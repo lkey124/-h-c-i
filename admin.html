@@ -38,7 +38,7 @@
 
       <form onsubmit="adminApp.unlockAdminGateway(event)" class="space-y-4">
         <div>
-          <input type="password" id="admin-pin-input" placeholder="Nhập PIN (mặc định: 1234)..." required class="w-full text-center text-xl tracking-widest px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-white font-mono focus:outline-none focus:border-indigo-500">
+          <input type="password" id="admin-pin-input" placeholder="Nhập mã PIN bảo mật..." required class="w-full text-center text-xl tracking-widest px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-white font-mono focus:outline-none focus:border-indigo-500">
         </div>
         <button type="submit" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2">
           <i data-lucide="unlock" class="w-4 h-4"></i> Mở Khóa Quản Trị
@@ -46,7 +46,7 @@
       </form>
 
       <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
-        <span class="text-slate-400">Mã PIN mặc định: <strong class="text-indigo-300 font-mono">1234</strong></span>
+        <span class="text-slate-400">Hệ thống bảo mật quản trị</span>
         <a href="/" class="text-cyan-400 hover:text-white font-bold flex items-center gap-1">
           <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Về Trang Học Viên
         </a>
@@ -187,7 +187,7 @@
       unlockAdminGateway: function(e) {
         e.preventDefault();
         const pin = document.getElementById('admin-pin-input').value.trim();
-        if (pin === '1234') {
+        if (pin === '642004') {
           sessionStorage.setItem('eduquest_admin_unlocked', 'true');
           this.showDashboard();
         } else {
