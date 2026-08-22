@@ -254,7 +254,7 @@
   </main>
 
   <!-- ========================================================================= -->
-  <!-- MODAL: KÍCH HOẠT MÃ KEY BẢN QUYỀN (1 INPUT DUY NHẤT) -->
+  <!-- MODAL: KÍCH HOẠT MÃ KEY BẢN QUYỀN -->
   <!-- ========================================================================= -->
   <div id="modal-login" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-slate-900 border-2 border-indigo-700/80 rounded-3xl max-w-md w-full p-5 sm:p-7 space-y-4 shadow-2xl relative my-auto">
@@ -294,6 +294,36 @@
         <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
           <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mua Key Bản Quyền Tại binhluu.ai.studio
         </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: HỘP THOẠI POPUP CHÍNH GIỮA MÀN HÌNH (CENTERED CUSTOM DIALOG) -->
+  <!-- ========================================================================= -->
+  <div id="modal-custom-dialog" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-indigo-600/80 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl text-center relative animate-scale-up">
+      <!-- Icon Container -->
+      <div id="custom-dialog-icon-wrapper" class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl">
+        <span id="custom-dialog-icon">⚠️</span>
+      </div>
+
+      <!-- Title & Message -->
+      <div class="space-y-2">
+        <h3 id="custom-dialog-title" class="font-extrabold text-lg sm:text-xl text-white">Xác Nhận Thoát Phòng Thi</h3>
+        <p id="custom-dialog-msg" class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+          Bạn có chắc chắn muốn thoát phòng thi? Toàn bộ bài làm chưa nộp sẽ không được lưu.
+        </p>
+      </div>
+
+      <!-- Buttons Action -->
+      <div id="custom-dialog-buttons" class="grid grid-cols-2 gap-3 pt-2">
+        <button id="custom-dialog-cancel-btn" onclick="app.closeCustomDialog(false)" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all">
+          Ở Lại Làm Bài
+        </button>
+        <button id="custom-dialog-confirm-btn" onclick="app.closeCustomDialog(true)" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-800 font-bold text-xs sm:text-sm transition-all">
+          Thoát Ra
+        </button>
       </div>
     </div>
   </div>

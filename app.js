@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Comprehensive Fisher-Yates Randomization (Parts, Questions & Options) + Smart Key Normalization + Cloud Sync
+ * Modern Centered Modal Dialogs + Comprehensive Fisher-Yates Randomization + Smart Key Normalization
  */
 
 const app = {
@@ -26,6 +26,97 @@ const app = {
     examTimer: {
       interval: null,
       secondsRemaining: 90 * 60
+    },
+
+    dialogCallback: null
+  },
+
+  // -------------------------------------------------------------
+  // SLEEK CENTERED CUSTOM DIALOG SYSTEM (REPLACES BROWSER POPUPS)
+  // -------------------------------------------------------------
+  showCustomConfirm: function(options) {
+    this.playSound('click');
+    const modal = document.getElementById('modal-custom-dialog');
+    const iconWrapper = document.getElementById('custom-dialog-icon-wrapper');
+    const iconSpan = document.getElementById('custom-dialog-icon');
+    const titleEl = document.getElementById('custom-dialog-title');
+    const msgEl = document.getElementById('custom-dialog-msg');
+    const cancelBtn = document.getElementById('custom-dialog-cancel-btn');
+    const confirmBtn = document.getElementById('custom-dialog-confirm-btn');
+    const btnContainer = document.getElementById('custom-dialog-buttons');
+
+    if (!modal) return;
+
+    iconSpan.innerText = options.icon || '⚠️';
+    iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
+      options.iconBg || 'bg-amber-950/80 border border-amber-600/60 text-amber-400'
+    }`;
+    titleEl.innerText = options.title || 'Xác Nhận';
+    msgEl.innerHTML = options.message || '';
+
+    btnContainer.className = 'grid grid-cols-2 gap-3 pt-2';
+    cancelBtn.className = 'w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all';
+    cancelBtn.innerText = options.cancelText || 'Ở Lại Làm Bài';
+    cancelBtn.style.display = 'block';
+
+    confirmBtn.className = 'w-full py-3 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-800 font-bold text-xs sm:text-sm transition-all';
+    confirmBtn.innerText = options.confirmText || 'Thoát Ra';
+
+    this.data.dialogCallback = (confirmed) => {
+      if (confirmed && options.onConfirm) options.onConfirm();
+      if (!confirmed && options.onCancel) options.onCancel();
+    };
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    this.initIcons();
+  },
+
+  showCustomAlert: function(options) {
+    this.playSound('click');
+    const modal = document.getElementById('modal-custom-dialog');
+    const iconWrapper = document.getElementById('custom-dialog-icon-wrapper');
+    const iconSpan = document.getElementById('custom-dialog-icon');
+    const titleEl = document.getElementById('custom-dialog-title');
+    const msgEl = document.getElementById('custom-dialog-msg');
+    const cancelBtn = document.getElementById('custom-dialog-cancel-btn');
+    const confirmBtn = document.getElementById('custom-dialog-confirm-btn');
+    const btnContainer = document.getElementById('custom-dialog-buttons');
+
+    if (!modal) return;
+
+    iconSpan.innerText = options.icon || '🎉';
+    iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
+      options.iconBg || 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400'
+    }`;
+    titleEl.innerText = options.title || 'Thông Báo';
+    msgEl.innerHTML = options.message || '';
+
+    btnContainer.className = 'flex justify-center pt-2';
+    cancelBtn.style.display = 'none';
+
+    confirmBtn.className = 'w-full max-w-xs py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all';
+    confirmBtn.innerText = options.btnText || 'Đã Hiểu';
+
+    this.data.dialogCallback = (confirmed) => {
+      if (options.onConfirm) options.onConfirm();
+    };
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    this.initIcons();
+  },
+
+  closeCustomDialog: function(confirmed) {
+    const modal = document.getElementById('modal-custom-dialog');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    if (this.data.dialogCallback) {
+      const cb = this.data.dialogCallback;
+      this.data.dialogCallback = null;
+      cb(confirmed);
     }
   },
 
@@ -100,7 +191,6 @@ const app = {
 
     // 2. Randomize Reading: Shuffle Parts, Questions & Options
     if (exam.skills?.reading?.parts) {
-      // Shuffle reading parts order
       exam.skills.reading.parts = this.shuffleArray(exam.skills.reading.parts);
 
       exam.skills.reading.parts.forEach(part => {
@@ -642,7 +732,14 @@ const app = {
       this.renderRoadmap();
       this.updateUserStatsDisplay();
       this.playSound('pass');
-      alert(`🎉 Kích hoạt thành công! Chào mừng học viên ${user.name} vào luyện thi.`);
+      
+      this.showCustomAlert({
+        title: 'KÍCH HOẠT THÀNH CÔNG!',
+        message: `Chào mừng học viên <strong>${user.name}</strong> (${user.package}) đã vào hệ thống luyện thi B1 Vượt Ải!`,
+        icon: '🎉',
+        iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+        btnText: 'Bắt Đầu Vượt Ải Ngay'
+      });
     } else {
       this.playSound('fail');
       if (errBox) {
@@ -653,23 +750,29 @@ const app = {
           </div>
         `;
         errBox.classList.remove('hidden');
-      } else {
-        alert('❌ Mã Key không chính xác!');
       }
     }
   },
 
   logout: function() {
-    if (confirm('Bạn có chắc chắn muốn thoát khỏi tài khoản này?')) {
-      this.stopAllAudios();
-      this.saveUserProgressToStorage();
-      this.data.currentUser = null;
-      localStorage.removeItem('eduquest_b1_logged_user');
-      this.loadUserProgressFromStorage();
-      this.renderRoadmap();
-      this.updateUserStatsDisplay();
-      this.playSound('click');
-    }
+    this.showCustomConfirm({
+      title: 'Đăng Xuất Tài Khoản?',
+      message: 'Bạn có chắc chắn muốn đăng xuất? Bạn có thể nhập lại mã Key bất kỳ lúc nào.',
+      icon: '👋',
+      iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
+      cancelText: 'Hủy Bỏ',
+      confirmText: 'Đăng Xuất',
+      onConfirm: () => {
+        this.stopAllAudios();
+        this.saveUserProgressToStorage();
+        this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_logged_user');
+        this.loadUserProgressFromStorage();
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        this.playSound('click');
+      }
+    });
   },
 
   // -------------------------------------------------------------
@@ -791,13 +894,22 @@ const app = {
     this.playSound('click');
 
     if (!this.data.currentUser) {
-      alert('Vui lòng nhập mã Key bản quyền để bắt đầu làm bài!');
-      this.openLoginModal();
+      this.showCustomAlert({
+        title: 'Yêu Cầu Nhập Key',
+        message: 'Vui lòng nhập mã Key bản quyền để mở khóa phòng thi!',
+        icon: '🔑',
+        onConfirm: () => this.openLoginModal()
+      });
       return;
     }
 
     if (!this.isAccountActive(this.data.currentUser)) {
-      alert('⚠️ KEY ĐÃ HẾT HẠN SỬ DỤNG!\n\nMã Key của bạn đã hết hạn. Vui lòng liên hệ Admin qua Cửa Hàng (binhluu.ai.studio) để gia hạn.');
+      this.showCustomAlert({
+        title: 'KEY ĐÃ HẾT HẠN SỬ DỤNG',
+        message: 'Mã Key của bạn đã hết hạn thời gian học. Vui lòng liên hệ Admin qua <strong>binhluu.ai.studio</strong> để gia hạn ngày học!',
+        icon: '⚠️',
+        iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400'
+      });
       return;
     }
 
@@ -817,11 +929,19 @@ const app = {
   },
 
   exitExamRoom: function() {
-    if (confirm('Bạn có chắc chắn muốn thoát phòng thi? Toàn bộ bài làm chưa nộp sẽ không được lưu.')) {
-      this.stopAllAudios();
-      this.stopExamTimer();
-      this.showTab('roadmap');
-    }
+    this.showCustomConfirm({
+      title: 'Thoát Phòng Thi?',
+      message: 'Bạn có chắc chắn muốn thoát phòng thi? Toàn bộ bài làm chưa nộp sẽ không được lưu.',
+      icon: '⚠️',
+      iconBg: 'bg-amber-950/80 border border-amber-600/60 text-amber-400',
+      cancelText: 'Ở Lại Làm Bài',
+      confirmText: 'Thoát Ra',
+      onConfirm: () => {
+        this.stopAllAudios();
+        this.stopExamTimer();
+        this.showTab('roadmap');
+      }
+    });
   },
 
   startExamTimer: function() {
@@ -838,8 +958,12 @@ const app = {
       }
       if (this.data.examTimer.secondsRemaining <= 0) {
         clearInterval(this.data.examTimer.interval);
-        alert('Hết thời gian làm bài! Hệ thống tự động nộp bài của bạn.');
-        this.submitCurrentExam();
+        this.showCustomAlert({
+          title: 'HẾT THỜI GIAN LÀM BÀI!',
+          message: 'Thời gian làm bài đã kết thúc. Hệ thống sẽ tự động nộp bài thi của bạn để chấm điểm ngay.',
+          icon: '⏰',
+          onConfirm: () => this.submitCurrentExam()
+        });
       }
     }, 1000);
   },
