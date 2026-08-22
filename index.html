@@ -108,7 +108,7 @@
           Lộ Trình 50 Bộ Đề Thi Tiếng Anh B1
         </h1>
         <p class="text-slate-200 text-sm sm:text-base leading-relaxed font-normal max-w-3xl">
-          Đề thi tổng hợp đầy đủ các phần: <strong class="text-indigo-300 font-semibold">Nghe (Listening)</strong>, <strong class="text-cyan-300 font-semibold">Đọc (Reading)</strong>, <strong class="text-amber-300 font-semibold">Viết (Writing)</strong> và <strong class="text-purple-300 font-semibold">Nói (Speaking)</strong> trong một bài làm liền mạch. Bạn cần đạt tối thiểu <strong>50% điểm số</strong> của đề hiện tại để mở khóa đề tiếp theo!
+          Đề thi trọn vẹn gồm 3 phần thi chính: <strong class="text-indigo-300 font-semibold">Nghe (Listening)</strong>, <strong class="text-cyan-300 font-semibold">Đọc (Reading)</strong> và <strong class="text-amber-300 font-semibold">Viết (Writing)</strong>. Bạn cần đạt tối thiểu <strong>50% điểm số</strong> của đề hiện tại để mở khóa đề tiếp theo!
         </p>
 
         <!-- Progress Stats Card -->
@@ -154,10 +154,10 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- VIEW 2: EXAM ROOM (DẠNG ĐỀ THI TRỌN VẸN LIỀN MẠCH - KHÔNG CHIA 4 TAB) -->
+    <!-- VIEW 2: EXAM ROOM (DẠNG ĐỀ THI TRỌN VẸN 3 PHẦN: NGHE • ĐỌC • VIẾT) -->
     <!-- ========================================================================= -->
     <section id="view-exam" class="hidden space-y-5">
-      <!-- Sticky Exam Header With Timer & Quick Navigation -->
+      <!-- Sticky Exam Header With Timer & Submit -->
       <div class="sticky top-20 z-30 bg-slate-900 border border-indigo-700/80 p-3.5 sm:p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2.5">
           <button onclick="app.exitExamRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white" title="Thoát phòng thi">
@@ -166,26 +166,10 @@
           <div>
             <div class="flex items-center gap-2">
               <h2 id="exam-room-title" class="font-bold text-base sm:text-lg text-white">Đề Thi B1 Số 01</h2>
-              <span id="exam-room-level-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">Trọn Vẹn 4 Phần</span>
+              <span id="exam-room-level-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">Nghe • Đọc • Viết</span>
             </div>
-            <p class="text-[11px] text-slate-300 font-medium">Làm bài liền mạch từ Phần 1 đến Phần 4</p>
+            <p class="text-[11px] text-slate-300 font-medium">Làm bài liền mạch từ Phần 1 đến Phần 3</p>
           </div>
-        </div>
-
-        <!-- Quick Section Anchor Links (Scroll Smoothly to Sections) -->
-        <div class="hidden md:flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
-          <button onclick="app.scrollToSection('sec-listening')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-            🎧 Nghe
-          </button>
-          <button onclick="app.scrollToSection('sec-reading')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-            📖 Đọc
-          </button>
-          <button onclick="app.scrollToSection('sec-writing')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-            ✍️ Viết
-          </button>
-          <button onclick="app.scrollToSection('sec-speaking')" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">
-            🗣️ Nói
-          </button>
         </div>
 
         <!-- Timer & Submit Action -->
@@ -200,9 +184,9 @@
         </div>
       </div>
 
-      <!-- Single Continuous Exam Sheet Container -->
+      <!-- Single Continuous Exam Sheet Container (Listening -> Reading -> Writing) -->
       <div id="exam-continuous-sheet" class="space-y-8">
-        <!-- Rendered dynamically by app.js: Listening -> Reading -> Writing -> Speaking -->
+        <!-- Rendered dynamically by app.js -->
       </div>
     </section>
 
@@ -223,28 +207,24 @@
           </p>
         </div>
 
-        <!-- Score Breakdown Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 max-w-4xl mx-auto">
+        <!-- Score Breakdown Grid (Listening, Reading, Writing) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
           <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
             <div class="text-xs text-slate-300 font-bold">Tổng Điểm</div>
             <div id="res-total-score" class="text-xl sm:text-2xl font-black text-white mt-0.5">85 / 100</div>
             <div id="res-percentage" class="text-xs font-black text-emerald-400">85% (ĐẠT)</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">🎧 Listening</div>
-            <div id="res-listening-score" class="text-lg sm:text-xl font-bold text-indigo-300 mt-0.5">22 / 25</div>
+            <div class="text-xs text-slate-300 font-bold">🎧 Listening (35đ)</div>
+            <div id="res-listening-score" class="text-lg sm:text-xl font-bold text-indigo-300 mt-0.5">30 / 35</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">📖 Reading</div>
-            <div id="res-reading-score" class="text-lg sm:text-xl font-bold text-cyan-300 mt-0.5">20 / 25</div>
+            <div class="text-xs text-slate-300 font-bold">📖 Reading (35đ)</div>
+            <div id="res-reading-score" class="text-lg sm:text-xl font-bold text-cyan-300 mt-0.5">28 / 35</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">✍️ Writing</div>
-            <div id="res-writing-score" class="text-lg sm:text-xl font-bold text-amber-300 mt-0.5">21 / 25</div>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 col-span-2 sm:col-span-1">
-            <div class="text-xs text-slate-300 font-bold">🗣️ Speaking</div>
-            <div id="res-speaking-score" class="text-lg sm:text-xl font-bold text-purple-300 mt-0.5">22 / 25</div>
+            <div class="text-xs text-slate-300 font-bold">✍️ Writing (30đ)</div>
+            <div id="res-writing-score" class="text-lg sm:text-xl font-bold text-amber-300 mt-0.5">27 / 30</div>
           </div>
         </div>
 

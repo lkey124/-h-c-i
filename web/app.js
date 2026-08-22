@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Unified Font (Be Vietnam Pro) & Continuous Comprehensive Exam Sheet (No 4-Tab Separation)
+ * 3-Skill B1 Standard (Listening 35p, Reading 35p, Writing 30p), Clean Production Data
  */
 
 const app = {
@@ -124,7 +124,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // USER STORAGE & MANAGEMENT
+  // USER STORAGE & MANAGEMENT (CLEAN NO DUMMY DATA)
   // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
@@ -447,7 +447,7 @@ const app = {
 
           <div>
             <h3 class="text-base sm:text-lg font-bold text-white">${ex.title}</h3>
-            <p class="text-xs text-slate-300 mt-1 font-normal">Trọn vẹn 4 phần • 90 Phút • Ngưỡng đỗ: ≥ ${ex.passing_threshold_percent}%</p>
+            <p class="text-xs text-slate-300 mt-1 font-normal">3 Phần (Nghe • Đọc • Viết) • 90 Phút • Ngưỡng đỗ: ≥ ${ex.passing_threshold_percent}%</p>
           </div>
         </div>
 
@@ -476,7 +476,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // EXAM ROOM: CONTINUOUS UNIFIED EXAM SHEET (NO 4 TABS)
+  // EXAM ROOM: 3 SKILLS (LISTENING 35P, READING 35P, WRITING 30P)
   // -------------------------------------------------------------
   startExam: function(examId) {
     this.playSound('click');
@@ -510,14 +510,6 @@ const app = {
     if (confirm('Bạn có chắc chắn muốn thoát phòng thi? Toàn bộ bài làm chưa nộp sẽ không được lưu.')) {
       this.stopExamTimer();
       this.showTab('roadmap');
-    }
-  },
-
-  scrollToSection: function(secId) {
-    this.playSound('click');
-    const el = document.getElementById(secId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   },
 
@@ -558,7 +550,7 @@ const app = {
     let questionGlobalIndex = 1;
 
     // ==========================================
-    // SECTION 1: LISTENING (KỸ NĂNG NGHE)
+    // SECTION 1: LISTENING (KỸ NĂNG NGHE - 35 ĐIỂM)
     // ==========================================
     const sec1 = document.createElement('div');
     sec1.id = 'sec-listening';
@@ -569,7 +561,7 @@ const app = {
           <i data-lucide="headphones" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="font-bold text-lg text-white">PHẦN 1: KỸ NĂNG NGHE (LISTENING COMPREHENSION)</h3>
+          <h3 class="font-bold text-lg text-white">PHẦN 1: KỸ NĂNG NGHE (LISTENING - 35 ĐIỂM)</h3>
           <p class="text-xs text-slate-300 font-medium">Nghe các đoạn băng audio và chọn đáp án chính xác nhất</p>
         </div>
       </div>
@@ -630,7 +622,7 @@ const app = {
     container.appendChild(sec1);
 
     // ==========================================
-    // SECTION 2: READING (KỸ NĂNG ĐỌC)
+    // SECTION 2: READING (KỸ NĂNG ĐỌC - 35 ĐIỂM)
     // ==========================================
     const sec2 = document.createElement('div');
     sec2.id = 'sec-reading';
@@ -641,8 +633,8 @@ const app = {
           <i data-lucide="book-open" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="font-bold text-lg text-white">PHẦN 2: KỸ NĂNG ĐỌC (READING COMPREHENSION)</h3>
-          <p class="text-xs text-slate-300 font-medium">Đọc các biển báo, thông báo và đoạn văn rồi chọn đáp án đúng</p>
+          <h3 class="font-bold text-lg text-white">PHẦN 2: KỸ NĂNG ĐỌC (READING - 35 ĐIỂM)</h3>
+          <p class="text-xs text-slate-300 font-medium">Đọc các thông báo, đoạn văn và chọn đáp án chính xác</p>
         </div>
       </div>
     `;
@@ -689,18 +681,18 @@ const app = {
     container.appendChild(sec2);
 
     // ==========================================
-    // SECTION 3: WRITING (KỸ NĂNG VIẾT)
+    // SECTION 3: WRITING (KỸ NĂNG VIẾT - 30 ĐIỂM)
     // ==========================================
     const sec3 = document.createElement('div');
     sec3.id = 'sec-writing';
-    sec3.className = 'space-y-6 pt-4';
+    sec3.className = 'space-y-6 pt-4 pb-8';
     sec3.innerHTML = `
       <div class="flex items-center gap-3 p-4 rounded-2xl bg-amber-950/70 border border-amber-700/80">
         <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-slate-950 shadow-md">
           <i data-lucide="pen-tool" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="font-bold text-lg text-white">PHẦN 3: KỸ NĂNG VIẾT (WRITING SKILLS)</h3>
+          <h3 class="font-bold text-lg text-white">PHẦN 3: KỸ NĂNG VIẾT (WRITING - 30 ĐIỂM)</h3>
           <p class="text-xs text-slate-300 font-medium">Viết lại câu tương đương và trả lời đề tài viết luận ngắn</p>
         </div>
       </div>
@@ -735,7 +727,7 @@ const app = {
 
     const wPart2 = exam.skills.writing.parts[1];
     const wCard2 = document.createElement('div');
-    wCard2.className = 'glass-panel rounded-3xl p-5 sm:p-7 space-y-4';
+    wCard2.className = 'glass-panel rounded-3xl p-5 sm:p-7 space-y-5';
     wCard2.innerHTML = `
       <div class="pb-3 border-b border-slate-800">
         <h4 class="font-bold text-base sm:text-lg text-white">${wPart2.title}</h4>
@@ -744,47 +736,15 @@ const app = {
         <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">${wPart2.task.prompt}</p>
         <textarea rows="4" placeholder="Viết câu trả lời vào đây (35-45 từ)..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border-2 border-slate-700 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-400 font-normal"></textarea>
       </div>
+
+      <div class="pt-4 border-t border-slate-800 flex justify-end">
+        <button onclick="app.submitCurrentExam()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl flex items-center gap-2">
+          <i data-lucide="send" class="w-5 h-5"></i> Hoàn Thành & Nộp Toàn Bộ Đề Thi
+        </button>
+      </div>
     `;
     sec3.appendChild(wCard2);
     container.appendChild(sec3);
-
-    // ==========================================
-    // SECTION 4: SPEAKING (KỸ NĂNG NÓI)
-    // ==========================================
-    const sec4 = document.createElement('div');
-    sec4.id = 'sec-speaking';
-    sec4.className = 'space-y-6 pt-4 pb-8';
-    sec4.innerHTML = `
-      <div class="flex items-center gap-3 p-4 rounded-2xl bg-purple-950/70 border border-purple-700/80">
-        <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow-md">
-          <i data-lucide="mic" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <h3 class="font-bold text-lg text-white">PHẦN 4: KỸ NĂNG NÓI (SPEAKING INTERACTION)</h3>
-          <p class="text-xs text-slate-300 font-medium">Chủ đề thảo luận: ${exam.skills.speaking.topic_theme}</p>
-        </div>
-      </div>
-
-      <div class="glass-panel rounded-3xl p-5 sm:p-7 space-y-5">
-        <div class="space-y-4">
-          ${exam.skills.speaking.parts.map(p => `
-            <div class="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-              <div class="font-bold text-sm sm:text-base text-purple-300">${p.title}</div>
-              ${p.prompts ? `<ul class="list-disc pl-5 text-xs sm:text-sm text-slate-200 space-y-1.5 font-normal">${p.prompts.map(pr => `<li>${pr}</li>`).join('')}</ul>` : ''}
-              ${p.situation ? `<p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">${p.situation}</p>` : ''}
-              ${p.discussion_questions ? `<ul class="list-disc pl-5 text-xs sm:text-sm text-slate-200 space-y-1.5 font-normal">${p.discussion_questions.map(dq => `<li>${dq}</li>`).join('')}</ul>` : ''}
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="pt-4 border-t border-slate-800 flex justify-end">
-          <button onclick="app.submitCurrentExam()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-xl flex items-center gap-2">
-            <i data-lucide="send" class="w-5 h-5"></i> Hoàn Thành & Nộp Toàn Bộ Đề Thi
-          </button>
-        </div>
-      </div>
-    `;
-    container.appendChild(sec4);
 
     this.initIcons();
   },
@@ -795,7 +755,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // SUBMISSION & STRICT 50% PASSING THRESHOLD
+  // SUBMISSION & STRICT 50% PASSING THRESHOLD (100-POINT SCALE)
   // -------------------------------------------------------------
   submitCurrentExam: function() {
     this.stopExamTimer();
@@ -827,12 +787,11 @@ const app = {
       if (userAns === targetAns || userAns.includes(targetAns)) writingCorrect++;
     });
 
-    const lisPct = listeningTotal ? (listeningCorrect / listeningTotal) * 25 : 20;
-    const reaPct = readingTotal ? (readingCorrect / readingTotal) * 25 : 20;
-    const wriPct = writingTotal ? (writingCorrect / writingTotal) * 25 : 20;
-    const spkPct = 22;
+    const lisScore = listeningTotal ? (listeningCorrect / listeningTotal) * 35 : 25;
+    const reaScore = readingTotal ? (readingCorrect / readingTotal) * 35 : 25;
+    const wriScore = writingTotal ? (writingCorrect / writingTotal) * 30 : 25;
 
-    const totalScore = Math.round(lisPct + reaPct + wriPct + spkPct);
+    const totalScore = Math.round(lisScore + reaScore + wriScore);
     const isPassed = totalScore >= exam.passing_threshold_percent;
 
     if (isPassed) {
@@ -864,10 +823,10 @@ const app = {
 
     this.saveUserProgressToStorage();
     this.updateUserStatsDisplay();
-    this.showResultModal(totalScore, isPassed, lisPct, reaPct, wriPct, spkPct);
+    this.showResultModal(totalScore, isPassed, lisScore, reaScore, wriScore);
   },
 
-  showResultModal: function(score, isPassed, lis, rea, wri, spk) {
+  showResultModal: function(score, isPassed, lis, rea, wri) {
     this.showTab('result');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -897,10 +856,9 @@ const app = {
 
     document.getElementById('res-total-score').innerText = `${score} / 100`;
     document.getElementById('res-percentage').innerText = `${score}% (${isPassed ? 'ĐẠT' : 'CHƯA ĐẠT'})`;
-    document.getElementById('res-listening-score').innerText = `${Math.round(lis)} / 25`;
-    document.getElementById('res-reading-score').innerText = `${Math.round(rea)} / 25`;
-    document.getElementById('res-writing-score').innerText = `${Math.round(wri)} / 25`;
-    document.getElementById('res-speaking-score').innerText = `${Math.round(spk)} / 25`;
+    document.getElementById('res-listening-score').innerText = `${Math.round(lis)} / 35`;
+    document.getElementById('res-reading-score').innerText = `${Math.round(rea)} / 35`;
+    document.getElementById('res-writing-score').innerText = `${Math.round(wri)} / 30`;
 
     this.renderReviewDetails();
   },
