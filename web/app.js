@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * 3-Skill B1 Standard with Custom Compact Play/Pause Button & Automatic Audio Stopping on Exit
+ * Fisher-Yates Dynamic Randomization of Questions & Options on every entry + Smart Audio Controller
  */
 
 const app = {
@@ -30,6 +30,89 @@ const app = {
   },
 
   // -------------------------------------------------------------
+  // FISHER-YATES SHUFFLE ALGORITHM
+  // -------------------------------------------------------------
+  shuffleArray: function(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  },
+
+  randomizeExamData: function(rawExam) {
+    if (!rawExam) return null;
+    const exam = JSON.parse(JSON.stringify(rawExam));
+
+    // Letters helper
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+
+    // 1. Randomize Listening Questions & Options
+    if (exam.skills?.listening?.parts) {
+      exam.skills.listening.parts.forEach(part => {
+        if (part.questions && part.questions.length > 0) {
+          // Shuffle question order
+          part.questions = this.shuffleArray(part.questions);
+
+          // Shuffle option order for each question
+          part.questions.forEach(q => {
+            if (q.options && q.options.length > 1) {
+              const originalCorrectKey = q.correct_answer;
+              const originalCorrectOption = q.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
+              const correctRawText = originalCorrectOption ? originalCorrectOption.replace(/^[A-Z][\.\:\s]\s*/, '').trim() : '';
+
+              // Extract raw text of all options
+              const rawOptions = q.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
+              const shuffledRaw = this.shuffleArray(rawOptions);
+
+              // Rebuild options with A, B, C, D and find new correct letter
+              q.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
+              const newCorrectIdx = shuffledRaw.findIndex(txt => txt === correctRawText);
+              if (newCorrectIdx !== -1) {
+                q.correct_answer = letters[newCorrectIdx];
+              }
+            }
+          });
+        }
+      });
+    }
+
+    // 2. Randomize Reading Questions & Options
+    if (exam.skills?.reading?.parts) {
+      exam.skills.reading.parts.forEach(part => {
+        if (part.questions && part.questions.length > 0) {
+          part.questions = this.shuffleArray(part.questions);
+
+          part.questions.forEach(q => {
+            if (q.options && q.options.length > 1) {
+              const originalCorrectKey = q.correct_answer;
+              const originalCorrectOption = q.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
+              const correctRawText = originalCorrectOption ? originalCorrectOption.replace(/^[A-Z][\.\:\s]\s*/, '').trim() : '';
+
+              const rawOptions = q.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
+              const shuffledRaw = this.shuffleArray(rawOptions);
+
+              q.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
+              const newCorrectIdx = shuffledRaw.findIndex(txt => txt === correctRawText);
+              if (newCorrectIdx !== -1) {
+                q.correct_answer = letters[newCorrectIdx];
+              }
+            }
+          });
+        }
+      });
+    }
+
+    // 3. Randomize Writing Part 1 Questions
+    if (exam.skills?.writing?.parts?.[0]?.questions) {
+      exam.skills.writing.parts[0].questions = this.shuffleArray(exam.skills.writing.parts[0].questions);
+    }
+
+    return exam;
+  },
+
+  // -------------------------------------------------------------
   // AUDIO CONTROLLER & SOUND SYNTHESIZER
   // -------------------------------------------------------------
   formatTime: function(seconds) {
@@ -40,7 +123,6 @@ const app = {
   },
 
   stopAllAudios: function() {
-    // 1. Pause and reset all audio elements
     const audios = document.querySelectorAll('audio');
     audios.forEach(a => {
       try {
@@ -49,7 +131,6 @@ const app = {
       } catch (e) {}
     });
 
-    // 2. Reset all custom audio buttons and soundwaves
     document.querySelectorAll('.custom-audio-pill').forEach(btn => {
       btn.classList.remove('is-playing');
       const icon = btn.querySelector('.audio-icon');
@@ -62,19 +143,23 @@ const app = {
       sw.classList.remove('sound-wave-playing');
     });
 
+    document.querySelectorAll('.audio-progress-fill').forEach(fill => {
+      fill.style.width = '0%';
+    });
+
     this.data.activeAudioElement = null;
     this.initIcons();
   },
 
-  toggleCustomAudio: function(audioId, btnId, timeId, waveId) {
+  toggleCustomAudio: function(audioId, btnId, timeId, waveId, fillId) {
     const audio = document.getElementById(audioId);
     const btn = document.getElementById(btnId);
     const timeDisplay = document.getElementById(timeId);
     const wave = document.getElementById(waveId);
+    const fill = document.getElementById(fillId);
 
     if (!audio) return;
 
-    // If another audio is currently playing, stop it first
     if (this.data.activeAudioElement && this.data.activeAudioElement !== audio) {
       this.stopAllAudios();
     }
@@ -93,7 +178,6 @@ const app = {
         console.warn('Audio play error:', err);
       });
 
-      // Attach event listeners if not already attached
       if (!audio.dataset.hasListeners) {
         audio.dataset.hasListeners = 'true';
 
@@ -101,14 +185,19 @@ const app = {
           if (timeDisplay && !isNaN(audio.duration)) {
             timeDisplay.innerText = `${this.formatTime(audio.currentTime)} / ${this.formatTime(audio.duration)}`;
           }
+          if (fill && !isNaN(audio.duration) && audio.duration > 0) {
+            const pct = (audio.currentTime / audio.duration) * 100;
+            fill.style.width = `${pct}%`;
+          }
         });
 
         audio.addEventListener('ended', () => {
           if (btn) btn.classList.remove('is-playing');
           if (wave) wave.classList.remove('sound-wave-playing');
+          if (fill) fill.style.width = '0%';
           const icon = btn?.querySelector('.audio-icon');
           const text = btn?.querySelector('.audio-btn-text');
-          if (icon) icon.setAttribute('data-lucide', 'play');
+          if (icon) icon.setAttribute('data-lucide', 'rotate-ccw');
           if (text) text.innerText = 'Phát Lại';
           if (timeDisplay && !isNaN(audio.duration)) {
             timeDisplay.innerText = `00:00 / ${this.formatTime(audio.duration)}`;
@@ -132,6 +221,34 @@ const app = {
       if (icon) icon.setAttribute('data-lucide', 'play');
       if (text) text.innerText = 'Tiếp Tục';
       this.initIcons();
+    }
+  },
+
+  seekAudio: function(audioId, event) {
+    const audio = document.getElementById(audioId);
+    const track = event.currentTarget;
+    if (!audio || isNaN(audio.duration) || audio.duration <= 0) return;
+
+    const rect = track.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const width = rect.width;
+    const targetTime = (clickX / width) * audio.duration;
+
+    audio.currentTime = targetTime;
+  },
+
+  skipAudio: function(audioId, seconds) {
+    const audio = document.getElementById(audioId);
+    if (!audio || isNaN(audio.duration)) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+  },
+
+  restartAudio: function(audioId, btnId, timeId, waveId, fillId) {
+    const audio = document.getElementById(audioId);
+    if (!audio) return;
+    audio.currentTime = 0;
+    if (audio.paused) {
+      this.toggleCustomAudio(audioId, btnId, timeId, waveId, fillId);
     }
   },
 
@@ -228,7 +345,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // USER STORAGE & MANAGEMENT (CLEAN DATA ONLY)
+  // USER STORAGE & MANAGEMENT (PRISTINE CLEAN DATA)
   // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
@@ -553,7 +670,7 @@ const app = {
 
           <div>
             <h3 class="text-base sm:text-lg font-bold text-white">${ex.title}</h3>
-            <p class="text-xs text-slate-300 mt-1 font-normal">3 Phần (Nghe • Đọc • Viết) • 90 Phút • Ngưỡng đỗ: ≥ ${ex.passing_threshold_percent}%</p>
+            <p class="text-xs text-slate-300 mt-1 font-normal">3 Phần (Nghe • Đọc • Viết) • Đảo câu hỏi ngẫu nhiên • Ngưỡng: ≥ ${ex.passing_threshold_percent}%</p>
           </div>
         </div>
 
@@ -582,7 +699,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // EXAM ROOM: 3 SKILLS (LISTENING 35P, READING 35P, WRITING 30P)
+  // EXAM ROOM: RANDOMIZED QUESTIONS ON EVERY ENTRY
   // -------------------------------------------------------------
   startExam: function(examId) {
     this.stopAllAudios();
@@ -599,13 +716,14 @@ const app = {
       return;
     }
 
-    const exam = this.data.exams.find(e => e.exam_id === examId);
-    if (!exam) return;
+    const rawExam = this.data.exams.find(e => e.exam_id === examId);
+    if (!rawExam) return;
 
-    this.data.currentExam = exam;
+    // Dynamically randomize questions & options using Fisher-Yates shuffle
+    this.data.currentExam = this.randomizeExamData(rawExam);
     this.data.userAnswers = {};
 
-    document.getElementById('exam-room-title').innerText = exam.title;
+    document.getElementById('exam-room-title').innerText = this.data.currentExam.title;
 
     this.showTab('exam');
     this.renderContinuousExamSheet();
@@ -670,7 +788,7 @@ const app = {
         </div>
         <div>
           <h3 class="font-bold text-lg text-white">PHẦN 1: KỸ NĂNG NGHE (LISTENING - 35 ĐIỂM)</h3>
-          <p class="text-xs text-slate-300 font-medium">Bấm nút phát âm thanh tương ứng để nghe đoạn băng và chọn đáp án</p>
+          <p class="text-xs text-slate-300 font-medium">Bấm phát âm thanh, có thể tua hoặc bấm nghe lại tùy ý</p>
         </div>
       </div>
     `;
@@ -683,35 +801,55 @@ const app = {
       const btnUniqueId = `btn-audio-part-${pIdx}`;
       const timeUniqueId = `time-audio-part-${pIdx}`;
       const waveUniqueId = `wave-audio-part-${pIdx}`;
+      const fillUniqueId = `fill-audio-part-${pIdx}`;
 
       partCard.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-          <div>
-            <h4 class="font-bold text-base sm:text-lg text-white">${part.title}</h4>
-            <p class="text-xs text-slate-300 font-medium">Bấm nút bên cạnh để nghe đoạn băng ghi âm</p>
+        <div class="flex flex-col gap-3 pb-3 border-b border-slate-800">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 class="font-bold text-base sm:text-lg text-white">${part.title}</h4>
+              <p class="text-xs text-slate-300 font-medium">Nghe đoạn băng và chọn đáp án chính xác</p>
+            </div>
+
+            <!-- Sleek Custom Audio Controller -->
+            <div class="flex items-center gap-2">
+              <audio id="${audioUniqueId}" preload="metadata" class="hidden">
+                <source src="/${part.audio_file}" type="audio/mpeg">
+              </audio>
+
+              <!-- Quick -10s -->
+              <button onclick="app.skipAudio('${audioUniqueId}', -10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Lùi 10 giây">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -10s
+              </button>
+
+              <!-- Main Play/Pause Button -->
+              <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}', '${fillUniqueId}')" class="custom-audio-pill px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="play" class="w-4 h-4 text-cyan-300 audio-icon"></i>
+                <span class="audio-btn-text">Phát Âm Thanh</span>
+              </button>
+
+              <!-- Quick +10s -->
+              <button onclick="app.skipAudio('${audioUniqueId}', 10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Tua 10 giây">
+                +10s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+              </button>
+
+              <!-- Time & Sound Wave Display -->
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5">
+                  <div class="sound-wave-bar"></div>
+                  <div class="sound-wave-bar"></div>
+                  <div class="sound-wave-bar"></div>
+                  <div class="sound-wave-bar"></div>
+                  <div class="sound-wave-bar"></div>
+                </div>
+                <span id="${timeUniqueId}" class="text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Sleek Custom Audio Controller -->
-          <div class="flex items-center gap-3">
-            <audio id="${audioUniqueId}" preload="metadata" class="hidden">
-              <source src="/${part.audio_file}" type="audio/mpeg">
-            </audio>
-
-            <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}')" class="custom-audio-pill px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white shadow-lg flex items-center gap-2 cursor-pointer">
-              <i data-lucide="play" class="w-4 h-4 text-cyan-300 audio-icon"></i>
-              <span class="audio-btn-text">Phát Âm Thanh</span>
-            </button>
-
-            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-950 border border-slate-800">
-              <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5 px-0.5">
-                <div class="sound-wave-bar"></div>
-                <div class="sound-wave-bar"></div>
-                <div class="sound-wave-bar"></div>
-                <div class="sound-wave-bar"></div>
-                <div class="sound-wave-bar"></div>
-              </div>
-              <span id="${timeUniqueId}" class="text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
-            </div>
+          <!-- Clickable Seek Progress Track -->
+          <div class="audio-progress-track" onclick="app.seekAudio('${audioUniqueId}', event)" title="Bấm vào thanh để tua nhanh đến đoạn mong muốn">
+            <div id="${fillUniqueId}" class="audio-progress-fill"></div>
           </div>
         </div>
 
