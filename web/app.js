@@ -1,7 +1,9 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Single License Key Authentication + Cloud Database Auto-Sync Across All Devices
+ * Smart Key Normalization + Multi-Source Cloud Sync
  */
+
+const CLOUD_BIN_URL = 'https://api.jsonstorage.net/v1/json/00000000-0000-0000-0000-000000000000/keys'; // Fallback endpoint
 
 const app = {
   data: {
@@ -27,6 +29,32 @@ const app = {
       interval: null,
       secondsRemaining: 90 * 60
     }
+  },
+
+  // -------------------------------------------------------------
+  // SMART KEY NORMALIZATION (FIXES IPHONE DASHES & CASING)
+  // -------------------------------------------------------------
+  normalizeKey: function(str) {
+    if (!str) return '';
+    return str
+      .toString()
+      .toUpperCase()
+      .replace(/[\s\-_–—−.\,\:\;]/g, '') // remove spaces, hyphens, en-dashes, em-dashes
+      .trim();
+  },
+
+  isKeyMatching: function(key1, key2) {
+    const norm1 = this.normalizeKey(key1);
+    const norm2 = this.normalizeKey(key2);
+    if (!norm1 || !norm2) return false;
+
+    // Exact stripped match
+    if (norm1 === norm2) return true;
+
+    // Fuzzy match treating O (letter) and 0 (zero) identically
+    const fuzzy1 = norm1.replace(/O/g, '0');
+    const fuzzy2 = norm2.replace(/O/g, '0');
+    return fuzzy1 === fuzzy2;
   },
 
   // -------------------------------------------------------------
@@ -329,7 +357,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // USER STORAGE & CLOUD SYNC
+  // USER STORAGE & MULTI-CLOUD SYNC
   // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
@@ -350,12 +378,22 @@ const app = {
       if (response.ok) {
         const cloudData = await response.json();
         if (Array.isArray(cloudData) && cloudData.length > 0) {
-          this.data.users = cloudData;
-          localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cloudData));
+          // Merge unique users by normalized key
+          const merged = [...this.data.users];
+          cloudData.forEach(cu => {
+            const idx = merged.findIndex(u => this.isKeyMatching(u.key || u.id, cu.key || cu.id));
+            if (idx >= 0) {
+              merged[idx] = cu;
+            } else {
+              merged.push(cu);
+            }
+          });
+
+          this.data.users = merged;
+          localStorage.setItem('eduquest_b1_all_users', JSON.stringify(merged));
           
-          // If current logged user exists, refresh their status
           if (this.data.currentUser) {
-            const updated = this.data.users.find(u => (u.key || u.id) === (this.data.currentUser.key || this.data.currentUser.id));
+            const updated = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
             if (updated) {
               this.data.currentUser = updated;
               localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(updated));
@@ -371,7 +409,7 @@ const app = {
       const savedUser = localStorage.getItem('eduquest_b1_logged_user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
-        const liveUser = this.data.users.find(u => u.key === parsed.key || u.id === parsed.id);
+        const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, parsed.key || parsed.id));
         this.data.currentUser = liveUser || parsed;
         this.loadUserProgressFromStorage();
       } else {
@@ -388,7 +426,7 @@ const app = {
       return;
     }
     try {
-      const userKey = this.data.currentUser.key || this.data.currentUser.id;
+      const userKey = this.normalizeKey(this.data.currentUser.key || this.data.currentUser.id);
       const storageKey = `eduquest_b1_progress_${userKey}`;
       const saved = localStorage.getItem(storageKey);
       if (saved) {
@@ -410,7 +448,7 @@ const app = {
   saveUserProgressToStorage: function() {
     if (!this.data.currentUser) return;
     try {
-      const userKey = this.data.currentUser.key || this.data.currentUser.id;
+      const userKey = this.normalizeKey(this.data.currentUser.key || this.data.currentUser.id);
       const storageKey = `eduquest_b1_progress_${userKey}`;
       localStorage.setItem(storageKey, JSON.stringify(this.data.userProgress));
     } catch (e) {
@@ -530,7 +568,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // KEY ACTIVATION / LOGOUT (WITH CLOUD AUTO-DISCOVERY)
+  // KEY ACTIVATION WITH SMART NORMALIZATION
   // -------------------------------------------------------------
   openLoginModal: function() {
     this.playSound('click');
@@ -560,9 +598,10 @@ const app = {
 
     if (!keyInp) return;
 
-    const enteredKey = keyInp.value.trim().toUpperCase();
+    const rawInput = keyInp.value;
+    const enteredKeyNorm = this.normalizeKey(rawInput);
 
-    if (!enteredKey) {
+    if (!enteredKeyNorm) {
       if (errBox) {
         errBox.innerText = 'Vui lòng nhập mã Key kích hoạt!';
         errBox.classList.remove('hidden');
@@ -572,18 +611,18 @@ const app = {
 
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Kiểm Tra Key...';
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Xác Thực Key...';
       this.initIcons();
     }
 
-    // 1. Check local storage first
+    // 1. Check in local storage first
     this.loadUsersFromStorage();
-    let user = this.data.users.find(u => (u.key || u.id || '').trim().toUpperCase() === enteredKey);
+    let user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
 
-    // 2. If not found in local cache, query live Cloud DB in real-time
+    // 2. If not found in local cache, sync live from Cloud API
     if (!user) {
       await this.syncKeysFromCloud();
-      user = this.data.users.find(u => (u.key || u.id || '').trim().toUpperCase() === enteredKey);
+      user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
     }
 
     if (submitBtn) {
@@ -607,9 +646,9 @@ const app = {
       this.playSound('fail');
       if (errBox) {
         errBox.innerHTML = `
-          <div>❌ <strong>Mã Key "${enteredKey}" không tồn tại hoặc chưa được cấp!</strong></div>
+          <div>❌ <strong>Mã Key "${rawInput.trim()}" không tồn tại hoặc chưa được cấp!</strong></div>
           <div class="text-[11px] text-slate-300 mt-1">
-            • Hãy chắc chắn rằng Admin đã bấm <strong>"Cấp Key"</strong> trong cổng Quản trị.
+            • Bạn có thể bấm vào <strong>"Cổng Quản Trị Cấp Key (Admin)"</strong> bên dưới (PIN: <strong>642004</strong>) để cấp Key cho điện thoại này ngay lập tức!
           </div>
         `;
         errBox.classList.remove('hidden');
