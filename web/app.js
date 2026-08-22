@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Single License Key Authentication + Dynamic Question Randomization
+ * Single License Key Authentication + Cloud Database Auto-Sync Across All Devices
  */
 
 const app = {
@@ -298,6 +298,7 @@ const app = {
   init: async function() {
     this.loadUsersFromStorage();
     this.loadActiveUserSession();
+    await this.syncKeysFromCloud();
     await this.loadExamsDataset();
     this.renderRoadmap();
     this.updateUserStatsDisplay();
@@ -328,7 +329,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // USER STORAGE & MANAGEMENT
+  // USER STORAGE & CLOUD SYNC
   // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
@@ -341,6 +342,28 @@ const app = {
     } catch (e) {
       this.data.users = [];
     }
+  },
+
+  syncKeysFromCloud: async function() {
+    try {
+      const response = await fetch('/api/keys');
+      if (response.ok) {
+        const cloudData = await response.json();
+        if (Array.isArray(cloudData) && cloudData.length > 0) {
+          this.data.users = cloudData;
+          localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cloudData));
+          
+          // If current logged user exists, refresh their status
+          if (this.data.currentUser) {
+            const updated = this.data.users.find(u => (u.key || u.id) === (this.data.currentUser.key || this.data.currentUser.id));
+            if (updated) {
+              this.data.currentUser = updated;
+              localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(updated));
+            }
+          }
+        }
+      }
+    } catch (e) {}
   },
 
   loadActiveUserSession: function() {
@@ -507,7 +530,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // KEY ACTIVATION / LOGOUT
+  // KEY ACTIVATION / LOGOUT (WITH CLOUD AUTO-DISCOVERY)
   // -------------------------------------------------------------
   openLoginModal: function() {
     this.playSound('click');
@@ -529,10 +552,11 @@ const app = {
     }
   },
 
-  handleLogin: function(event) {
+  handleLogin: async function(event) {
     if (event) event.preventDefault();
     const keyInp = document.getElementById('login-license-key');
     const errBox = document.getElementById('login-error-msg');
+    const submitBtn = document.getElementById('btn-submit-login');
 
     if (!keyInp) return;
 
@@ -546,13 +570,27 @@ const app = {
       return;
     }
 
-    this.loadUsersFromStorage();
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Kiểm Tra Key...';
+      this.initIcons();
+    }
 
-    // Match against license key
-    const user = this.data.users.find(u => {
-      const uKey = (u.key || u.id || '').trim().toUpperCase();
-      return uKey === enteredKey;
-    });
+    // 1. Check local storage first
+    this.loadUsersFromStorage();
+    let user = this.data.users.find(u => (u.key || u.id || '').trim().toUpperCase() === enteredKey);
+
+    // 2. If not found in local cache, query live Cloud DB in real-time
+    if (!user) {
+      await this.syncKeysFromCloud();
+      user = this.data.users.find(u => (u.key || u.id || '').trim().toUpperCase() === enteredKey);
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Kích Hoạt & Bắt Đầu Học';
+      this.initIcons();
+    }
 
     if (user) {
       if (errBox) errBox.classList.add('hidden');
@@ -571,7 +609,7 @@ const app = {
         errBox.innerHTML = `
           <div>❌ <strong>Mã Key "${enteredKey}" không tồn tại hoặc chưa được cấp!</strong></div>
           <div class="text-[11px] text-slate-300 mt-1">
-            • Bạn có thể bấm vào <strong>"Cổng Quản Trị Cấp Key"</strong> bên dưới để tạo mã Key mới.
+            • Hãy chắc chắn rằng Admin đã bấm <strong>"Cấp Key"</strong> trong cổng Quản trị.
           </div>
         `;
         errBox.classList.remove('hidden');

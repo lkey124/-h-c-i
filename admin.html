@@ -64,8 +64,13 @@
             <i data-lucide="shield" class="w-5 h-5"></i>
           </div>
           <div>
-            <h1 class="font-black text-base sm:text-lg text-white">QUẢN TRỊ BẢN QUYỀN KEY</h1>
-            <p class="text-xs text-slate-400">TIẾNG ANH LÀ GÌ TÔI KO QUEN</p>
+            <div class="flex items-center gap-2">
+              <h1 class="font-black text-base sm:text-lg text-white">QUẢN TRỊ BẢN QUYỀN KEY</h1>
+              <span id="cloud-sync-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Cloud Sync
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Đồng bộ đám mây toàn quốc cho mọi thiết bị</p>
           </div>
         </div>
 
@@ -89,7 +94,7 @@
             <h2 class="font-extrabold text-lg sm:text-xl text-white flex items-center gap-2">
               <i data-lucide="key" class="w-5 h-5 text-indigo-400"></i> Cấp Mã Key Mới Cho Học Viên
             </h2>
-            <p class="text-xs text-slate-300">Tạo mã Key kích hoạt (học viên chỉ cần nhập key này để vào học)</p>
+            <p class="text-xs text-slate-300">Tạo mã Key kích hoạt (tự động đồng bộ ngay sang tất cả điện thoại của học viên)</p>
           </div>
         </div>
 
@@ -121,7 +126,7 @@
 
           <div>
             <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i> Cấp Key Kích Hoạt
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Cấp Key & Đồng Bộ Cloud
             </button>
           </div>
         </form>
@@ -137,11 +142,14 @@
             <p class="text-xs text-slate-300">Quản lý mã key, số ngày còn lại và gia hạn thời gian học</p>
           </div>
           <div class="flex items-center gap-2">
-            <button onclick="adminApp.exportDataJSON()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
+            <button onclick="adminApp.syncFromCloud()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tải Lại Cloud
+            </button>
+            <button onclick="adminApp.exportDataJSON()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
               <i data-lucide="download" class="w-3.5 h-3.5"></i> Sao Lưu JSON
             </button>
             <button onclick="adminApp.clearAllData()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dọn Sạch Dữ Liệu
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dọn Sạch
             </button>
           </div>
         </div>
@@ -172,8 +180,9 @@
     const adminApp = {
       users: [],
 
-      init: function() {
-        this.loadUsers();
+      init: async function() {
+        this.loadUsersLocal();
+        await this.syncFromCloud();
         if (sessionStorage.getItem('eduquest_admin_unlocked') === 'true') {
           this.showDashboard();
         }
@@ -208,7 +217,7 @@
         this.generateRandomKey();
       },
 
-      loadUsers: function() {
+      loadUsersLocal: function() {
         try {
           const saved = localStorage.getItem('eduquest_b1_all_users');
           this.users = saved ? JSON.parse(saved) : [];
@@ -217,9 +226,32 @@
         }
       },
 
-      saveUsers: function() {
+      saveUsers: async function() {
         localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
         this.renderUserTable();
+
+        // 1. Sync to Server/Vercel /api/keys
+        try {
+          await fetch('/api/keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.users)
+          });
+        } catch(e) {}
+      },
+
+      syncFromCloud: async function() {
+        try {
+          const response = await fetch('/api/keys');
+          if (response.ok) {
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+              this.users = data;
+              localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
+              this.renderUserTable();
+            }
+          }
+        } catch (e) {}
       },
 
       generateRandomKey: function() {
@@ -230,7 +262,7 @@
         if (input) input.value = key;
       },
 
-      handleCreateKeyUser: function(e) {
+      handleCreateKeyUser: async function(e) {
         e.preventDefault();
         const name = document.getElementById('inp-student-name').value.trim();
         const key = document.getElementById('inp-student-key').value.trim().toUpperCase();
@@ -238,7 +270,6 @@
 
         if (!name || !key) return;
 
-        // Check if key already exists
         const exists = this.users.find(u => (u.key || '').toUpperCase() === key);
         if (exists) {
           alert('⚠️ Mã Key này đã tồn tại! Vui lòng chọn hoặc tự sinh mã Key khác.');
@@ -265,12 +296,12 @@
         };
 
         this.users.unshift(newUser);
-        this.saveUsers();
+        await this.saveUsers();
 
         document.getElementById('inp-student-name').value = '';
         this.generateRandomKey();
 
-        alert(`✅ Cấp Key thành công cho học viên ${name}!\n\n• Tên hiển thị: ${name}\n• Mã Key Kích Hoạt: ${key}\n• Thời hạn: ${pkgName} (Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nHọc viên chỉ cần mở web và nhập mã Key này để vào học!`);
+        alert(`✅ Cấp Key thành công cho học viên ${name}!\n\n• Tên hiển thị: ${name}\n• Mã Key Kích Hoạt: ${key}\n• Thời hạn: ${pkgName} (Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
       },
 
       copyKey: function(key) {
@@ -281,7 +312,7 @@
         });
       },
 
-      extendDuration: function(userId, days) {
+      extendDuration: async function(userId, days) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
         const currentExp = new Date(user.expiresAt);
@@ -289,23 +320,23 @@
         baseDate.setDate(baseDate.getDate() + days);
         user.expiresAt = baseDate.toISOString();
         user.status = 'ACTIVE';
-        this.saveUsers();
+        await this.saveUsers();
         alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!`);
       },
 
-      toggleStatus: function(userId) {
+      toggleStatus: async function(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
         user.status = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-        this.saveUsers();
+        await this.saveUsers();
       },
 
-      deleteUser: function(userId) {
+      deleteUser: async function(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
         if (confirm(`Bạn có chắc chắn muốn xóa học viên ${user.name} (Key: ${user.key})?`)) {
           this.users = this.users.filter(u => u.id !== userId);
-          this.saveUsers();
+          await this.saveUsers();
         }
       },
 
@@ -406,10 +437,10 @@
         a.remove();
       },
 
-      clearAllData: function() {
+      clearAllData: async function() {
         if (confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách key học viên?')) {
           this.users = [];
-          this.saveUsers();
+          await this.saveUsers();
           alert('✅ Đã dọn sạch toàn bộ dữ liệu!');
         }
       }

@@ -2,116 +2,116 @@ import os
 import sys
 import json
 import mimetypes
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.parse
 
-# Ensure UTF-8 in Windows
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-WEB_DIR = os.path.join(BASE_DIR, "web")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+KEYS_FILE = os.path.join(DATA_DIR, "users_cloud_db.json")
 
-class B1AppRequestHandler(SimpleHTTPRequestHandler):
-    def end_headers(self):
+os.makedirs(DATA_DIR, exist_ok=True)
+if not os.path.exists(KEYS_FILE):
+    with open(KEYS_FILE, "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+
+class CleanHandler(BaseHTTPRequestHandler):
+    def send_headers_with_cors(self, content_type, length):
+        self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache')
-        SimpleHTTPRequestHandler.end_headers(self)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(length))
+        self.end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/api/keys":
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            try:
+                data = json.loads(body.decode('utf-8'))
+                with open(KEYS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                res = json.dumps({"success": True, "count": len(data)}).encode('utf-8')
+                self.send_headers_with_cors("application/json; charset=utf-8", len(res))
+                self.wfile.write(res)
+                return
+            except Exception as e:
+                self.send_error(500, str(e))
+                return
+        self.send_error(404)
 
     def do_GET(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
 
-        # 1. API: Get 50 Exams Dataset
+        if path == "/api/keys":
+            try:
+                with open(KEYS_FILE, "rb") as f:
+                    content = f.read()
+            except:
+                content = b"[]"
+            self.send_headers_with_cors("application/json; charset=utf-8", len(content))
+            self.wfile.write(content)
+            return
+
         if path == "/api/exams":
             exams_file = os.path.join(DATA_DIR, "exams_50_dataset.json")
             if os.path.exists(exams_file):
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json; charset=utf-8")
-                self.end_headers()
                 with open(exams_file, "rb") as f:
-                    self.wfile.write(f.read())
+                    content = f.read()
+                self.send_headers_with_cors("application/json; charset=utf-8", len(content))
+                self.wfile.write(content)
                 return
-            else:
-                self.send_error(404, "Exams dataset not found")
-                return
-
-        # 2. API: Get Question Bank
-        if path == "/api/question_bank":
-            qbank_file = os.path.join(DATA_DIR, "question_bank.json")
-            if os.path.exists(qbank_file):
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json; charset=utf-8")
-                self.end_headers()
-                with open(qbank_file, "rb") as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_error(404, "Question bank not found")
-                return
-
-        # 3. Dedicated Admin Gateway
-        if path == "/admin" or path == "/admin.html":
-            file_path = os.path.join(WEB_DIR, "admin.html")
-            self.serve_static_file(file_path)
+            self.send_error(404)
             return
 
-        # 4. Static Public Assets (Audios, Documents)
-        if path.startswith("/public/"):
-            rel_path = path[len("/public/"):]
-            rel_path = urllib.parse.unquote(rel_path)
-            file_path = os.path.join(PUBLIC_DIR, rel_path)
-            if os.path.exists(file_path) and os.path.isfile(file_path):
-                self.serve_static_file(file_path)
-                return
-
-        # 5. Student Web UI Files (HTML, JS, CSS)
+        # Serve static file
         if path == "/" or path == "/index.html":
-            file_path = os.path.join(WEB_DIR, "index.html")
-            self.serve_static_file(file_path)
-            return
+            file_path = os.path.join(BASE_DIR, "index.html")
+        elif path == "/admin" or path == "/admin.html":
+            file_path = os.path.join(BASE_DIR, "admin.html")
+        elif path.startswith("/public/"):
+            rel = urllib.parse.unquote(path[len("/public/"):])
+            file_path = os.path.join(PUBLIC_DIR, rel)
+        else:
+            file_path = os.path.join(BASE_DIR, path.lstrip("/"))
 
-        # Any other file from web directory
-        web_file_path = os.path.join(WEB_DIR, path.lstrip("/"))
-        if os.path.exists(web_file_path) and os.path.isfile(web_file_path):
-            self.serve_static_file(web_file_path)
-            return
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            mime_type, _ = mimetypes.guess_type(file_path)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read()
+                self.send_headers_with_cors(mime_type, len(content))
+                self.wfile.write(content)
+            except Exception as e:
+                self.send_error(500, str(e))
+        else:
+            self.send_error(404, "Not Found")
 
-        self.send_error(404, "File Not Found")
-
-    def serve_static_file(self, file_path):
-        mime_type, _ = mimetypes.guess_type(file_path)
-        if not mime_type:
-            mime_type = "application/octet-stream"
-
-        try:
-            with open(file_path, "rb") as f:
-                content = f.read()
-            self.send_response(200)
-            self.send_header("Content-Type", mime_type)
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-        except Exception as e:
-            self.send_error(500, f"Error reading file: {str(e)}")
-
-def run_server(port=8000):
-    server_address = ('', port)
-    httpd = HTTPServer(server_address, B1AppRequestHandler)
-    print("\n" + "="*70)
-    print(f"🚀 EDUQUEST B1 WEB SERVER ĐANG CHẠY TẠI: http://localhost:{port}")
-    print(f"📁 Thư mục Web UI: {WEB_DIR}")
-    print(f"🎧 41 Audio Tracks sẵn sàng phục vụ tại: /public/audios/")
-    print(f"💡 Nhấn Ctrl+C để dừng server.")
-    print("="*70 + "\n")
+def run(port=8000):
+    server = HTTPServer(('', port), CleanHandler)
+    print(f"Server started on port {port}")
     try:
-        httpd.serve_forever()
+        server.serve_forever()
     except KeyboardInterrupt:
-        print("\nĐã dừng server.")
-        httpd.server_close()
+        server.server_close()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    run_server(port=port)
+    run(port)
