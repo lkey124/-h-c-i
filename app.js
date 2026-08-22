@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Modern Centered Modal Dialogs + Comprehensive Fisher-Yates Randomization + Smart Key Normalization
+ * Full Flat Shuffle (Total Randomization Across All Skills) + Smart Key Normalization + Centered Modal Dialogs
  */
 
 const app = {
@@ -32,7 +32,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // SLEEK CENTERED CUSTOM DIALOG SYSTEM (REPLACES BROWSER POPUPS)
+  // SLEEK CENTERED CUSTOM DIALOG SYSTEM
   // -------------------------------------------------------------
   showCustomConfirm: function(options) {
     this.playSound('click');
@@ -121,14 +121,14 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // SMART KEY NORMALIZATION (FIXES IPHONE DASHES & CASING)
+  // SMART KEY NORMALIZATION
   // -------------------------------------------------------------
   normalizeKey: function(str) {
     if (!str) return '';
     return str
       .toString()
       .toUpperCase()
-      .replace(/[\s\-_–—−.\,\:\;]/g, '') // remove spaces, hyphens, en-dashes, em-dashes
+      .replace(/[\s\-_–—−.\,\:\;]/g, '')
       .trim();
   },
 
@@ -136,11 +136,7 @@ const app = {
     const norm1 = this.normalizeKey(key1);
     const norm2 = this.normalizeKey(key2);
     if (!norm1 || !norm2) return false;
-
-    // Exact stripped match
     if (norm1 === norm2) return true;
-
-    // Fuzzy match treating O (letter) and 0 (zero) identically
     const fuzzy1 = norm1.replace(/O/g, '0');
     const fuzzy2 = norm2.replace(/O/g, '0');
     return fuzzy1 === fuzzy2;
@@ -159,68 +155,90 @@ const app = {
     return arr;
   },
 
+  // -------------------------------------------------------------
+  // FULL FLAT SHUFFLE: XÁO TRỘN TOÀN BỘ CÂU HỎI TÙM LÙM
+  // -------------------------------------------------------------
   randomizeExamData: function(rawExam) {
     if (!rawExam) return null;
     const exam = JSON.parse(JSON.stringify(rawExam));
     const letters = ['A', 'B', 'C', 'D', 'E'];
+    const allQuestions = [];
 
-    // 1. Randomize Listening Questions & Options
+    // 1. Extract and randomize all Listening Questions
     if (exam.skills?.listening?.parts) {
       exam.skills.listening.parts.forEach(part => {
-        if (part.questions && part.questions.length > 0) {
-          part.questions = this.shuffleArray(part.questions);
+        if (part.questions) {
           part.questions.forEach(q => {
-            if (q.options && q.options.length > 1) {
-              const originalCorrectKey = q.correct_answer;
-              const originalCorrectOption = q.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
+            const item = { ...q, skillType: 'listening', partTitle: part.title, audioFile: part.audio_file };
+            if (item.options && item.options.length > 1) {
+              const originalCorrectKey = item.correct_answer;
+              const originalCorrectOption = item.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
               const correctRawText = originalCorrectOption ? originalCorrectOption.replace(/^[A-Z][\.\:\s]\s*/, '').trim() : '';
 
-              const rawOptions = q.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
+              const rawOptions = item.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
               const shuffledRaw = this.shuffleArray(rawOptions);
 
-              q.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
+              item.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
               const newCorrectIdx = shuffledRaw.findIndex(txt => txt === correctRawText);
               if (newCorrectIdx !== -1) {
-                q.correct_answer = letters[newCorrectIdx];
+                item.correct_answer = letters[newCorrectIdx];
               }
             }
+            allQuestions.push(item);
           });
         }
       });
     }
 
-    // 2. Randomize Reading: Shuffle Parts, Questions & Options
+    // 2. Extract and randomize all Reading Questions
     if (exam.skills?.reading?.parts) {
-      exam.skills.reading.parts = this.shuffleArray(exam.skills.reading.parts);
-
       exam.skills.reading.parts.forEach(part => {
-        if (part.questions && part.questions.length > 0) {
-          part.questions = this.shuffleArray(part.questions);
+        if (part.questions) {
           part.questions.forEach(q => {
-            if (q.options && q.options.length > 1) {
-              const originalCorrectKey = q.correct_answer;
-              const originalCorrectOption = q.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
+            const item = { ...q, skillType: 'reading', partTitle: part.title };
+            if (item.options && item.options.length > 1) {
+              const originalCorrectKey = item.correct_answer;
+              const originalCorrectOption = item.options.find(opt => opt.startsWith(originalCorrectKey + '.') || opt.startsWith(originalCorrectKey + ' '));
               const correctRawText = originalCorrectOption ? originalCorrectOption.replace(/^[A-Z][\.\:\s]\s*/, '').trim() : '';
 
-              const rawOptions = q.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
+              const rawOptions = item.options.map(opt => opt.replace(/^[A-Z][\.\:\s]\s*/, '').trim());
               const shuffledRaw = this.shuffleArray(rawOptions);
 
-              q.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
+              item.options = shuffledRaw.map((txt, idx) => `${letters[idx]}. ${txt}`);
               const newCorrectIdx = shuffledRaw.findIndex(txt => txt === correctRawText);
               if (newCorrectIdx !== -1) {
-                q.correct_answer = letters[newCorrectIdx];
+                item.correct_answer = letters[newCorrectIdx];
               }
             }
+            allQuestions.push(item);
           });
         }
       });
     }
 
-    // 3. Randomize Writing Part 1 Questions
+    // 3. Extract all Writing Part 1 Questions
     if (exam.skills?.writing?.parts?.[0]?.questions) {
-      exam.skills.writing.parts[0].questions = this.shuffleArray(exam.skills.writing.parts[0].questions);
+      exam.skills.writing.parts[0].questions.forEach(q => {
+        allQuestions.push({
+          ...q,
+          skillType: 'writing_p1',
+          partTitle: 'Part 1 - Sentence Transformation'
+        });
+      });
     }
 
+    // 4. Extract Writing Part 2 (Essay)
+    if (exam.skills?.writing?.parts?.[1]?.task) {
+      allQuestions.push({
+        id: 'WRI-ESSAY-001',
+        skillType: 'writing_p2',
+        partTitle: 'Part 2 - Short Message & Essay',
+        prompt: exam.skills.writing.parts[1].task.prompt
+      });
+    }
+
+    // 🔀 TOTAL SHUFFLE OF ALL QUESTIONS TOGETHER!
+    exam.flatQuestions = this.shuffleArray(allQuestions);
     return exam;
   },
 
@@ -431,9 +449,6 @@ const app = {
     }
   },
 
-  // -------------------------------------------------------------
-  // SUBSCRIPTION & LICENSE CALCULATION
-  // -------------------------------------------------------------
   getRemainingDays: function(expiresAt) {
     if (!expiresAt) return 0;
     const now = new Date();
@@ -448,17 +463,10 @@ const app = {
     return remaining > 0 && user.status === 'ACTIVE';
   },
 
-  // -------------------------------------------------------------
-  // USER STORAGE & MULTI-CLOUD SYNC
-  // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
       const saved = localStorage.getItem('eduquest_b1_all_users');
-      if (saved) {
-        this.data.users = JSON.parse(saved);
-      } else {
-        this.data.users = [];
-      }
+      this.data.users = saved ? JSON.parse(saved) : [];
     } catch (e) {
       this.data.users = [];
     }
@@ -473,16 +481,11 @@ const app = {
           const merged = [...this.data.users];
           cloudData.forEach(cu => {
             const idx = merged.findIndex(u => this.isKeyMatching(u.key || u.id, cu.key || cu.id));
-            if (idx >= 0) {
-              merged[idx] = cu;
-            } else {
-              merged.push(cu);
-            }
+            if (idx >= 0) merged[idx] = cu;
+            else merged.push(cu);
           });
-
           this.data.users = merged;
           localStorage.setItem('eduquest_b1_all_users', JSON.stringify(merged));
-          
           if (this.data.currentUser) {
             const updated = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
             if (updated) {
@@ -520,17 +523,7 @@ const app = {
       const userKey = this.normalizeKey(this.data.currentUser.key || this.data.currentUser.id);
       const storageKey = `eduquest_b1_progress_${userKey}`;
       const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        this.data.userProgress = JSON.parse(saved);
-      } else {
-        this.data.userProgress = {
-          unlockedUpTo: 1,
-          passedSets: {},
-          streak: 1,
-          exp: 0,
-          attempts: []
-        };
-      }
+      this.data.userProgress = saved ? JSON.parse(saved) : { unlockedUpTo: 1, passedSets: {}, streak: 1, exp: 0, attempts: [] };
     } catch (e) {
       console.warn('Could not read user progress', e);
     }
@@ -548,13 +541,7 @@ const app = {
   },
 
   loadExamsDataset: async function() {
-    const candidateUrls = [
-      '/data/exams_50_dataset.json',
-      'data/exams_50_dataset.json',
-      '/api/exams',
-      '../data/exams_50_dataset.json'
-    ];
-
+    const candidateUrls = ['/data/exams_50_dataset.json', 'data/exams_50_dataset.json', '/api/exams', '../data/exams_50_dataset.json'];
     for (const url of candidateUrls) {
       try {
         const response = await fetch(url);
@@ -581,9 +568,7 @@ const app = {
       const remainingDays = this.getRemainingDays(user.expiresAt);
       const isActive = this.isAccountActive(user);
 
-      if (heroBadge) {
-        heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong>`;
-      }
+      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong>`;
 
       if (isActive) {
         if (subBadge) {
@@ -633,9 +618,7 @@ const app = {
       if (progBar) progBar.style.width = `${percent}%`;
 
     } else {
-      if (heroBadge) {
-        heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
-      }
+      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       if (subBadge) subBadge.classList.add('hidden');
       if (statusBadge) {
         statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 text-slate-400 border border-slate-800 text-xs font-bold';
@@ -648,19 +631,14 @@ const app = {
           </button>
         `;
       }
-
       const progText = document.getElementById('roadmap-progress-text');
       const progBar = document.getElementById('roadmap-progress-bar');
       if (progText) progText.innerText = `0 / 50 Đề (0%)`;
       if (progBar) progBar.style.width = `0%`;
     }
-
     this.initIcons();
   },
 
-  // -------------------------------------------------------------
-  // KEY ACTIVATION WITH SMART NORMALIZATION
-  // -------------------------------------------------------------
   openLoginModal: function() {
     this.playSound('click');
     const modal = document.getElementById('modal-login');
@@ -686,12 +664,10 @@ const app = {
     const keyInp = document.getElementById('login-license-key');
     const errBox = document.getElementById('login-error-msg');
     const submitBtn = document.getElementById('btn-submit-login');
-
     if (!keyInp) return;
 
     const rawInput = keyInp.value;
     const enteredKeyNorm = this.normalizeKey(rawInput);
-
     if (!enteredKeyNorm) {
       if (errBox) {
         errBox.innerText = 'Vui lòng nhập mã Key kích hoạt!';
@@ -706,11 +682,9 @@ const app = {
       this.initIcons();
     }
 
-    // 1. Check in local storage first
     this.loadUsersFromStorage();
     let user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
 
-    // 2. If not found in local cache, sync live from Cloud API
     if (!user) {
       await this.syncKeysFromCloud();
       user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
@@ -727,7 +701,6 @@ const app = {
       this.data.currentUser = user;
       localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
       this.loadUserProgressFromStorage();
-
       this.closeLoginModal();
       this.renderRoadmap();
       this.updateUserStatsDisplay();
@@ -775,9 +748,6 @@ const app = {
     });
   },
 
-  // -------------------------------------------------------------
-  // TAB NAVIGATION
-  // -------------------------------------------------------------
   showTab: function(tabName) {
     this.stopAllAudios();
     this.playSound('click');
@@ -801,9 +771,6 @@ const app = {
     this.initIcons();
   },
 
-  // -------------------------------------------------------------
-  // ROADMAP & EXAM CARDS
-  // -------------------------------------------------------------
   filterLevel: function(level) {
     this.playSound('click');
     this.data.currentLevelFilter = level;
@@ -858,7 +825,7 @@ const app = {
 
           <div>
             <h3 class="text-sm sm:text-base font-bold text-white">${ex.title}</h3>
-            <p class="text-xs text-slate-300 mt-1 font-normal">3 Phần (Nghe • Đọc • Viết) • Đảo câu hỏi • Ngưỡng: ≥ ${ex.passing_threshold_percent}%</p>
+            <p class="text-xs text-slate-300 mt-1 font-normal">Xáo trộn ngẫu nhiên 100% • Ngưỡng đạt: ≥ ${ex.passing_threshold_percent}%</p>
           </div>
         </div>
 
@@ -887,7 +854,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // EXAM ROOM: RANDOMIZED QUESTIONS ON EVERY ENTRY
+  // EXAM ROOM: COMPLETE FLAT SHUFFLE (RANDOMIZED ON EVERY ENTRY)
   // -------------------------------------------------------------
   startExam: function(examId) {
     this.stopAllAudios();
@@ -916,7 +883,7 @@ const app = {
     const rawExam = this.data.exams.find(e => e.exam_id === examId);
     if (!rawExam) return;
 
-    // Full fresh randomization on every single entry
+    // Total flat shuffle on every single entry
     this.data.currentExam = this.randomizeExamData(rawExam);
     this.data.userAnswers = {};
 
@@ -975,243 +942,178 @@ const app = {
     }
   },
 
+  // -------------------------------------------------------------
+  // RENDER CONTINUOUS EXAM SHEET (COMPLETELY MIXED QUESTIONS)
+  // -------------------------------------------------------------
   renderContinuousExamSheet: function() {
     const container = document.getElementById('exam-continuous-sheet');
     if (!container || !this.data.currentExam) return;
 
     container.innerHTML = '';
     const exam = this.data.currentExam;
+    const questions = exam.flatQuestions || [];
 
-    let questionGlobalIndex = 1;
+    questions.forEach((q, idx) => {
+      const qNumber = idx + 1;
+      const card = document.createElement('div');
+      card.className = 'glass-panel rounded-3xl p-4 sm:p-7 space-y-4 shadow-xl border border-slate-800';
 
-    // ==========================================
-    // SECTION 1: LISTENING (KỸ NĂNG NGHE - 35 ĐIỂM)
-    // ==========================================
-    const sec1 = document.createElement('div');
-    sec1.id = 'sec-listening';
-    sec1.className = 'space-y-4 sm:space-y-6 pt-2';
-    sec1.innerHTML = `
-      <div class="flex items-center gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-2xl bg-indigo-950/70 border border-indigo-700/80">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shrink-0">
-          <i data-lucide="headphones" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-        </div>
-        <div>
-          <h3 class="font-bold text-sm sm:text-lg text-white">PHẦN 1: KỸ NĂNG NGHE (LISTENING - 35 ĐIỂM)</h3>
-          <p class="text-[11px] sm:text-xs text-slate-300 font-medium">Bấm phát âm thanh, có thể tua hoặc bấm nghe lại tùy ý</p>
-        </div>
-      </div>
-    `;
+      // ------------------------------------
+      // CASE 1: LISTENING QUESTION (HAS INDEPENDENT AUDIO CONTROLLER)
+      // ------------------------------------
+      if (q.skillType === 'listening') {
+        const audioUniqueId = `audio-q-${idx}`;
+        const btnUniqueId = `btn-audio-q-${idx}`;
+        const timeUniqueId = `time-audio-q-${idx}`;
+        const waveUniqueId = `wave-audio-q-${idx}`;
+        const fillUniqueId = `fill-audio-q-${idx}`;
 
-    exam.skills.listening.parts.forEach((part, pIdx) => {
-      const partCard = document.createElement('div');
-      partCard.className = 'glass-panel rounded-3xl p-4 sm:p-7 space-y-4 sm:space-y-5';
+        card.innerHTML = `
+          <div class="flex flex-col gap-2.5 pb-3 border-b border-slate-800">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-xl bg-indigo-950 text-cyan-300 font-black text-xs border border-indigo-700">Câu ${qNumber} (Nghe)</span>
+                <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+              </div>
 
-      const audioUniqueId = `audio-part-${pIdx}`;
-      const btnUniqueId = `btn-audio-part-${pIdx}`;
-      const timeUniqueId = `time-audio-part-${pIdx}`;
-      const waveUniqueId = `wave-audio-part-${pIdx}`;
-      const fillUniqueId = `fill-audio-part-${pIdx}`;
-
-      partCard.innerHTML = `
-        <div class="flex flex-col gap-2.5 pb-3 border-b border-slate-800">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div>
-              <h4 class="font-bold text-sm sm:text-lg text-white">${part.title}</h4>
-              <p class="text-xs text-slate-300 font-medium">Nghe đoạn băng và chọn đáp án chính xác</p>
+              <!-- Independent Audio Player for this question -->
+              <div class="flex flex-wrap items-center gap-2">
+                <audio id="${audioUniqueId}" preload="metadata" class="hidden">
+                  <source src="/${q.audioFile}" type="audio/mpeg">
+                </audio>
+                <button onclick="app.skipAudio('${audioUniqueId}', -10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Lùi 10 giây">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -10s
+                </button>
+                <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}', '${fillUniqueId}')" class="custom-audio-pill px-3.5 py-2 rounded-2xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-300 audio-icon"></i>
+                  <span class="audio-btn-text">Phát</span>
+                </button>
+                <button onclick="app.skipAudio('${audioUniqueId}', 10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Tua 10 giây">
+                  +10s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                </button>
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950 border border-slate-800">
+                  <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5">
+                    <div class="sound-wave-bar"></div>
+                    <div class="sound-wave-bar"></div>
+                    <div class="sound-wave-bar"></div>
+                    <div class="sound-wave-bar"></div>
+                    <div class="sound-wave-bar"></div>
+                  </div>
+                  <span id="${timeUniqueId}" class="text-[10px] sm:text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
+                </div>
+              </div>
             </div>
 
-            <!-- Sleek Custom Audio Controller -->
-            <div class="flex flex-wrap items-center gap-2">
-              <audio id="${audioUniqueId}" preload="metadata" class="hidden">
-                <source src="/${part.audio_file}" type="audio/mpeg">
-              </audio>
-
-              <button onclick="app.skipAudio('${audioUniqueId}', -10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Lùi 10 giây">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -10s
-              </button>
-
-              <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}', '${fillUniqueId}')" class="custom-audio-pill px-3.5 py-2 rounded-2xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer">
-                <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-300 audio-icon"></i>
-                <span class="audio-btn-text">Phát</span>
-              </button>
-
-              <button onclick="app.skipAudio('${audioUniqueId}', 10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Tua 10 giây">
-                +10s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
-              </button>
-
-              <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5">
-                  <div class="sound-wave-bar"></div>
-                  <div class="sound-wave-bar"></div>
-                  <div class="sound-wave-bar"></div>
-                  <div class="sound-wave-bar"></div>
-                  <div class="sound-wave-bar"></div>
-                </div>
-                <span id="${timeUniqueId}" class="text-[10px] sm:text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
-              </div>
+            <!-- Clickable seek progress track -->
+            <div class="audio-progress-track" onclick="app.seekAudio('${audioUniqueId}', event)" title="Bấm vào thanh để tua nhanh">
+              <div id="${fillUniqueId}" class="audio-progress-fill"></div>
             </div>
           </div>
 
-          <!-- Clickable Seek Progress Track -->
-          <div class="audio-progress-track" onclick="app.seekAudio('${audioUniqueId}', event)" title="Bấm vào thanh để tua nhanh">
-            <div id="${fillUniqueId}" class="audio-progress-fill"></div>
-          </div>
-        </div>
-
-        <div class="space-y-4 sm:space-y-5">
-          ${part.questions.map(q => {
-            const currentNum = questionGlobalIndex++;
-            return `
-              <div class="space-y-2.5 bg-slate-950 p-3.5 sm:p-5 rounded-2xl border border-slate-800">
-                <div class="font-semibold text-xs sm:text-base text-white flex items-start gap-2 leading-snug">
-                  <span class="px-2 py-0.5 rounded-lg bg-indigo-900 text-cyan-300 text-[11px] font-bold shrink-0 mt-0.5">Câu ${currentNum}</span>
-                  <span>${q.question}</span>
-                </div>
-                <div class="grid grid-cols-1 gap-2 pt-1">
-                  ${q.options.map(opt => {
-                    const optKey = opt.charAt(0);
-                    const isChecked = this.data.userAnswers[q.id] === optKey;
-                    return `
-                      <label class="option-label">
-                        <input type="radio" name="ans-${q.id}" value="${optKey}" ${isChecked ? 'checked' : ''} onchange="app.recordAnswer('${q.id}', '${optKey}')" class="w-4 h-4 text-indigo-500 bg-slate-950 border-slate-700 shrink-0">
-                        <span class="text-xs sm:text-sm font-normal text-slate-100">${opt}</span>
-                      </label>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-      sec1.appendChild(partCard);
-    });
-    container.appendChild(sec1);
-
-    // ==========================================
-    // SECTION 2: READING (KỸ NĂNG ĐỌC - 35 ĐIỂM)
-    // ==========================================
-    const sec2 = document.createElement('div');
-    sec2.id = 'sec-reading';
-    sec2.className = 'space-y-4 sm:space-y-6 pt-3 sm:pt-4';
-    sec2.innerHTML = `
-      <div class="flex items-center gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-2xl bg-cyan-950/70 border border-cyan-700/80">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-600 flex items-center justify-center text-slate-950 shadow-md shrink-0">
-          <i data-lucide="book-open" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-        </div>
-        <div>
-          <h3 class="font-bold text-sm sm:text-lg text-white">PHẦN 2: KỸ NĂNG ĐỌC (READING - 35 ĐIỂM)</h3>
-          <p class="text-[11px] sm:text-xs text-slate-300 font-medium">Đọc các thông báo, đoạn văn và chọn đáp án chính xác</p>
-        </div>
-      </div>
-    `;
-
-    exam.skills.reading.parts.forEach(part => {
-      const partCard = document.createElement('div');
-      partCard.className = 'glass-panel rounded-3xl p-4 sm:p-7 space-y-4 sm:space-y-5';
-
-      partCard.innerHTML = `
-        <div class="pb-2.5 border-b border-slate-800">
-          <h4 class="font-bold text-sm sm:text-lg text-white">${part.title}</h4>
-        </div>
-
-        <div class="space-y-4 sm:space-y-5">
-          ${part.questions.map(q => {
-            const currentNum = questionGlobalIndex++;
-            return `
-              <div class="space-y-2.5 bg-slate-950 p-3.5 sm:p-5 rounded-2xl border border-slate-800">
-                ${q.context ? `<div class="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-700/80 text-xs font-mono text-cyan-200 mb-2.5">${q.context}</div>` : ''}
-                ${q.passage ? `<div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 leading-relaxed font-normal mb-2.5">${q.passage}</div>` : ''}
-                <div class="font-semibold text-xs sm:text-base text-white flex items-start gap-2 leading-snug">
-                  <span class="px-2 py-0.5 rounded-lg bg-cyan-950 text-cyan-300 text-[11px] font-bold shrink-0 mt-0.5">Câu ${currentNum}</span>
-                  <span>${q.question}</span>
-                </div>
-                <div class="grid grid-cols-1 gap-2 pt-1">
-                  ${q.options.map(opt => {
-                    const optKey = opt.charAt(0);
-                    const isChecked = this.data.userAnswers[q.id] === optKey;
-                    return `
-                      <label class="option-label">
-                        <input type="radio" name="ans-${q.id}" value="${optKey}" ${isChecked ? 'checked' : ''} onchange="app.recordAnswer('${q.id}', '${optKey}')" class="w-4 h-4 text-cyan-500 bg-slate-950 border-slate-700 shrink-0">
-                        <span class="text-xs sm:text-sm font-normal text-slate-100">${opt}</span>
-                      </label>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-      sec2.appendChild(partCard);
-    });
-    container.appendChild(sec2);
-
-    // ==========================================
-    // SECTION 3: WRITING (KỸ NĂNG VIẾT - 30 ĐIỂM)
-    // ==========================================
-    const sec3 = document.createElement('div');
-    sec3.id = 'sec-writing';
-    sec3.className = 'space-y-4 sm:space-y-6 pt-3 sm:pt-4 pb-6';
-    sec3.innerHTML = `
-      <div class="flex items-center gap-2.5 sm:gap-3 p-3.5 sm:p-4 rounded-2xl bg-amber-950/70 border border-amber-700/80">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-600 flex items-center justify-center text-slate-950 shadow-md shrink-0">
-          <i data-lucide="pen-tool" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-        </div>
-        <div>
-          <h3 class="font-bold text-sm sm:text-lg text-white">PHẦN 3: KỸ NĂNG VIẾT (WRITING - 30 ĐIỂM)</h3>
-          <p class="text-[11px] sm:text-xs text-slate-300 font-medium">Viết lại câu tương đương và trả lời đề tài viết luận ngắn</p>
-        </div>
-      </div>
-    `;
-
-    const wPart1 = exam.skills.writing.parts[0];
-    const wCard1 = document.createElement('div');
-    wCard1.className = 'glass-panel rounded-3xl p-4 sm:p-7 space-y-4 sm:space-y-5';
-    wCard1.innerHTML = `
-      <div class="pb-2.5 border-b border-slate-800">
-        <h4 class="font-bold text-sm sm:text-lg text-white">${wPart1.title}</h4>
-        <p class="text-xs text-slate-300 font-normal mt-0.5">Hoàn thành câu thứ hai sao cho nghĩa tương đương, dùng từ in hoa cho sẵn (1-3 từ).</p>
-      </div>
-
-      <div class="space-y-3.5">
-        ${wPart1.questions.map(q => {
-          const currentNum = questionGlobalIndex++;
-          return `
-            <div class="space-y-2 bg-slate-950 p-3.5 sm:p-5 rounded-2xl border border-slate-800">
-              <div class="text-xs text-slate-300">
-                <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 font-bold text-xs mr-1">Câu ${currentNum}</span>
-                Câu gốc: <strong class="text-white">"${q.original}"</strong> (Từ cho sẵn: <strong class="text-amber-400 font-mono">${q.target_word}</strong>)
-              </div>
-              <div class="text-xs sm:text-base font-semibold text-slate-100 mt-1">${q.prompt}</div>
-              <input type="text" placeholder="Nhập từ còn thiếu..." value="${this.data.userAnswers[q.id] || ''}" oninput="app.recordAnswer('${q.id}', this.value)" class="w-full mt-2 px-4 py-3 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:outline-none focus:border-amber-400 font-medium transition-colors">
+          <div class="space-y-3 pt-1">
+            ${q.context ? `<div class="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-700/80 text-xs font-mono text-cyan-200">${q.context}</div>` : ''}
+            <div class="font-bold text-xs sm:text-base text-white leading-snug">${q.question}</div>
+            <div class="grid grid-cols-1 gap-2 pt-1">
+              ${q.options.map(opt => {
+                const optKey = opt.charAt(0);
+                const isChecked = this.data.userAnswers[q.id] === optKey;
+                return `
+                  <label class="option-label">
+                    <input type="radio" name="ans-${q.id}" value="${optKey}" ${isChecked ? 'checked' : ''} onchange="app.recordAnswer('${q.id}', '${optKey}')" class="w-4 h-4 text-indigo-500 bg-slate-950 border-slate-700 shrink-0">
+                    <span class="text-xs sm:text-sm font-normal text-slate-100">${opt}</span>
+                  </label>
+                `;
+              }).join('')}
             </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-    sec3.appendChild(wCard1);
+          </div>
+        `;
+      }
 
-    const wPart2 = exam.skills.writing.parts[1];
-    const wCard2 = document.createElement('div');
-    wCard2.className = 'glass-panel rounded-3xl p-4 sm:p-7 space-y-4';
-    wCard2.innerHTML = `
-      <div class="pb-2.5 border-b border-slate-800">
-        <h4 class="font-bold text-sm sm:text-lg text-white">${wPart2.title}</h4>
-      </div>
-      <div class="p-3.5 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
-        <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">${wPart2.task.prompt}</p>
-        <textarea rows="4" placeholder="Viết câu trả lời vào đây (35-45 từ)..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:outline-none focus:border-indigo-400 font-normal"></textarea>
-      </div>
+      // ------------------------------------
+      // CASE 2: READING QUESTION (PASSAGE / NOTICE)
+      // ------------------------------------
+      else if (q.skillType === 'reading') {
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-xl bg-cyan-950 text-cyan-300 font-black text-xs border border-cyan-700">Câu ${qNumber} (Đọc)</span>
+              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+            </div>
+          </div>
 
-      <div class="pt-3 border-t border-slate-800 flex justify-end">
-        <button onclick="app.submitCurrentExam()" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2">
-          <i data-lucide="send" class="w-4 h-4"></i> Hoàn Thành & Nộp Toàn Bộ Đề Thi
-        </button>
-      </div>
+          <div class="space-y-3 pt-1">
+            ${q.context ? `<div class="p-3 rounded-2xl bg-indigo-950/60 border border-indigo-700/80 text-xs font-mono text-cyan-200">${q.context}</div>` : ''}
+            ${q.passage ? `<div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 leading-relaxed font-normal">${q.passage}</div>` : ''}
+            <div class="font-bold text-xs sm:text-base text-white leading-snug">${q.question}</div>
+            <div class="grid grid-cols-1 gap-2 pt-1">
+              ${q.options.map(opt => {
+                const optKey = opt.charAt(0);
+                const isChecked = this.data.userAnswers[q.id] === optKey;
+                return `
+                  <label class="option-label">
+                    <input type="radio" name="ans-${q.id}" value="${optKey}" ${isChecked ? 'checked' : ''} onchange="app.recordAnswer('${q.id}', '${optKey}')" class="w-4 h-4 text-cyan-500 bg-slate-950 border-slate-700 shrink-0">
+                    <span class="text-xs sm:text-sm font-normal text-slate-100">${opt}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // ------------------------------------
+      // CASE 3: WRITING PART 1 (SENTENCE TRANSFORMATION)
+      // ------------------------------------
+      else if (q.skillType === 'writing_p1') {
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-xl bg-amber-950 text-amber-300 font-black text-xs border border-amber-700">Câu ${qNumber} (Viết)</span>
+              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-1">
+            <div class="text-xs text-slate-300">
+              Câu gốc: <strong class="text-white">"${q.original}"</strong> (Từ cho sẵn: <strong class="text-amber-400 font-mono">${q.target_word}</strong>)
+            </div>
+            <div class="text-xs sm:text-base font-semibold text-slate-100">${q.prompt}</div>
+            <input type="text" placeholder="Nhập từ còn thiếu..." value="${this.data.userAnswers[q.id] || ''}" oninput="app.recordAnswer('${q.id}', this.value)" class="w-full mt-2 px-4 py-3 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:outline-none focus:border-amber-400 font-medium transition-colors">
+          </div>
+        `;
+      }
+
+      // ------------------------------------
+      // CASE 4: WRITING PART 2 (ESSAY / MESSAGE)
+      // ------------------------------------
+      else if (q.skillType === 'writing_p2') {
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-xl bg-rose-950 text-rose-300 font-black text-xs border border-rose-700">Câu ${qNumber} (Viết Luận)</span>
+              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+            </div>
+          </div>
+
+          <div class="space-y-3 pt-1">
+            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">${q.prompt}</p>
+            <textarea rows="4" placeholder="Viết câu trả lời vào đây (35-45 từ)..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border-2 border-slate-700 text-white focus:outline-none focus:border-indigo-400 font-normal"></textarea>
+          </div>
+        `;
+      }
+
+      container.appendChild(card);
+    });
+
+    // Bottom Submit Action
+    const submitCard = document.createElement('div');
+    submitCard.className = 'pt-4 pb-10 flex justify-center';
+    submitCard.innerHTML = `
+      <button onclick="app.submitCurrentExam()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm sm:text-base shadow-2xl flex items-center justify-center gap-2 transition-all">
+        <i data-lucide="send" class="w-5 h-5"></i> Hoàn Thành & Nộp Toàn Bộ Bài Thi
+      </button>
     `;
-    sec3.appendChild(wCard2);
-    container.appendChild(sec3);
+    container.appendChild(submitCard);
 
     this.initIcons();
   },
@@ -1222,37 +1124,31 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // SUBMISSION & STRICT 50% PASSING THRESHOLD
+  // SUBMISSION & SCORECARD
   // -------------------------------------------------------------
   submitCurrentExam: function() {
     this.stopAllAudios();
     this.stopExamTimer();
     const exam = this.data.currentExam;
-    if (!exam) return;
+    if (!exam || !exam.flatQuestions) return;
 
     let listeningCorrect = 0, listeningTotal = 0;
     let readingCorrect = 0, readingTotal = 0;
     let writingCorrect = 0, writingTotal = 0;
 
-    exam.skills.listening.parts.forEach(p => {
-      p.questions.forEach(q => {
+    exam.flatQuestions.forEach(q => {
+      if (q.skillType === 'listening') {
         listeningTotal++;
         if (this.data.userAnswers[q.id] === q.correct_answer) listeningCorrect++;
-      });
-    });
-
-    exam.skills.reading.parts.forEach(p => {
-      p.questions.forEach(q => {
+      } else if (q.skillType === 'reading') {
         readingTotal++;
         if (this.data.userAnswers[q.id] === q.correct_answer) readingCorrect++;
-      });
-    });
-
-    exam.skills.writing.parts[0].questions.forEach(q => {
-      writingTotal++;
-      const userAns = (this.data.userAnswers[q.id] || '').trim().toLowerCase();
-      const targetAns = q.correct_answer.toLowerCase();
-      if (userAns === targetAns || userAns.includes(targetAns)) writingCorrect++;
+      } else if (q.skillType === 'writing_p1') {
+        writingTotal++;
+        const userAns = (this.data.userAnswers[q.id] || '').trim().toLowerCase();
+        const targetAns = (q.correct_answer || '').toLowerCase();
+        if (userAns === targetAns || userAns.includes(targetAns)) writingCorrect++;
+      }
     });
 
     const lisScore = listeningTotal ? (listeningCorrect / listeningTotal) * 35 : 25;
@@ -1331,89 +1227,50 @@ const app = {
     this.renderReviewDetails();
   },
 
-  // -------------------------------------------------------------
-  // REVIEW DETAILS
-  // -------------------------------------------------------------
   renderReviewDetails: function() {
     const container = document.getElementById('review-questions-list');
-    if (!container || !this.data.currentExam) return;
+    if (!container || !this.data.currentExam || !this.data.currentExam.flatQuestions) return;
 
     container.innerHTML = '';
-    const exam = this.data.currentExam;
+    const questions = this.data.currentExam.flatQuestions;
 
-    // Listening Review
-    exam.skills.listening.parts.forEach(p => {
-      p.questions.forEach(q => {
-        const userAns = this.data.userAnswers[q.id];
-        const isCorrect = userAns === q.correct_answer;
+    questions.forEach((q, idx) => {
+      if (q.skillType === 'writing_p2') return;
 
-        const el = document.createElement('div');
-        el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3 shadow-lg`;
+      const userAns = this.data.userAnswers[q.id];
+      const isCorrect = q.skillType === 'writing_p1'
+        ? (userAns || '').trim().toLowerCase() === (q.correct_answer || '').toLowerCase()
+        : userAns === q.correct_answer;
 
-        el.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-900 text-emerald-200 border border-emerald-600' : 'bg-rose-900 text-rose-200 border border-rose-600'}">
-              ${isCorrect ? '✓ TRẢ LỜI ĐÚNG' : '✗ TRẢ LỜI SAI'}
-            </span>
-            <span class="text-xs text-slate-300 font-bold">${p.title}</span>
+      const el = document.createElement('div');
+      el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3 shadow-lg`;
+
+      el.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-900 text-emerald-200 border border-emerald-600' : 'bg-rose-900 text-rose-200 border border-rose-600'}">
+            ${isCorrect ? '✓ TRẢ LỜI ĐÚNG' : '✗ TRẢ LỜI SAI'}
+          </span>
+          <span class="text-xs text-slate-300 font-bold">Câu ${idx + 1} • ${q.partTitle}</span>
+        </div>
+
+        <div class="font-semibold text-xs sm:text-base text-white leading-snug">${q.question || q.prompt}</div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
+            <span class="text-slate-300 font-medium">Bạn đã chọn:</span> <strong class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold ml-1">${userAns || 'Chưa chọn'}</strong>
           </div>
-
-          <div class="font-semibold text-xs sm:text-base text-white leading-snug">${q.question}</div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-              <span class="text-slate-300 font-medium">Bạn đã chọn:</span> <strong class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold ml-1">${userAns || 'Chưa chọn'}</strong>
-            </div>
-            <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-              <span class="text-slate-300 font-medium">Đáp án đúng:</span> <strong class="text-emerald-400 font-bold ml-1">${q.correct_answer}</strong>
-            </div>
+          <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
+            <span class="text-slate-300 font-medium">Đáp án đúng:</span> <strong class="text-emerald-400 font-bold ml-1">${q.correct_answer}</strong>
           </div>
+        </div>
 
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1 leading-relaxed font-normal">
-            <div class="text-cyan-300 font-bold flex items-center gap-1.5">💡 Giải thích chi tiết:</div>
-            <div>${q.explanation}</div>
-            ${q.tapescript ? `<div class="mt-2 text-slate-300 italic p-2 rounded-xl bg-slate-900/80 border border-slate-800">🎧 Tapescript: "${q.tapescript}"</div>` : ''}
-          </div>
-        `;
-        container.appendChild(el);
-      });
-    });
-
-    // Reading Review
-    exam.skills.reading.parts.forEach(p => {
-      p.questions.forEach(q => {
-        const userAns = this.data.userAnswers[q.id];
-        const isCorrect = userAns === q.correct_answer;
-
-        const el = document.createElement('div');
-        el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3 shadow-lg`;
-
-        el.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-900 text-emerald-200 border border-emerald-600' : 'bg-rose-900 text-rose-200 border border-rose-600'}">
-              ${isCorrect ? '✓ TRẢ LỜI ĐÚNG' : '✗ TRẢ LỜI SAI'}
-            </span>
-            <span class="text-xs text-slate-300 font-bold">${p.title}</span>
-          </div>
-
-          <div class="font-semibold text-xs sm:text-base text-white leading-snug">${q.question}</div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-              <span class="text-slate-300 font-medium">Bạn đã chọn:</span> <strong class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold ml-1">${userAns || 'Chưa chọn'}</strong>
-            </div>
-            <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-              <span class="text-slate-300 font-medium">Đáp án đúng:</span> <strong class="text-emerald-400 font-bold ml-1">${q.correct_answer}</strong>
-            </div>
-          </div>
-
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1 leading-relaxed font-normal">
-            <div class="text-cyan-300 font-bold flex items-center gap-1.5">💡 Giải thích ngữ pháp:</div>
-            <div>${q.explanation}</div>
-          </div>
-        `;
-        container.appendChild(el);
-      });
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1 leading-relaxed font-normal">
+          <div class="text-cyan-300 font-bold flex items-center gap-1.5">💡 Giải thích chi tiết:</div>
+          <div>${q.explanation || 'Đối chiếu ngữ pháp và ngữ cảnh bài đọc/nghe.'}</div>
+          ${q.tapescript ? `<div class="mt-2 text-slate-300 italic p-2 rounded-xl bg-slate-900/80 border border-slate-800">🎧 Tapescript: "${q.tapescript}"</div>` : ''}
+        </div>
+      `;
+      container.appendChild(el);
     });
 
     this.initIcons();
@@ -1429,9 +1286,6 @@ const app = {
     this.showTab('roadmap');
   },
 
-  // -------------------------------------------------------------
-  // HISTORY
-  // -------------------------------------------------------------
   renderHistory: function() {
     const list = document.getElementById('history-list');
     if (!list) return;
@@ -1474,7 +1328,6 @@ const app = {
   }
 };
 
-// Start application upon DOM load
 document.addEventListener('DOMContentLoaded', () => {
   app.init();
 });
