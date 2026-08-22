@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * 3-Skill B1 Standard (Listening 35p, Reading 35p, Writing 30p), Clean Production Data
+ * 3-Skill B1 Standard with Custom Compact Play/Pause Button & Automatic Audio Stopping on Exit
  */
 
 const app = {
@@ -10,6 +10,7 @@ const app = {
     currentLevelFilter: 'all',
     userAnswers: {},
     soundEnabled: true,
+    activeAudioElement: null,
 
     users: [],
     currentUser: null,
@@ -29,8 +30,111 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // AUDIO & SOUND SYNTHESIZER
+  // AUDIO CONTROLLER & SOUND SYNTHESIZER
   // -------------------------------------------------------------
+  formatTime: function(seconds) {
+    if (isNaN(seconds) || seconds === Infinity || seconds < 0) return '00:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  },
+
+  stopAllAudios: function() {
+    // 1. Pause and reset all audio elements
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => {
+      try {
+        a.pause();
+        a.currentTime = 0;
+      } catch (e) {}
+    });
+
+    // 2. Reset all custom audio buttons and soundwaves
+    document.querySelectorAll('.custom-audio-pill').forEach(btn => {
+      btn.classList.remove('is-playing');
+      const icon = btn.querySelector('.audio-icon');
+      const text = btn.querySelector('.audio-btn-text');
+      if (icon) icon.setAttribute('data-lucide', 'play');
+      if (text) text.innerText = 'Phát Âm Thanh';
+    });
+
+    document.querySelectorAll('.sound-wave').forEach(sw => {
+      sw.classList.remove('sound-wave-playing');
+    });
+
+    this.data.activeAudioElement = null;
+    this.initIcons();
+  },
+
+  toggleCustomAudio: function(audioId, btnId, timeId, waveId) {
+    const audio = document.getElementById(audioId);
+    const btn = document.getElementById(btnId);
+    const timeDisplay = document.getElementById(timeId);
+    const wave = document.getElementById(waveId);
+
+    if (!audio) return;
+
+    // If another audio is currently playing, stop it first
+    if (this.data.activeAudioElement && this.data.activeAudioElement !== audio) {
+      this.stopAllAudios();
+    }
+
+    if (audio.paused) {
+      audio.play().then(() => {
+        this.data.activeAudioElement = audio;
+        if (btn) btn.classList.add('is-playing');
+        if (wave) wave.classList.add('sound-wave-playing');
+        const icon = btn?.querySelector('.audio-icon');
+        const text = btn?.querySelector('.audio-btn-text');
+        if (icon) icon.setAttribute('data-lucide', 'pause');
+        if (text) text.innerText = 'Tạm Dừng';
+        this.initIcons();
+      }).catch(err => {
+        console.warn('Audio play error:', err);
+      });
+
+      // Attach event listeners if not already attached
+      if (!audio.dataset.hasListeners) {
+        audio.dataset.hasListeners = 'true';
+
+        audio.addEventListener('timeupdate', () => {
+          if (timeDisplay && !isNaN(audio.duration)) {
+            timeDisplay.innerText = `${this.formatTime(audio.currentTime)} / ${this.formatTime(audio.duration)}`;
+          }
+        });
+
+        audio.addEventListener('ended', () => {
+          if (btn) btn.classList.remove('is-playing');
+          if (wave) wave.classList.remove('sound-wave-playing');
+          const icon = btn?.querySelector('.audio-icon');
+          const text = btn?.querySelector('.audio-btn-text');
+          if (icon) icon.setAttribute('data-lucide', 'play');
+          if (text) text.innerText = 'Phát Lại';
+          if (timeDisplay && !isNaN(audio.duration)) {
+            timeDisplay.innerText = `00:00 / ${this.formatTime(audio.duration)}`;
+          }
+          this.data.activeAudioElement = null;
+          this.initIcons();
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+          if (timeDisplay && !isNaN(audio.duration)) {
+            timeDisplay.innerText = `00:00 / ${this.formatTime(audio.duration)}`;
+          }
+        });
+      }
+    } else {
+      audio.pause();
+      if (btn) btn.classList.remove('is-playing');
+      if (wave) wave.classList.remove('sound-wave-playing');
+      const icon = btn?.querySelector('.audio-icon');
+      const text = btn?.querySelector('.audio-btn-text');
+      if (icon) icon.setAttribute('data-lucide', 'play');
+      if (text) text.innerText = 'Tiếp Tục';
+      this.initIcons();
+    }
+  },
+
   playSound: function(type) {
     if (!this.data.soundEnabled) return;
     try {
@@ -124,7 +228,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // USER STORAGE & MANAGEMENT (CLEAN NO DUMMY DATA)
+  // USER STORAGE & MANAGEMENT (CLEAN DATA ONLY)
   // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
@@ -355,6 +459,7 @@ const app = {
 
   logout: function() {
     if (confirm('Bạn có chắc chắn muốn đăng xuất tài khoản?')) {
+      this.stopAllAudios();
       this.saveUserProgressToStorage();
       this.data.currentUser = null;
       localStorage.removeItem('eduquest_b1_logged_user');
@@ -369,6 +474,7 @@ const app = {
   // TAB NAVIGATION
   // -------------------------------------------------------------
   showTab: function(tabName) {
+    this.stopAllAudios();
     this.playSound('click');
     const views = ['roadmap', 'exam', 'result', 'history'];
     views.forEach(v => {
@@ -479,6 +585,7 @@ const app = {
   // EXAM ROOM: 3 SKILLS (LISTENING 35P, READING 35P, WRITING 30P)
   // -------------------------------------------------------------
   startExam: function(examId) {
+    this.stopAllAudios();
     this.playSound('click');
 
     if (!this.data.currentUser) {
@@ -508,6 +615,7 @@ const app = {
 
   exitExamRoom: function() {
     if (confirm('Bạn có chắc chắn muốn thoát phòng thi? Toàn bộ bài làm chưa nộp sẽ không được lưu.')) {
+      this.stopAllAudios();
       this.stopExamTimer();
       this.showTab('roadmap');
     }
@@ -562,32 +670,48 @@ const app = {
         </div>
         <div>
           <h3 class="font-bold text-lg text-white">PHẦN 1: KỸ NĂNG NGHE (LISTENING - 35 ĐIỂM)</h3>
-          <p class="text-xs text-slate-300 font-medium">Nghe các đoạn băng audio và chọn đáp án chính xác nhất</p>
+          <p class="text-xs text-slate-300 font-medium">Bấm nút phát âm thanh tương ứng để nghe đoạn băng và chọn đáp án</p>
         </div>
       </div>
     `;
 
-    exam.skills.listening.parts.forEach(part => {
+    exam.skills.listening.parts.forEach((part, pIdx) => {
       const partCard = document.createElement('div');
       partCard.className = 'glass-panel rounded-3xl p-5 sm:p-7 space-y-5';
+
+      const audioUniqueId = `audio-part-${pIdx}`;
+      const btnUniqueId = `btn-audio-part-${pIdx}`;
+      const timeUniqueId = `time-audio-part-${pIdx}`;
+      const waveUniqueId = `wave-audio-part-${pIdx}`;
 
       partCard.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div>
             <h4 class="font-bold text-base sm:text-lg text-white">${part.title}</h4>
-            <p class="text-xs text-slate-300 font-medium">Nghe đoạn băng và trả lời các câu hỏi bên dưới</p>
+            <p class="text-xs text-slate-300 font-medium">Bấm nút bên cạnh để nghe đoạn băng ghi âm</p>
           </div>
-          <div class="flex items-center gap-2 bg-slate-950 p-2 sm:p-2.5 rounded-2xl border border-indigo-700/80 w-full sm:w-auto justify-between">
-            <div class="sound-wave flex items-center gap-0.5 px-1.5">
-              <div class="sound-wave-bar"></div>
-              <div class="sound-wave-bar"></div>
-              <div class="sound-wave-bar"></div>
-              <div class="sound-wave-bar"></div>
-              <div class="sound-wave-bar"></div>
-            </div>
-            <audio controls class="h-8 max-w-full sm:max-w-[240px]" onplay="this.closest('.flex').querySelector('.sound-wave').classList.add('sound-wave-playing')" onpause="this.closest('.flex').querySelector('.sound-wave').classList.remove('sound-wave-playing')">
+
+          <!-- Sleek Custom Audio Controller -->
+          <div class="flex items-center gap-3">
+            <audio id="${audioUniqueId}" preload="metadata" class="hidden">
               <source src="/${part.audio_file}" type="audio/mpeg">
             </audio>
+
+            <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}')" class="custom-audio-pill px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white shadow-lg flex items-center gap-2 cursor-pointer">
+              <i data-lucide="play" class="w-4 h-4 text-cyan-300 audio-icon"></i>
+              <span class="audio-btn-text">Phát Âm Thanh</span>
+            </button>
+
+            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-950 border border-slate-800">
+              <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5 px-0.5">
+                <div class="sound-wave-bar"></div>
+                <div class="sound-wave-bar"></div>
+                <div class="sound-wave-bar"></div>
+                <div class="sound-wave-bar"></div>
+                <div class="sound-wave-bar"></div>
+              </div>
+              <span id="${timeUniqueId}" class="text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
+            </div>
           </div>
         </div>
 
@@ -755,9 +879,10 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // SUBMISSION & STRICT 50% PASSING THRESHOLD (100-POINT SCALE)
+  // SUBMISSION & STRICT 50% PASSING THRESHOLD
   // -------------------------------------------------------------
   submitCurrentExam: function() {
+    this.stopAllAudios();
     this.stopExamTimer();
     const exam = this.data.currentExam;
     if (!exam) return;
