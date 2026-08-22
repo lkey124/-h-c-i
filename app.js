@@ -1,6 +1,6 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Mobile Optimized + Dynamic Fisher-Yates Randomization + Robust Login Handling
+ * Single License Key Authentication + Dynamic Question Randomization
  */
 
 const app = {
@@ -348,7 +348,7 @@ const app = {
       const savedUser = localStorage.getItem('eduquest_b1_logged_user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
-        const liveUser = this.data.users.find(u => u.id === parsed.id);
+        const liveUser = this.data.users.find(u => u.key === parsed.key || u.id === parsed.id);
         this.data.currentUser = liveUser || parsed;
         this.loadUserProgressFromStorage();
       } else {
@@ -365,8 +365,9 @@ const app = {
       return;
     }
     try {
-      const key = `eduquest_b1_progress_${this.data.currentUser.id}`;
-      const saved = localStorage.getItem(key);
+      const userKey = this.data.currentUser.key || this.data.currentUser.id;
+      const storageKey = `eduquest_b1_progress_${userKey}`;
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         this.data.userProgress = JSON.parse(saved);
       } else {
@@ -386,8 +387,9 @@ const app = {
   saveUserProgressToStorage: function() {
     if (!this.data.currentUser) return;
     try {
-      const key = `eduquest_b1_progress_${this.data.currentUser.id}`;
-      localStorage.setItem(key, JSON.stringify(this.data.userProgress));
+      const userKey = this.data.currentUser.key || this.data.currentUser.id;
+      const storageKey = `eduquest_b1_progress_${userKey}`;
+      localStorage.setItem(storageKey, JSON.stringify(this.data.userProgress));
     } catch (e) {
       console.error('Could not save progress', e);
     }
@@ -428,7 +430,7 @@ const app = {
       const isActive = this.isAccountActive(user);
 
       if (heroBadge) {
-        heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> <span class="truncate max-w-[150px] inline-block align-bottom">${user.name}</span>`;
+        heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong>`;
       }
 
       if (isActive) {
@@ -446,10 +448,10 @@ const app = {
           subBadge.classList.remove('hidden');
           subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-950 border border-rose-700 text-rose-300 text-xs font-bold animate-pulse';
         }
-        if (subText) subText.innerText = '⚠️ Đã Hết Hạn';
+        if (subText) subText.innerText = '⚠️ Key Đã Hết Hạn';
         if (statusBadge) {
           statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950 text-rose-300 border border-rose-800 text-xs font-bold';
-          statusBadge.innerHTML = '<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Đã Hết Hạn';
+          statusBadge.innerHTML = '<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Key Đã Hết Hạn';
         }
       }
 
@@ -460,9 +462,9 @@ const app = {
               <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
                 ${user.name.charAt(0).toUpperCase()}
               </div>
-              <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[90px]">${user.name}</span>
+              <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[100px]">${user.name}</span>
             </div>
-            <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất">
+            <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
               <i data-lucide="log-out" class="w-4 h-4"></i>
             </button>
           </div>
@@ -480,17 +482,17 @@ const app = {
 
     } else {
       if (heroBadge) {
-        heroBadge.innerHTML = `<i data-lucide="user-x" class="w-3 h-3 text-slate-400"></i> Đăng nhập để làm bài`;
+        heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       }
       if (subBadge) subBadge.classList.add('hidden');
       if (statusBadge) {
         statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 text-slate-400 border border-slate-800 text-xs font-bold';
-        statusBadge.innerHTML = '<i data-lucide="lock" class="w-3.5 h-3.5"></i> Đăng Nhập';
+        statusBadge.innerHTML = '<i data-lucide="lock" class="w-3.5 h-3.5"></i> Nhập Key';
       }
       if (authSec) {
         authSec.innerHTML = `
           <button onclick="app.openLoginModal()" class="px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all shrink-0">
-            <i data-lucide="log-in" class="w-3.5 h-3.5"></i> Đăng Nhập
+            <i data-lucide="key" class="w-3.5 h-3.5"></i> Nhập Key
           </button>
         `;
       }
@@ -505,7 +507,7 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // LOGIN / LOGOUT (MOBILE RESILIENT)
+  // KEY ACTIVATION / LOGOUT
   // -------------------------------------------------------------
   openLoginModal: function() {
     this.playSound('click');
@@ -529,18 +531,16 @@ const app = {
 
   handleLogin: function(event) {
     if (event) event.preventDefault();
-    const userInp = document.getElementById('login-username');
-    const passInp = document.getElementById('login-password');
+    const keyInp = document.getElementById('login-license-key');
     const errBox = document.getElementById('login-error-msg');
 
-    if (!userInp || !passInp) return;
+    if (!keyInp) return;
 
-    const username = userInp.value.trim().toLowerCase();
-    const password = passInp.value.trim();
+    const enteredKey = keyInp.value.trim().toUpperCase();
 
-    if (!username || !password) {
+    if (!enteredKey) {
       if (errBox) {
-        errBox.innerText = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!';
+        errBox.innerText = 'Vui lòng nhập mã Key kích hoạt!';
         errBox.classList.remove('hidden');
       }
       return;
@@ -548,14 +548,10 @@ const app = {
 
     this.loadUsersFromStorage();
 
-    // Check match against username, email, or full name (case-insensitive)
+    // Match against license key
     const user = this.data.users.find(u => {
-      const uName = (u.username || '').trim().toLowerCase();
-      const uMail = (u.email || '').trim().toLowerCase();
-      const uFullName = (u.name || '').trim().toLowerCase();
-      const uPass = (u.password || '').trim();
-
-      return (uName === username || uMail === username || uFullName === username) && uPass === password;
+      const uKey = (u.key || u.id || '').trim().toUpperCase();
+      return uKey === enteredKey;
     });
 
     if (user) {
@@ -568,24 +564,25 @@ const app = {
       this.renderRoadmap();
       this.updateUserStatsDisplay();
       this.playSound('pass');
+      alert(`🎉 Kích hoạt thành công! Chào mừng học viên ${user.name} vào luyện thi.`);
     } else {
       this.playSound('fail');
       if (errBox) {
         errBox.innerHTML = `
-          <div>❌ <strong>Tên đăng nhập hoặc mật khẩu không chính xác!</strong></div>
+          <div>❌ <strong>Mã Key "${enteredKey}" không tồn tại hoặc chưa được cấp!</strong></div>
           <div class="text-[11px] text-slate-300 mt-1">
-            • Nếu bạn vừa mở web lần đầu trên điện thoại: Hãy bấm vào nút <strong>"Cổng Quản Trị Cấp Tài Khoản"</strong> bên dưới để tạo tài khoản trên điện thoại này.
+            • Bạn có thể bấm vào <strong>"Cổng Quản Trị Cấp Key"</strong> bên dưới để tạo mã Key mới.
           </div>
         `;
         errBox.classList.remove('hidden');
       } else {
-        alert('❌ Tên đăng nhập hoặc mật khẩu không đúng!');
+        alert('❌ Mã Key không chính xác!');
       }
     }
   },
 
   logout: function() {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất tài khoản?')) {
+    if (confirm('Bạn có chắc chắn muốn thoát khỏi tài khoản này?')) {
       this.stopAllAudios();
       this.saveUserProgressToStorage();
       this.data.currentUser = null;
@@ -696,7 +693,7 @@ const app = {
                     <i data-lucide="lock" class="w-3 h-3"></i> Khóa
                   </button>`
               : `<button onclick="app.openLoginModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1 border border-slate-700">
-                  <i data-lucide="log-in" class="w-3 h-3"></i> Đăng Nhập
+                  <i data-lucide="key" class="w-3 h-3"></i> Nhập Key
                 </button>`
           }
         </div>
@@ -716,13 +713,13 @@ const app = {
     this.playSound('click');
 
     if (!this.data.currentUser) {
-      alert('Vui lòng đăng nhập tài khoản học viên để bắt đầu làm bài!');
+      alert('Vui lòng nhập mã Key bản quyền để bắt đầu làm bài!');
       this.openLoginModal();
       return;
     }
 
     if (!this.isAccountActive(this.data.currentUser)) {
-      alert('⚠️ TÀI KHOẢN ĐÃ HẾT HẠN SỬ DỤNG!\n\nTài khoản của bạn đã hết hạn gói học. Vui lòng liên hệ Admin qua Cửa Hàng (binhluu.ai.studio) để gia hạn ngày sử dụng.');
+      alert('⚠️ KEY ĐÃ HẾT HẠN SỬ DỤNG!\n\nMã Key của bạn đã hết hạn. Vui lòng liên hệ Admin qua Cửa Hàng (binhluu.ai.studio) để gia hạn.');
       return;
     }
 
@@ -820,7 +817,7 @@ const app = {
               <p class="text-xs text-slate-300 font-medium">Nghe đoạn băng và chọn đáp án chính xác</p>
             </div>
 
-            <!-- Sleek Custom Audio Controller (Mobile Wrap Friendly) -->
+            <!-- Sleek Custom Audio Controller -->
             <div class="flex flex-wrap items-center gap-2">
               <audio id="${audioUniqueId}" preload="metadata" class="hidden">
                 <source src="/${part.audio_file}" type="audio/mpeg">
@@ -1242,7 +1239,7 @@ const app = {
     if (!this.data.currentUser) {
       list.innerHTML = `
         <div class="text-center py-10 bg-slate-900/40 rounded-3xl border border-slate-800 text-slate-300 text-xs sm:text-sm font-medium">
-          Vui lòng đăng nhập để xem lịch sử làm bài thi.
+          Vui lòng nhập mã Key để xem lịch sử làm bài thi.
         </div>
       `;
       return;
