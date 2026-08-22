@@ -1,0 +1,130 @@
+/* Modern, High-Contrast & High-Legibility Stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
+
+:root {
+  --font-main: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: #030712;
+  color: #f3f4f6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* High Contrast Glass Panels */
+.glass-panel {
+  background-color: #0b1120;
+  border: 1px solid #1e293b;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+.glass-card {
+  background-color: #0b1120;
+  border: 1px solid #1e293b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-card:hover:not(.locked) {
+  border-color: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.25);
+}
+
+.glass-card.locked {
+  opacity: 0.6;
+  filter: grayscale(40%);
+}
+
+/* Navigation Tabs */
+.nav-tab-btn {
+  color: #94a3b8;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+  color: #f8fafc;
+  background-color: #1e293b;
+}
+
+.nav-tab-btn.active-tab {
+  color: #ffffff;
+  background-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+/* Question Option Labels */
+.option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background-color: #030712;
+  border: 1.5px solid #1f2937;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  min-height: 48px;
+}
+
+.option-label:hover {
+  background-color: #111827;
+  border-color: #4b5563;
+}
+
+.option-label:has(input:checked) {
+  background-color: #1e1b4b;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+/* Sound Wave Animation */
+.sound-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.sound-wave-bar {
+  width: 3px;
+  height: 6px;
+  background-color: #22d3ee;
+  border-radius: 2px;
+  transition: height 0.2s ease;
+}
+
+.sound-wave-playing .sound-wave-bar:nth-child(1) { animation: wave 0.8s ease-in-out infinite alternate; }
+.sound-wave-playing .sound-wave-bar:nth-child(2) { animation: wave 0.6s ease-in-out 0.2s infinite alternate; }
+.sound-wave-playing .sound-wave-bar:nth-child(3) { animation: wave 0.9s ease-in-out 0.4s infinite alternate; }
+.sound-wave-playing .sound-wave-bar:nth-child(4) { animation: wave 0.7s ease-in-out 0.1s infinite alternate; }
+.sound-wave-playing .sound-wave-bar:nth-child(5) { animation: wave 0.85s ease-in-out 0.3s infinite alternate; }
+
+@keyframes wave {
+  0% { height: 4px; }
+  100% { height: 18px; }
+}
+
+/* Clean Button Ripple & Focus */
+button:focus-visible, input:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
