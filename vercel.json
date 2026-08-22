@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/web/index.html" },
+    { "source": "/admin", "destination": "/web/admin.html" },
+    { "source": "/admin.html", "destination": "/web/admin.html" },
+    { "source": "/api/exams", "destination": "/data/exams_50_dataset.json" },
+    { "source": "/api/question_bank", "destination": "/data/question_bank.json" },
+    { "source": "/public/:path*", "destination": "/public/:path*" },
+    { "source": "/:path*", "destination": "/web/:path*" }
+  ],
+  "headers": [
+    {
+      "source": "/public/audios/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Accept-Ranges", "value": "bytes" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}

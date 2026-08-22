@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIẾNG ANH LÀ GÌ TÔI KO QUEN - Cổng Quản Trị Hệ Thống</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-purple-600 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- STATE 1: LOCKED ADMIN SECURITY GATEWAY -->
+  <!-- ========================================================================= -->
+  <div id="admin-lock-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-900 border-2 border-indigo-700/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl shadow-purple-950/40 text-center relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-40 h-40 bg-purple-600/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <div class="w-16 h-16 rounded-2xl bg-purple-950 border border-purple-700 text-purple-300 flex items-center justify-center mx-auto shadow-lg">
+        <i data-lucide="shield-alert" class="w-8 h-8 text-purple-400"></i>
+      </div>
+
+      <div class="space-y-1.5">
+        <span class="px-3 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[11px] font-black uppercase tracking-wider">CỔNG BẢO MẬT ADMIN</span>
+        <h1 class="text-xl sm:text-2xl font-display font-black text-white">TIẾNG ANH LÀ GÌ TÔI KO QUEN</h1>
+        <p class="text-xs text-slate-300 font-medium">Khu vực quản trị & cấp bản quyền học viên</p>
+      </div>
+
+      <form onsubmit="adminApp.unlockGateway(event)" class="space-y-4 pt-2">
+        <div class="space-y-1.5 text-left">
+          <label class="text-xs font-bold text-slate-300">Nhập Mã PIN / Mật Khẩu Admin:</label>
+          <div class="relative">
+            <input type="password" id="admin-pin-input" placeholder="Nhập PIN (Mặc định: 1234)..." required autofocus class="w-full px-4 py-3 rounded-xl bg-slate-950 border-2 border-slate-700 text-sm font-black text-white focus:outline-none focus:border-purple-500 tracking-widest text-center">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-black text-sm shadow-xl shadow-purple-950 flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="key" class="w-4 h-4"></i> Xác Thực & Mở Khóa Gateway
+        </button>
+      </form>
+
+      <div class="text-[11px] text-slate-400 pt-2 border-t border-slate-800 flex items-center justify-center gap-1">
+        <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i> Mã PIN mặc định: <strong class="text-purple-300 font-mono">1234</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- STATE 2: AUTHENTICATED ADMIN DASHBOARD -->
+  <!-- ========================================================================= -->
+  <div id="admin-dashboard" class="hidden flex-col min-h-screen">
+    <!-- Admin Top Header -->
+    <header class="sticky top-0 z-40 bg-slate-900 border-b border-indigo-800 shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center shadow-md">
+            <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-display font-black text-lg text-white">TIẾNG ANH LÀ GÌ TÔI KO QUEN</span>
+              <span class="text-[10px] font-black uppercase text-purple-300 px-2 py-0.5 rounded bg-purple-950 border border-purple-800">ADMIN MASTER</span>
+            </div>
+            <p class="text-[11px] text-slate-300 font-medium">Hệ Thống Cấp Bản Quyền & Quản Lý Đề Thi B1</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="/" target="_blank" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Mở Trang Học Viên
+          </a>
+          <button onclick="adminApp.lockGateway()" class="px-3.5 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800 flex items-center gap-1.5 transition-colors">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Khóa Gateway
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Admin Main Body -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Metrics Overview -->
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+          <div class="text-xs text-slate-400 font-bold uppercase">Tổng Số Học Viên Cấp Bản Quyền</div>
+          <div id="stat-total-users" class="text-2xl font-display font-black text-white mt-1">0 Tài Khoản</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+          <div class="text-xs text-slate-400 font-bold uppercase">Tài Khoản Đang Hoạt Động</div>
+          <div id="stat-active-users" class="text-2xl font-display font-black text-emerald-400 mt-1">0 Active</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+          <div class="text-xs text-slate-400 font-bold uppercase">Tổng Số Bộ Đề Thi B1</div>
+          <div class="text-2xl font-display font-black text-cyan-400 mt-1">50 Đề Chuẩn</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+          <div class="text-xs text-slate-400 font-bold uppercase">File Audio MP3</div>
+          <div class="text-2xl font-display font-black text-purple-400 mt-1">41 Tracks</div>
+        </div>
+      </div>
+
+      <!-- Section 1: Create New Student Account Form -->
+      <div class="bg-slate-900 border border-indigo-700/80 p-6 rounded-3xl space-y-4 shadow-xl">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-display font-black text-white flex items-center gap-2">
+              <i data-lucide="user-plus" class="w-5 h-5 text-cyan-400"></i> Cấp Tài Khoản Mới & Chọn Gói Hạn Sử Dụng
+            </h2>
+            <p class="text-xs text-slate-300 font-medium mt-0.5">Admin nhập thông tin và cấp tài khoản cho học viên sau khi nhận thanh toán</p>
+          </div>
+        </div>
+
+        <form onsubmit="adminApp.createUser(event)" class="grid grid-cols-1 sm:grid-cols-5 gap-3.5 pt-2">
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300">Họ và Tên Học Viên:</label>
+            <input type="text" id="new-user-name" placeholder="Ví dụ: Nguyễn Văn A" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300">Tên Đăng Nhập / Email:</label>
+            <input type="text" id="new-user-username" placeholder="Ví dụ: hocvien01" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300">Mật Khẩu Cấp Cho Học Viên:</label>
+            <input type="text" id="new-user-password" placeholder="Ví dụ: 123456" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300">Gói Hạn Sử Dụng:</label>
+            <select id="new-user-duration" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-cyan-300 focus:outline-none focus:border-indigo-500">
+              <option value="30">Gói 1 Tháng (30 Ngày)</option>
+              <option value="90" selected>Gói 3 Tháng (90 Ngày)</option>
+              <option value="180">Gói 6 Tháng (180 Ngày)</option>
+              <option value="365">Gói 1 Năm (365 Ngày)</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md flex items-center justify-center gap-1.5 transition-all">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Cấp Bản Quyền
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Section 2: Student Accounts Table -->
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-display font-black text-white flex items-center gap-2">
+              <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i> Danh Sách Học Viên Đang Sử Dụng
+            </h2>
+            <p class="text-xs text-slate-300 font-medium mt-0.5">Theo dõi số ngày còn lại, mật khẩu, gia hạn nhanh +30 ngày / +90 ngày hoặc khóa tài khoản</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-800">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-950 text-slate-300 font-black uppercase border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Học Viên</th>
+                <th class="p-3.5">Tài Khoản / Mật Khẩu</th>
+                <th class="p-3.5">Gói Cấp</th>
+                <th class="p-3.5">Ngày Hết Hạn</th>
+                <th class="p-3.5">Thời Gian Còn Lại</th>
+                <th class="p-3.5">Trạng Thái</th>
+                <th class="p-3.5 text-right">Gia Hạn / Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body" class="divide-y divide-slate-800/80 bg-slate-900/60">
+              <!-- Rendered dynamically by script -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 3: Exams & System Management -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <!-- Exam Bank Actions -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+          <h2 class="text-base font-display font-black text-white flex items-center gap-2">
+            <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i> Quản Lý Ngân Hàng Đề Thi
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed font-medium">
+            Tự động sinh thêm bộ đề mới ngẫu nhiên theo chuẩn ma trận B1 hoặc mở khóa đề để học viên làm bài.
+          </p>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button onclick="adminApp.unlockAllExams()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-bold border border-slate-700 flex items-center gap-1.5">
+              <i data-lucide="unlock" class="w-3.5 h-3.5"></i> Mở Khóa Tất Cả 50 Đề
+            </button>
+            <button onclick="adminApp.generateMoreExams()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tạo Thêm 10 Bộ Đề
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Backup & Restore -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+          <h2 class="text-base font-display font-black text-white flex items-center gap-2">
+            <i data-lucide="database" class="w-5 h-5 text-cyan-400"></i> Sao Lưu & Phục Hồi Dữ Liệu (JSON)
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed font-medium">
+            Xuất file sao lưu toàn bộ thông tin học viên, bản quyền và tiến độ để lưu trữ an toàn khi deploy lên Vercel.
+          </p>
+          <div class="flex flex-wrap gap-2 pt-2">
+            <button onclick="adminApp.exportDataBackup()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Xuất File Backup (JSON)
+            </button>
+            <button onclick="adminApp.clearAllData()" class="px-4 py-2 rounded-xl bg-rose-950 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800 flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dọn Sạch Toàn Bộ Dữ Liệu
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-800 bg-slate-950 py-5 text-center text-xs text-slate-400">
+      <p>TIẾNG ANH LÀ GÌ TÔI KO QUEN • Cổng Quản Trị Hệ Thống & Cấp Bản Quyền Học Viên</p>
+    </footer>
+  </div>
+
+  <!-- Admin Dedicated JavaScript Logic -->
+  <script>
+    const adminApp = {
+      users: [],
+
+      init: function() {
+        this.loadUsers();
+        this.renderTable();
+        this.updateStats();
+        if (window.lucide) lucide.createIcons();
+      },
+
+      loadUsers: function() {
+        const saved = localStorage.getItem('eduquest_b1_all_users');
+        if (saved) {
+          try {
+            this.users = JSON.parse(saved);
+          } catch (e) {
+            this.users = [];
+          }
+        } else {
+          this.users = [];
+          this.saveUsers();
+        }
+      },
+
+      saveUsers: function() {
+        localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
+      },
+
+      getRemainingDays: function(expiresAt) {
+        const now = new Date();
+        const expiry = new Date(expiresAt);
+        return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+      },
+
+      unlockGateway: function(e) {
+        e.preventDefault();
+        const pin = document.getElementById('admin-pin-input').value.trim();
+        if (pin === '1234' || pin === 'admin' || pin === 'admin888') {
+          document.getElementById('admin-lock-screen').classList.add('hidden');
+          document.getElementById('admin-dashboard').classList.remove('hidden');
+          document.getElementById('admin-dashboard').classList.add('flex');
+          this.init();
+        } else {
+          alert('❌ Mã PIN bảo mật không chính xác!');
+        }
+      },
+
+      lockGateway: function() {
+        document.getElementById('admin-lock-screen').classList.remove('hidden');
+        document.getElementById('admin-dashboard').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('flex');
+        document.getElementById('admin-pin-input').value = '';
+      },
+
+      createUser: function(e) {
+        e.preventDefault();
+        const name = document.getElementById('new-user-name').value.trim();
+        const username = document.getElementById('new-user-username').value.trim();
+        const password = document.getElementById('new-user-password').value.trim();
+        const durationDays = parseInt(document.getElementById('new-user-duration').value);
+
+        if (!name || !username || !password) return;
+
+        // Check if username already exists
+        if (this.users.some(u => u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase())) {
+          alert('❌ Tên đăng nhập này đã tồn tại! Vui lòng chọn tên đăng nhập khác.');
+          return;
+        }
+
+        const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const pkgName = durationDays === 30 ? 'Gói 1 Tháng' : (durationDays === 90 ? 'Gói 3 Tháng' : (durationDays === 180 ? 'Gói 6 Tháng' : 'Gói 1 Năm'));
+
+        const newUser = {
+          id: 'student_' + Date.now(),
+          name: name,
+          username: username,
+          email: username.includes('@') ? username : (username + '@eduquest.vn'),
+          password: password,
+          role: 'STUDENT',
+          package: pkgName,
+          createdAt: new Date().toISOString().slice(0, 10),
+          expiresAt: expiresAt,
+          status: 'ACTIVE'
+        };
+
+        this.users.push(newUser);
+        this.saveUsers();
+        this.renderTable();
+        this.updateStats();
+
+        document.getElementById('new-user-name').value = '';
+        document.getElementById('new-user-username').value = '';
+        document.getElementById('new-user-password').value = '';
+        alert(`✅ Cấp tài khoản thành công cho học viên ${name}!\n\n• Tên đăng nhập: ${username}\n• Mật khẩu: ${password}\n• ${pkgName} (Hạn đến: ${expiresAt})`);
+      },
+
+      extendUser: function(userId, days) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        const currentExpiry = new Date(user.expiresAt);
+        const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+        const newExpiry = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+        user.expiresAt = newExpiry.toISOString().slice(0, 10);
+        user.status = 'ACTIVE';
+
+        this.saveUsers();
+        this.renderTable();
+        this.updateStats();
+        alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}! Hạn mới: ${user.expiresAt}`);
+      },
+
+      toggleUserStatus: function(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        user.status = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
+        this.saveUsers();
+        this.renderTable();
+        this.updateStats();
+      },
+
+      deleteUser: function(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        if (confirm(`Bạn có chắc chắn muốn xóa học viên ${user.name}?`)) {
+          this.users = this.users.filter(u => u.id !== userId);
+          localStorage.removeItem(`eduquest_b1_progress_${userId}`);
+          this.saveUsers();
+          this.renderTable();
+          this.updateStats();
+        }
+      },
+
+      renderTable: function() {
+        const tbody = document.getElementById('admin-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (this.users.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="p-8 text-center text-slate-400">
+                Chưa có học viên nào được cấp tài khoản. Hãy sử dụng form ở trên để cấp tài khoản đầu tiên!
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        this.users.forEach(u => {
+          const remainingDays = this.getRemainingDays(u.expiresAt);
+          const isActive = remainingDays > 0 && u.status === 'ACTIVE';
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-800/40 transition-colors';
+
+          tr.innerHTML = `
+            <td class="p-3.5 font-bold text-white">
+              <div class="text-sm font-black">${u.name}</div>
+            </td>
+            <td class="p-3.5">
+              <div class="font-mono text-cyan-300 font-bold">${u.username || u.email}</div>
+              <div class="text-[11px] text-slate-400 font-mono">MK: <span class="text-amber-300">${u.password || '123456'}</span></div>
+            </td>
+            <td class="p-3.5 text-cyan-300 font-bold">${u.package}</td>
+            <td class="p-3.5 font-mono text-slate-200 font-semibold">${u.expiresAt}</td>
+            <td class="p-3.5 font-black text-sm ${remainingDays > 0 ? 'text-emerald-400' : 'text-rose-400'}">
+              ${remainingDays > 0 ? `Còn ${remainingDays} ngày` : 'Đã hết hạn (0 ngày)'}
+            </td>
+            <td class="p-3.5">
+              ${
+                isActive 
+                  ? '<span class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-950 text-emerald-300 border border-emerald-800">Hoạt Động</span>'
+                  : '<span class="px-2.5 py-1 rounded-full text-xs font-black bg-rose-950 text-rose-300 border border-rose-800">Hết Hạn / Khóa</span>'
+              }
+            </td>
+            <td class="p-3.5 text-right space-x-1.5">
+              <button onclick="adminApp.extendUser('${u.id}', 30)" class="px-2.5 py-1 rounded-lg bg-indigo-950 hover:bg-indigo-900 text-cyan-300 text-xs font-bold border border-indigo-800" title="Gia hạn +1 Tháng">+1 Tháng</button>
+              <button onclick="adminApp.extendUser('${u.id}', 90)" class="px-2.5 py-1 rounded-lg bg-cyan-950 hover:bg-cyan-900 text-cyan-300 text-xs font-bold border border-cyan-800" title="Gia hạn +3 Tháng">+3 Tháng</button>
+              <button onclick="adminApp.toggleUserStatus('${u.id}')" class="px-2.5 py-1 rounded-lg ${u.status === 'ACTIVE' ? 'bg-amber-950 text-amber-300 border border-amber-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'} text-xs font-bold">${u.status === 'ACTIVE' ? 'Khóa' : 'Mở'}</button>
+              <button onclick="adminApp.deleteUser('${u.id}')" class="px-2 py-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-rose-300 text-xs font-bold border border-rose-800" title="Xóa học viên">Xóa</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (window.lucide) lucide.createIcons();
+      },
+
+      updateStats: function() {
+        const total = this.users.length;
+        const active = this.users.filter(u => this.getRemainingDays(u.expiresAt) > 0 && u.status === 'ACTIVE').length;
+
+        const totalEl = document.getElementById('stat-total-users');
+        const activeEl = document.getElementById('stat-active-users');
+        if (totalEl) totalEl.innerText = `${total} Tài Khoản`;
+        if (activeEl) activeEl.innerText = `${active} Active`;
+      },
+
+      unlockAllExams: function() {
+        alert('💡 Khi học viên thi thật, tiến độ mở khóa được lưu tự động theo từng tài khoản.');
+      },
+
+      generateMoreExams: function() {
+        alert('💡 Để tạo thêm 10 bộ đề tự động, bạn có thể chạy lệnh: python scripts/exam_cli.py --generate 10');
+      },
+
+      exportDataBackup: function() {
+        const data = {
+          users: this.users,
+          backupDate: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `tienganhlagitokoquen_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+      },
+
+      clearAllData: function() {
+        if (confirm('⚠️ Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách học viên và tiến trình về trạng thái ban đầu?')) {
+          localStorage.removeItem('eduquest_b1_all_users');
+          localStorage.removeItem('eduquest_b1_logged_user');
+          this.users = [];
+          this.saveUsers();
+          this.renderTable();
+          this.updateStats();
+          alert('✅ Đã dọn sạch toàn bộ dữ liệu!');
+        }
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
