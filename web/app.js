@@ -1,9 +1,7 @@
 /**
  * TIẾNG ANH LÀ GÌ TÔI KO QUEN - Core Web Application Logic
- * Smart Key Normalization + Multi-Source Cloud Sync
+ * Comprehensive Fisher-Yates Randomization (Parts, Questions & Options) + Smart Key Normalization + Cloud Sync
  */
-
-const CLOUD_BIN_URL = 'https://api.jsonstorage.net/v1/json/00000000-0000-0000-0000-000000000000/keys'; // Fallback endpoint
 
 const app = {
   data: {
@@ -58,9 +56,10 @@ const app = {
   },
 
   // -------------------------------------------------------------
-  // FISHER-YATES SHUFFLE ALGORITHM
+  // COMPREHENSIVE FISHER-YATES SHUFFLE ALGORITHM
   // -------------------------------------------------------------
   shuffleArray: function(array) {
+    if (!Array.isArray(array)) return [];
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -74,7 +73,7 @@ const app = {
     const exam = JSON.parse(JSON.stringify(rawExam));
     const letters = ['A', 'B', 'C', 'D', 'E'];
 
-    // 1. Randomize Listening
+    // 1. Randomize Listening Questions & Options
     if (exam.skills?.listening?.parts) {
       exam.skills.listening.parts.forEach(part => {
         if (part.questions && part.questions.length > 0) {
@@ -99,8 +98,11 @@ const app = {
       });
     }
 
-    // 2. Randomize Reading
+    // 2. Randomize Reading: Shuffle Parts, Questions & Options
     if (exam.skills?.reading?.parts) {
+      // Shuffle reading parts order
+      exam.skills.reading.parts = this.shuffleArray(exam.skills.reading.parts);
+
       exam.skills.reading.parts.forEach(part => {
         if (part.questions && part.questions.length > 0) {
           part.questions = this.shuffleArray(part.questions);
@@ -124,7 +126,7 @@ const app = {
       });
     }
 
-    // 3. Randomize Writing Part 1
+    // 3. Randomize Writing Part 1 Questions
     if (exam.skills?.writing?.parts?.[0]?.questions) {
       exam.skills.writing.parts[0].questions = this.shuffleArray(exam.skills.writing.parts[0].questions);
     }
@@ -378,7 +380,6 @@ const app = {
       if (response.ok) {
         const cloudData = await response.json();
         if (Array.isArray(cloudData) && cloudData.length > 0) {
-          // Merge unique users by normalized key
           const merged = [...this.data.users];
           cloudData.forEach(cu => {
             const idx = merged.findIndex(u => this.isKeyMatching(u.key || u.id, cu.key || cu.id));
@@ -803,6 +804,7 @@ const app = {
     const rawExam = this.data.exams.find(e => e.exam_id === examId);
     if (!rawExam) return;
 
+    // Full fresh randomization on every single entry
     this.data.currentExam = this.randomizeExamData(rawExam);
     this.data.userAnswers = {};
 
