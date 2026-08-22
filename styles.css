@@ -5,28 +5,31 @@
   --font-main: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
 body {
   font-family: var(--font-main);
   background-color: #030712;
   color: #f3f4f6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: manipulation;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #0b1120;
 }
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  border-radius: 3px;
 }
 
 /* High Contrast Glass Panels */
@@ -71,6 +74,27 @@ body {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
+/* Level Pills */
+.level-pill {
+  color: #94a3b8;
+  background-color: #0b1120;
+  border: 1px solid #1e293b;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.level-pill:hover {
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+
+.level-pill.active-level {
+  background-color: #1e1b4b;
+  border-color: #6366f1;
+  color: #38bdf8;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
+
 /* Question Option Labels */
 .option-label {
   display: flex;
@@ -103,10 +127,9 @@ body {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.custom-audio-pill:hover {
+.custom-audio-pill:hover, .custom-audio-pill:active {
   border-color: #6366f1;
   box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
-  transform: translateY(-1px);
 }
 
 .custom-audio-pill.is-playing {
@@ -118,19 +141,20 @@ body {
 /* Audio Progress Bar */
 .audio-progress-track {
   width: 100%;
-  height: 6px;
+  height: 8px;
   background-color: #1e293b;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  touch-action: none;
 }
 
 .audio-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #6366f1, #22d3ee);
   width: 0%;
-  border-radius: 3px;
+  border-radius: 4px;
   transition: width 0.1s linear;
 }
 
@@ -138,12 +162,12 @@ body {
 .sound-wave {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2.5px;
   height: 18px;
 }
 
 .sound-wave-bar {
-  width: 3px;
+  width: 2.5px;
   height: 4px;
   background-color: #64748b;
   border-radius: 2px;
@@ -161,12 +185,17 @@ body {
 .sound-wave-playing .sound-wave-bar:nth-child(5) { animation: wave 0.75s ease-in-out 0.3s infinite alternate; }
 
 @keyframes wave {
-  0% { height: 4px; }
+  0% { height: 3px; }
   100% { height: 16px; }
 }
 
-/* Focus */
-button:focus-visible, input:focus-visible {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
+/* Mobile Inputs: Prevent auto zoom on iOS */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+@media (min-width: 640px) {
+  input, textarea, select {
+    font-size: 14px !important;
+  }
 }

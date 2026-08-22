@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Canvas Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-  <!-- Google Fonts: Be Vietnam Pro (100% Vietnamese Typography) -->
+  <!-- Google Fonts: Be Vietnam Pro -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
@@ -31,49 +31,37 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-600 selection:text-white">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="sticky top-0 z-40 bg-slate-900 border-b border-slate-800 shadow-md">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-      <!-- Brand Logo & Store Link -->
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md cursor-pointer shrink-0" onclick="app.showTab('roadmap')">
-          <i data-lucide="graduation-cap" class="w-6 h-6 text-white"></i>
+  <!-- TOP NAVIGATION BAR (FLUID RESPONSIVE FOR MOBILE & DESKTOP) -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0 cursor-pointer" onclick="app.showTab('roadmap')">
+        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shrink-0">
+          <i data-lucide="graduation-cap" class="w-5 h-5 text-white"></i>
         </div>
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-2 cursor-pointer" onclick="app.showTab('roadmap')">
-            <span class="font-bold text-base sm:text-lg lg:text-xl text-white tracking-tight leading-tight">TIẾNG ANH LÀ GÌ TÔI KO QUEN</span>
-            <span class="text-[10px] font-black uppercase text-cyan-300 px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-800 shrink-0">50 ĐỀ</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="font-black text-xs sm:text-base lg:text-lg text-white tracking-tight leading-tight truncate">TIẾNG ANH LÀ GÌ TÔI KO QUEN</span>
+            <span class="text-[9px] font-black uppercase text-cyan-300 px-1 py-0.5 rounded bg-cyan-950 border border-cyan-800 shrink-0">50 ĐỀ</span>
           </div>
-          <!-- Store Link Directly to binhluu.ai.studio -->
-          <div class="flex items-center gap-2">
-            <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 hover:text-white bg-cyan-950/90 hover:bg-cyan-900 px-2 py-0.5 rounded-md border border-cyan-700/70 transition-colors shadow-sm">
-              <i data-lucide="shopping-bag" class="w-3 h-3 text-cyan-400"></i> Cửa Hàng (binhluu.ai.studio)
-              <i data-lucide="external-link" class="w-2.5 h-2.5 text-cyan-400"></i>
+          <!-- Store Link -->
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-cyan-300 hover:text-white bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-700/80 transition-colors shrink-0">
+              <i data-lucide="shopping-bag" class="w-2.5 h-2.5 text-cyan-400"></i> binhluu.ai.studio
             </a>
-            <span class="text-[11px] text-slate-400 hidden sm:inline">• Luyện Thi Vượt Ải B1</span>
           </div>
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-        <button onclick="app.showTab('roadmap')" id="nav-roadmap" class="nav-tab-btn active-tab px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5">
-          <i data-lucide="map" class="w-4 h-4"></i> Lộ Trình
-        </button>
-        <button onclick="app.showTab('history')" id="nav-history" class="nav-tab-btn px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5">
-          <i data-lucide="history" class="w-4 h-4"></i> Lịch Sử
-        </button>
-      </nav>
-
-      <!-- User Stats, Subscription Widget & Auth State -->
-      <div class="flex items-center gap-2">
+      <!-- Navigation & Auth (Mobile Optimized) -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <!-- Sound Effect Toggle -->
         <button onclick="app.toggleSoundEffects()" id="btn-sound-toggle" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 transition-colors" title="Bật/Tắt âm thanh">
           <i data-lucide="volume-2" id="icon-sound" class="w-4 h-4"></i>
         </button>
 
-        <!-- Subscription Remaining Days Badge -->
-        <div id="badge-subscription-status" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/80 border border-indigo-700 text-cyan-300 text-xs font-bold shadow-sm" title="Hạn sử dụng tài khoản">
+        <!-- Subscription Remaining Days Badge (Hidden on very small screens, visible on md+) -->
+        <div id="badge-subscription-status" class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/80 border border-indigo-700 text-cyan-300 text-xs font-bold shadow-sm">
           <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
           <span id="stat-subscription-days">Chưa Đăng Nhập</span>
         </div>
@@ -87,68 +75,68 @@
   </header>
 
   <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6">
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
 
     <!-- ========================================================================= -->
     <!-- VIEW 1: ROADMAP & 50 EXAM CARDS -->
     <!-- ========================================================================= -->
-    <section id="view-roadmap" class="space-y-6">
+    <section id="view-roadmap" class="space-y-5 sm:space-y-6">
       <!-- High Contrast Hero Banner -->
-      <div class="rounded-3xl bg-slate-900 border border-indigo-700/60 p-5 sm:p-8 shadow-xl space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-700 text-xs font-bold">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-cyan-400"></i> Quy Tắc Vượt Ải Đạt ≥ 50% Điểm
+      <div class="rounded-3xl bg-slate-900 border border-indigo-700/60 p-4 sm:p-7 shadow-xl space-y-3 sm:space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-700 text-[11px] sm:text-xs font-bold">
+            <i data-lucide="shield-check" class="w-3 h-3 text-cyan-400"></i> Vượt Ải Đạt ≥ 50% Điểm
           </span>
-          <span id="hero-user-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-xs font-bold">
-            <i data-lucide="user-x" class="w-3.5 h-3.5 text-slate-400"></i> Vui lòng đăng nhập để bắt đầu
+          <span id="hero-user-badge" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-[11px] sm:text-xs font-bold">
+            <i data-lucide="user-x" class="w-3 h-3 text-slate-400"></i> Vui lòng đăng nhập để bắt đầu
           </span>
         </div>
         
-        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
+        <h1 class="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
           Lộ Trình 50 Bộ Đề Thi Tiếng Anh B1
         </h1>
-        <p class="text-slate-200 text-sm sm:text-base leading-relaxed font-normal max-w-3xl">
-          Đề thi trọn vẹn gồm 3 phần thi chính: <strong class="text-indigo-300 font-semibold">Nghe (Listening)</strong>, <strong class="text-cyan-300 font-semibold">Đọc (Reading)</strong> và <strong class="text-amber-300 font-semibold">Viết (Writing)</strong>. Bạn cần đạt tối thiểu <strong>50% điểm số</strong> của đề hiện tại để mở khóa đề tiếp theo!
+        <p class="text-slate-200 text-xs sm:text-sm leading-relaxed font-normal max-w-3xl">
+          Đề thi 3 phần chuẩn: <strong class="text-indigo-300 font-semibold">Nghe (35đ)</strong>, <strong class="text-cyan-300 font-semibold">Đọc (35đ)</strong> và <strong class="text-amber-300 font-semibold">Viết (30đ)</strong>. Tự động xáo trộn câu hỏi ngẫu nhiên mỗi lần làm bài. Cần đạt tối thiểu <strong>50%</strong> để mở khóa đề kế tiếp!
         </p>
 
         <!-- Progress Stats Card -->
-        <div class="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-          <div class="sm:col-span-2 space-y-2">
-            <div class="flex justify-between text-xs sm:text-sm font-bold">
+        <div class="pt-3 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+          <div class="sm:col-span-2 space-y-1.5">
+            <div class="flex justify-between text-xs font-bold">
               <span class="text-slate-300">Tiến Độ Vượt 50 Đề:</span>
               <span id="roadmap-progress-text" class="text-cyan-300 font-extrabold">0 / 50 Đề (0%)</span>
             </div>
-            <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
+            <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800">
               <div id="roadmap-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
             </div>
           </div>
           
           <div class="flex items-center justify-start sm:justify-end">
             <span id="roadmap-status-badge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 text-slate-400 border border-slate-800 text-xs font-bold">
-              <i data-lucide="lock" class="w-4 h-4"></i> Đăng Nhập Để Làm Bài
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i> Đăng Nhập Để Làm Bài
             </span>
           </div>
         </div>
       </div>
 
       <!-- Level Filter Pills -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <button onclick="app.filterLevel('all')" id="btn-filter-all" class="level-pill active-level px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold">
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button onclick="app.filterLevel('all')" id="btn-filter-all" class="level-pill active-level px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold">
           Tất Cả 50 Đề
         </button>
-        <button onclick="app.filterLevel(1)" id="btn-filter-1" class="level-pill px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Đề 01 - 15 (Cơ Bản)
+        <button onclick="app.filterLevel(1)" id="btn-filter-1" class="level-pill px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Đề 01 - 15 (Cơ Bản)
         </button>
-        <button onclick="app.filterLevel(2)" id="btn-filter-2" class="level-pill px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Đề 16 - 35 (Trung Cấp)
+        <button onclick="app.filterLevel(2)" id="btn-filter-2" class="level-pill px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span> Đề 16 - 35 (Trung Cấp)
         </button>
-        <button onclick="app.filterLevel(3)" id="btn-filter-3" class="level-pill px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
-          <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Đề 36 - 50 (Nâng Cao)
+        <button onclick="app.filterLevel(3)" id="btn-filter-3" class="level-pill px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-rose-400"></span> Đề 36 - 50 (Nâng Cao)
         </button>
       </div>
 
       <!-- 50 Exam Cards Grid -->
-      <div id="exams-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div id="exams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         <!-- Rendered dynamically by app.js -->
       </div>
     </section>
@@ -156,36 +144,36 @@
     <!-- ========================================================================= -->
     <!-- VIEW 2: EXAM ROOM (DẠNG ĐỀ THI TRỌN VẸN 3 PHẦN: NGHE • ĐỌC • VIẾT) -->
     <!-- ========================================================================= -->
-    <section id="view-exam" class="hidden space-y-5">
+    <section id="view-exam" class="hidden space-y-4 sm:space-y-5">
       <!-- Sticky Exam Header With Timer & Submit -->
-      <div class="sticky top-20 z-30 bg-slate-900 border border-indigo-700/80 p-3.5 sm:p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-          <button onclick="app.exitExamRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white" title="Thoát phòng thi">
+      <div class="sticky top-14 sm:top-20 z-30 bg-slate-900/95 backdrop-blur-md border border-indigo-700/80 p-3 sm:p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2">
+          <button onclick="app.exitExamRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white shrink-0" title="Thoát phòng thi">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
           </button>
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 id="exam-room-title" class="font-bold text-base sm:text-lg text-white">Đề Thi B1 Số 01</h2>
-              <span id="exam-room-level-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">Nghe • Đọc • Viết</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h2 id="exam-room-title" class="font-bold text-sm sm:text-base text-white truncate">Đề Thi B1 Số 01</h2>
+              <span id="exam-room-level-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700 shrink-0">Nghe • Đọc • Viết</span>
             </div>
-            <p class="text-[11px] text-slate-300 font-medium">Làm bài liền mạch từ Phần 1 đến Phần 3</p>
+            <p class="text-[10px] sm:text-xs text-slate-300 font-medium">Làm bài liền mạch từ Phần 1 đến Phần 3</p>
           </div>
         </div>
 
         <!-- Timer & Submit Action -->
         <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono font-bold text-xs sm:text-sm">
-            <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-amber-300 font-mono font-bold text-xs sm:text-sm">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400"></i>
             <span id="exam-countdown">89:45</span>
           </div>
-          <button onclick="app.submitCurrentExam()" class="px-4 sm:px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all">
-            <i data-lucide="send" class="w-4 h-4"></i> Nộp Toàn Bộ Bài Thi
+          <button onclick="app.submitCurrentExam()" class="px-3.5 sm:px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-1.5 transition-all">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i> Nộp Toàn Bộ Bài Thi
           </button>
         </div>
       </div>
 
       <!-- Single Continuous Exam Sheet Container (Listening -> Reading -> Writing) -->
-      <div id="exam-continuous-sheet" class="space-y-8">
+      <div id="exam-continuous-sheet" class="space-y-6 sm:space-y-8">
         <!-- Rendered dynamically by app.js -->
       </div>
     </section>
@@ -193,47 +181,47 @@
     <!-- ========================================================================= -->
     <!-- VIEW 3: SCORECARD & DETAILED REVIEW -->
     <!-- ========================================================================= -->
-    <section id="view-result" class="hidden space-y-6">
-      <div id="result-scorecard-card" class="rounded-3xl p-6 sm:p-8 border shadow-xl text-center space-y-5">
+    <section id="view-result" class="hidden space-y-5 sm:space-y-6">
+      <div id="result-scorecard-card" class="rounded-3xl p-5 sm:p-8 border shadow-xl text-center space-y-4 sm:space-y-5">
         <div class="space-y-2">
-          <div id="result-status-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl shadow-xl">
+          <div id="result-status-icon" class="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full flex items-center justify-center text-3xl shadow-xl">
             🎉
           </div>
-          <h2 id="result-status-title" class="font-extrabold text-2xl sm:text-3xl text-white">
+          <h2 id="result-status-title" class="font-extrabold text-xl sm:text-3xl text-white">
             CHÚC MỪNG BẠN ĐÃ VƯỢT ẢI THÀNH CÔNG!
           </h2>
-          <p id="result-status-sub" class="text-slate-200 max-w-xl mx-auto text-sm sm:text-base leading-relaxed font-normal">
+          <p id="result-status-sub" class="text-slate-200 max-w-xl mx-auto text-xs sm:text-base leading-relaxed font-normal">
             Bạn đã xuất sắc vượt qua ngưỡng 50%. Bộ đề tiếp theo đã được mở khóa!
           </p>
         </div>
 
         <!-- Score Breakdown Grid (Listening, Reading, Writing) -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 max-w-4xl mx-auto">
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
             <div class="text-xs text-slate-300 font-bold">Tổng Điểm</div>
-            <div id="res-total-score" class="text-xl sm:text-2xl font-black text-white mt-0.5">85 / 100</div>
+            <div id="res-total-score" class="text-lg sm:text-2xl font-black text-white mt-0.5">85 / 100</div>
             <div id="res-percentage" class="text-xs font-black text-emerald-400">85% (ĐẠT)</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">🎧 Listening (35đ)</div>
-            <div id="res-listening-score" class="text-lg sm:text-xl font-bold text-indigo-300 mt-0.5">30 / 35</div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-300 font-bold">🎧 Nghe (35đ)</div>
+            <div id="res-listening-score" class="text-base sm:text-xl font-bold text-indigo-300 mt-0.5">30 / 35</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">📖 Reading (35đ)</div>
-            <div id="res-reading-score" class="text-lg sm:text-xl font-bold text-cyan-300 mt-0.5">28 / 35</div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-300 font-bold">📖 Đọc (35đ)</div>
+            <div id="res-reading-score" class="text-base sm:text-xl font-bold text-cyan-300 mt-0.5">28 / 35</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-            <div class="text-xs text-slate-300 font-bold">✍️ Writing (30đ)</div>
-            <div id="res-writing-score" class="text-lg sm:text-xl font-bold text-amber-300 mt-0.5">27 / 30</div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-xs text-slate-300 font-bold">✍️ Viết (30đ)</div>
+            <div id="res-writing-score" class="text-base sm:text-xl font-bold text-amber-300 mt-0.5">27 / 30</div>
           </div>
         </div>
 
         <!-- Action Buttons -->
-        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <button onclick="app.retakeCurrentExam()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm border border-slate-700 flex items-center justify-center gap-2">
+        <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+          <button onclick="app.retakeCurrentExam()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm border border-slate-700 flex items-center justify-center gap-2">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Làm Lại Đề Này
           </button>
-          <button onclick="app.showNextExamOrRoadmap()" id="btn-next-exam" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2">
+          <button onclick="app.showNextExamOrRoadmap()" id="btn-next-exam" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2">
             Làm Bộ Đề Tiếp Theo <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
@@ -241,11 +229,9 @@
 
       <!-- Detailed Question by Question Error Review -->
       <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-            <i data-lucide="check-check" class="w-5 h-5 text-cyan-400"></i> Phân Tích Lỗi Sai Chi Tiết
-          </h3>
-        </div>
+        <h3 class="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="check-check" class="w-5 h-5 text-cyan-400"></i> Phân Tích Lỗi Sai Chi Tiết
+        </h3>
         <div id="review-questions-list" class="space-y-4">
           <!-- Rendered by app.js -->
         </div>
@@ -255,12 +241,10 @@
     <!-- ========================================================================= -->
     <!-- VIEW 4: HISTORY -->
     <!-- ========================================================================= -->
-    <section id="view-history" class="hidden space-y-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-white">Lịch Sử Làm Bài & Tiến Độ</h2>
-          <p class="text-xs text-slate-300 font-medium">Toàn bộ điểm số các lần thi được lưu trữ tự động</p>
-        </div>
+    <section id="view-history" class="hidden space-y-4 sm:space-y-5">
+      <div>
+        <h2 class="text-lg sm:text-2xl font-bold text-white">Lịch Sử Làm Bài & Tiến Độ</h2>
+        <p class="text-xs text-slate-300 font-medium">Toàn bộ điểm số các lần thi được lưu trữ tự động</p>
       </div>
       <div id="history-list" class="space-y-3">
         <!-- Rendered by app.js -->
@@ -270,40 +254,47 @@
   </main>
 
   <!-- ========================================================================= -->
-  <!-- MODAL: LOGIN DUY NHẤT DÀNH CHO HỌC VIÊN -->
+  <!-- MODAL: LOGIN DUY NHẤT DÀNH CHO HỌC VIÊN (MOBILE OPTIMIZED) -->
   <!-- ========================================================================= -->
-  <div id="modal-login" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-indigo-700/80 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-5 shadow-2xl relative">
+  <div id="modal-login" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-900 border-2 border-indigo-700/80 rounded-3xl max-w-md w-full p-5 sm:p-7 space-y-4 shadow-2xl relative my-auto">
       <button onclick="app.closeLoginModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <div class="text-center space-y-1.5">
-        <div class="w-12 h-12 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md">
-          <i data-lucide="key-round" class="w-6 h-6 text-indigo-400"></i>
+      <div class="text-center space-y-1">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md">
+          <i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i>
         </div>
-        <h3 class="font-bold text-xl text-white">Đăng Nhập Tài Khoản Học Viên</h3>
-        <p class="text-xs text-slate-300 font-medium">Nhập thông tin tài khoản được Admin cấp để vào học</p>
+        <h3 class="font-bold text-lg sm:text-xl text-white">Đăng Nhập Tài Khoản Học Viên</h3>
+        <p class="text-xs text-slate-300 font-medium">Nhập thông tin do Admin cấp để vào làm bài</p>
       </div>
 
-      <!-- Login Form -->
-      <form onsubmit="app.handleLogin(event)" class="space-y-4 pt-1">
+      <!-- Inline Error Box -->
+      <div id="login-error-msg" class="hidden p-3 rounded-xl bg-rose-950/90 border border-rose-700 text-rose-200 text-xs font-medium space-y-1">
+        <!-- Error text rendered dynamically -->
+      </div>
+
+      <!-- Login Form (Mobile Anti-Capitalization & Touch Ready) -->
+      <form onsubmit="app.handleLogin(event)" class="space-y-3.5 pt-1">
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-300">Tên Đăng Nhập hoặc Email:</label>
-          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập hoặc email..." required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+          <input type="text" id="login-username" placeholder="Nhập tên đăng nhập..." autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium focus:outline-none focus:border-indigo-500">
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-300">Mật Khẩu:</label>
-          <input type="password" id="login-password" placeholder="Nhập mật khẩu..." required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+          <input type="password" id="login-password" placeholder="Nhập mật khẩu..." autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password" required class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium focus:outline-none focus:border-indigo-500">
         </div>
-        <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all">
+        <button type="submit" id="btn-submit-login" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
           <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Vào Học
         </button>
       </form>
 
-      <!-- Store Contact Notice -->
-      <div class="pt-3 border-t border-slate-800 text-center space-y-2">
-        <p class="text-xs text-slate-300 font-medium">Chưa có tài khoản học viên?</p>
+      <!-- Admin Portal Shortcut & Store Link -->
+      <div class="pt-3 border-t border-slate-800 space-y-2 text-center">
+        <a href="/admin.html" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-indigo-400"></i> Cổng Quản Trị Cấp Tài Khoản (Admin)
+        </a>
         <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
           <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mua Bản Quyền Tại binhluu.ai.studio
         </a>
@@ -312,8 +303,8 @@
   </div>
 
   <!-- FOOTER -->
-  <footer class="mt-auto border-t border-slate-800 bg-slate-950 py-5 text-center text-xs text-slate-400">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+  <footer class="mt-auto border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <p>TIẾNG ANH LÀ GÌ TÔI KO QUEN • 50 Bộ đề luyện thi B1 vượt ải</p>
       <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="text-[11px] text-cyan-400 hover:text-white font-bold flex items-center gap-1">
         <i data-lucide="shopping-cart" class="w-3 h-3"></i> Cửa hàng: binhluu.ai.studio
