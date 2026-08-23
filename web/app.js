@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.4.4',
+  APP_VERSION: 'v2.4.5',
 
   // -------------------------------------------------------------
   // INITIALIZATION
