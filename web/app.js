@@ -870,12 +870,16 @@ const app = {
       else if (level === 2) size = 22;
       else size = 19;
     }
-    const height = Math.round(size * 1.2);
+    const height = Math.round(size * 1.25);
+    const webpSrc = `public/flames/flame_lv${level}.webp`;
     const gifSrc = `public/flames/flame_lv${level}.gif`;
 
     return `
       <span class="flame-gif-wrapper flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <img src="${gifSrc}" alt="Flame Lv${level}" class="flame-gif-img" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+        <picture>
+          <source srcset="${webpSrc}" type="image/webp">
+          <img src="${gifSrc}" alt="Flame Lv${level}" class="flame-gif-img" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
+        </picture>
       </span>
     `;
   },
