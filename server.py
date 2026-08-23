@@ -4,6 +4,8 @@ import json
 import mimetypes
 from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 import urllib.parse
+import time
+import random
 from datetime import datetime, timezone, timedelta
 
 if sys.platform == "win32":
@@ -21,6 +23,21 @@ for f in [KEYS_FILE, ACCOUNTS_FILE, ADMIN_KEYS_FILE]:
     if not os.path.exists(f):
         with open(f, "w", encoding="utf-8") as fh:
             json.dump([], fh, ensure_ascii=False, indent=2)
+
+RECENT_EVENTS = []
+
+def record_event(ev_type, ev_data):
+    global RECENT_EVENTS
+    ev = {
+        "id": f"EV-{int(time.time()*1000)}-{random.randint(100,999)}",
+        "type": ev_type,
+        "data": ev_data,
+        "timestamp": int(time.time()*1000)
+    }
+    RECENT_EVENTS.append(ev)
+    if len(RECENT_EVENTS) > 100:
+        RECENT_EVENTS = RECENT_EVENTS[-100:]
+    return ev
 
 def norm_key(k):
     if not k: return ""
@@ -228,12 +245,25 @@ class CleanHandler(BaseHTTPRequestHandler):
                 elif isinstance(body, dict) and "account" in body and isinstance(body["account"], dict):
                     accounts_list = self.read_json_file(ACCOUNTS_FILE)
                     acct = body["account"]
+                    is_new = body.get("isNewRegistration", False)
                     idx = next((i for i, a in enumerate(accounts_list) if isinstance(a, dict) and a.get("accountId") == acct.get("accountId")), -1)
                     if idx >= 0:
                         accounts_list[idx] = acct
                     else:
                         accounts_list.append(acct)
+                        is_new = True
                     self.write_json_file(ACCOUNTS_FILE, accounts_list)
+
+                    if is_new:
+                        record_event("user:new_registered", {
+                            "accountId": acct.get("accountId"),
+                            "name": acct.get("name"),
+                            "email": acct.get("email"),
+                            "tier": acct.get("tier", "free"),
+                            "createdAt": acct.get("createdAt") or datetime.now(timezone.utc).isoformat(),
+                            "lastActiveDate": acct.get("lastActiveDate") or datetime.now(timezone.utc).isoformat()
+                        })
+
                     self.send_json({"success": True, "account": acct})
                 elif isinstance(body, dict) and "accounts" in body and isinstance(body["accounts"], list):
                     valid = [a for a in body["accounts"] if isinstance(a, dict)]
@@ -241,6 +271,18 @@ class CleanHandler(BaseHTTPRequestHandler):
                     self.send_json({"success": True, "count": len(valid)})
                 else:
                     self.send_error(400, "Invalid body")
+            except Exception as e:
+                self.send_error(500, str(e))
+            return
+
+        # /api/events (Client or Admin publishes an event)
+        if path == "/api/events":
+            try:
+                body = json.loads(self.read_body().decode('utf-8'))
+                ev_type = body.get("type", "")
+                ev_data = body.get("data", {})
+                ev = record_event(ev_type, ev_data)
+                self.send_json({"success": True, "event": ev})
             except Exception as e:
                 self.send_error(500, str(e))
             return
@@ -329,6 +371,18 @@ class CleanHandler(BaseHTTPRequestHandler):
                 else: accounts_list.append(acct)
                 self.write_json_file(ACCOUNTS_FILE, accounts_list)
 
+                # Real-Time Event: key:activated
+                record_event("key:activated", {
+                    "key": key_obj.get("key") or raw_key,
+                    "keyId": key_obj.get("key") or key_obj.get("id"),
+                    "accountId": account_id,
+                    "name": student_name,
+                    "email": acct.get("email", ""),
+                    "time": datetime.now(timezone.utc).isoformat(),
+                    "expiresAt": key_obj.get("expiresAt"),
+                    "tier": "premium"
+                })
+
                 self.send_json({"ok": True, "account": acct, "keyInfo": key_obj})
             except Exception as e:
                 self.send_error(500, str(e))
@@ -339,6 +393,19 @@ class CleanHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+
+        # /api/events (Real-time Socket/Poll events stream for Admin Dashboard)
+        if path == "/api/events":
+            try:
+                qs = parsed.query
+                since_val = 0
+                if "since=" in qs:
+                    since_val = int(urllib.parse.parse_qs(qs).get("since", [0])[0])
+                new_events = [e for e in RECENT_EVENTS if e.get("timestamp", 0) > since_val]
+                self.send_json({"events": new_events, "serverTime": int(time.time()*1000)})
+            except Exception as e:
+                self.send_json({"events": [], "serverTime": int(time.time()*1000)})
+            return
 
         if path == "/api/keys":
             try:

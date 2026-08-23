@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.3.5',
+  APP_VERSION: 'v2.4.0',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,8 +476,8 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.5',
-          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với giao diện đăng nhập tinh gọn theo Email/Tên, xóa tài khoản vĩnh viễn và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.4.0',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với kiến trúc Real-Time Events (Tự động cập nhật Đăng Ký & Nâng Cấp Key tức thì giữa Client & Admin).<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
           btnText: 'Đăng Nhập Lại Ngay',
@@ -1766,7 +1766,7 @@ const app = {
     };
 
     try {
-      await this.pushAccountToCloud(account);
+      await this.pushAccountToCloud(account, true);
       this.loginWithAccount(account);
       this.closeLoginModal();
       this.playSound('pass');
@@ -2034,13 +2034,13 @@ const app = {
     return accountsList;
   },
 
-  pushAccountToCloud: async function(account) {
+  pushAccountToCloud: async function(account, isNewRegistration = false) {
     if (!account) return;
     try {
       await fetch('/api/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account })
+        body: JSON.stringify({ account, isNewRegistration })
       });
     } catch (e) {}
 
