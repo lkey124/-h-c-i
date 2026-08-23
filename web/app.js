@@ -865,91 +865,131 @@ const app = {
     let size = customSize;
     if (!size) {
       if (level === 5) size = 30;
-      else if (level === 4) size = 26;
-      else if (level === 3) size = 24;
-      else if (level === 2) size = 21;
-      else size = 18;
+      else if (level === 4) size = 27;
+      else if (level === 3) size = 25;
+      else if (level === 2) size = 22;
+      else size = 19;
     }
-    const height = Math.round(size * 1.25);
-    const showSparks = level >= 2;
+    const height = Math.round(size * 1.15);
 
     return `
       <span class="flame-vector-wrapper flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <svg viewBox="0 0 100 125" class="flame-anim-sway anime-flame-svg" style="width: 100%; height: 100%; overflow: visible;">
+        <svg viewBox="0 0 100 115" class="flame-anim-sway" style="width: 100%; height: 100%; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="vector-outer-1" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#b45309"/>
-              <stop offset="55%" stop-color="#f59e0b"/>
-              <stop offset="100%" stop-color="#fef08a"/>
-            </linearGradient>
-            <linearGradient id="vector-inner-1" x1="0" y1="1" x2="0" y2="0">
+            <!-- Level 1: Warm Amber / Gold (Week 1: 1-7 Days) -->
+            <linearGradient id="snap-grad-1" x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%" stop-color="#f59e0b"/>
-              <stop offset="60%" stop-color="#fde047"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-
-            <linearGradient id="vector-outer-2" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#c2410c"/>
-              <stop offset="50%" stop-color="#f97316"/>
+              <stop offset="40%" stop-color="#fbbf24"/>
+              <stop offset="85%" stop-color="#fde047"/>
               <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="vector-inner-2" x1="0" y1="1" x2="0" y2="0">
+            <radialGradient id="snap-core-1" cx="50%" cy="85%" r="55%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="45%" stop-color="#fef08a" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+            </radialGradient>
+
+            <!-- Level 2: Fiery Radiant Orange (Week 2: 8-14 Days) -->
+            <linearGradient id="snap-grad-2" x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%" stop-color="#ea580c"/>
-              <stop offset="60%" stop-color="#fbbf24"/>
-              <stop offset="100%" stop-color="#ffffff"/>
+              <stop offset="35%" stop-color="#f97316"/>
+              <stop offset="80%" stop-color="#fb923c"/>
+              <stop offset="100%" stop-color="#fed7aa"/>
             </linearGradient>
+            <radialGradient id="snap-core-2" cx="50%" cy="85%" r="55%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="45%" stop-color="#ffedd5" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#ea580c" stop-opacity="0"/>
+            </radialGradient>
 
-            <linearGradient id="vector-outer-3" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#9f1239"/>
-              <stop offset="45%" stop-color="#e11d48"/>
+            <!-- Level 3: Ruby Red Inferno (Week 3: 15-21 Days) -->
+            <linearGradient id="snap-grad-3" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0%" stop-color="#be123c"/>
+              <stop offset="35%" stop-color="#e11d48"/>
               <stop offset="75%" stop-color="#ff2a5f"/>
-              <stop offset="100%" stop-color="#ffe4e6"/>
+              <stop offset="100%" stop-color="#fda4af"/>
             </linearGradient>
-            <linearGradient id="vector-inner-3" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#e11d48"/>
-              <stop offset="60%" stop-color="#fb7185"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
+            <radialGradient id="snap-core-3" cx="50%" cy="85%" r="55%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="40%" stop-color="#ffe4e6" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#be123c" stop-opacity="0"/>
+            </radialGradient>
 
-            <linearGradient id="vector-outer-4" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#4c1d95"/>
-              <stop offset="45%" stop-color="#7c3aed"/>
-              <stop offset="80%" stop-color="#c084fc"/>
-              <stop offset="100%" stop-color="#f5d0fe"/>
+            <!-- Level 4: Electric Blue / Cyan Plasma (Exact Image Match!) (Week 4: 22-28 Days) -->
+            <linearGradient id="snap-grad-4" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0%" stop-color="#0284c7"/>
+              <stop offset="30%" stop-color="#0ea5e9"/>
+              <stop offset="70%" stop-color="#38bdf8"/>
+              <stop offset="100%" stop-color="#7dd3fc"/>
             </linearGradient>
-            <linearGradient id="vector-inner-4" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#7c3aed"/>
-              <stop offset="60%" stop-color="#d8b4fe"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
+            <radialGradient id="snap-core-4" cx="50%" cy="85%" r="55%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="40%" stop-color="#e0f2fe" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+            </radialGradient>
 
-            <linearGradient id="vector-outer-5" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#854d0e"/>
-              <stop offset="45%" stop-color="#eab308"/>
-              <stop offset="80%" stop-color="#fde047"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-            <linearGradient id="vector-inner-5" x1="0" y1="1" x2="0" y2="0">
+            <!-- Level 5: Sacred Solar Gold Crown (Week 5+: >=29 Days) -->
+            <linearGradient id="snap-grad-5" x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%" stop-color="#ca8a04"/>
-              <stop offset="60%" stop-color="#fef08a"/>
-              <stop offset="100%" stop-color="#ffffff"/>
+              <stop offset="35%" stop-color="#eab308"/>
+              <stop offset="75%" stop-color="#facc15"/>
+              <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
+            <radialGradient id="snap-core-5" cx="50%" cy="85%" r="55%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+              <stop offset="45%" stop-color="#fef9c3" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#ca8a04" stop-opacity="0"/>
+            </radialGradient>
           </defs>
 
-          <!-- Outer Flame Body (Teardrop Organic Bezier Curve) -->
-          <path class="anime-flame-outer" fill="url(#vector-outer-${level})" d="M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z"/>
+          <!-- 1. Main Multi-Tongued Flame Silhouette (Exact Snapchat/TikTok Shape) -->
+          <path fill="url(#snap-grad-${level})" d="
+            M50,8
+            C48,15 44,22 41,26
+            C37,22 34,16 35,11
+            C28,19 26,30 29,40
+            C25,38 21,34 20,29
+            C16,36 15,45 18,54
+            C14,53 10,48 10,42
+            C7,52 9,64 16,73
+            C24,84 36,92 50,92
+            C64,92 76,84 84,73
+            C91,64 93,52 90,42
+            C90,48 86,53 82,54
+            C85,45 84,36 80,29
+            C79,34 75,38 71,40
+            C74,30 72,19 65,11
+            C66,16 63,22 59,26
+            C56,22 52,15 50,8 Z
+          " />
 
-          <!-- Secondary Outer Curve Cut (for 3D stylized look) -->
-          <path class="anime-flame-inner" fill="url(#vector-inner-${level})" opacity="0.92" d="M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z"/>
+          <!-- 2. Inner Glow Multi-Tongue Body Layer -->
+          <path fill="url(#snap-grad-${level})" opacity="0.88" d="
+            M50,22
+            C48,27 45,33 42,36
+            C39,33 37,28 38,24
+            C33,30 31,38 34,46
+            C30,44 27,41 26,37
+            C23,43 23,50 25,57
+            C22,56 19,52 19,47
+            C17,55 19,65 24,72
+            C31,80 40,86 50,86
+            C60,86 69,80 76,72
+            C81,65 83,55 81,47
+            C81,52 78,56 75,57
+            C77,50 77,43 74,37
+            C73,41 70,44 66,46
+            C69,38 67,30 62,24
+            C63,28 61,33 58,36
+            C55,33 52,27 50,22 Z
+          " />
 
-          <!-- Bright Core Pulse Flame -->
-          <path class="anime-flame-core flame-core-pulse" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
+          <!-- 3. Superheated White-Hot Center Glow (Exact as Sample Image) -->
+          <ellipse cx="50" cy="74" rx="22" ry="16" fill="url(#snap-core-${level})" class="flame-core-pulse" />
+
+          <!-- 4. Floating Ember Tip at Top Right (Exact as Sample Image) -->
+          <path fill="url(#snap-grad-${level})" d="M72,13 C70,17 71,21 73,23 C75,21 76,17 74,13 C73,11 73,11 72,13 Z" />
         </svg>
-
-        ${showSparks ? `
-          <span class="flame-spark-dot spark-dot-1"></span>
-          <span class="flame-spark-dot spark-dot-2"></span>
-        ` : ''}
       </span>
     `;
   },
@@ -1052,7 +1092,7 @@ const app = {
         level: 4,
         title: 'Bậc Thầy (Tuần 4)',
         textClass: 'streak-text-lv4',
-        heroClass: 'text-purple-400 font-extrabold'
+        heroClass: 'text-cyan-400 font-extrabold'
       };
     }
     if (days >= 15) {
