@@ -466,7 +466,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.5.2',
+  APP_VERSION: 'v2.5.3',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -2781,6 +2781,59 @@ const app = {
     this.renderReviewDetails();
   },
 
+  speakText: function(text) {
+    if (!window.speechSynthesis) {
+      this.showToast('Trình duyệt không hỗ trợ phát âm giọng đọc.');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/[\n\r]+/g, ' ');
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    window.speechSynthesis.speak(utterance);
+    this.showToast('🔊 Đang phát âm bài văn mẫu chuẩn tiếng Anh...');
+  },
+
+  copyTextToClipboard: function(text) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast('✅ Đã sao chép khung bài mẫu vào bộ nhớ tạm!');
+      }).catch(() => {
+        this.showToast('Đã sao chép!');
+      });
+    } else {
+      this.showToast('✅ Đã sao chép khung bài mẫu!');
+    }
+  },
+
+  getCheatCodeForPattern: function(q) {
+    const pat = (q.grammar_pattern || '').toLowerCase();
+    const orig = (q.original || '').toLowerCase();
+    const target = (q.target_word || '').toUpperCase();
+
+    if (pat.includes('unless') || target === 'IF' || orig.includes('unless')) {
+      return 'Unless + Khẳng định ⚡ Đổi thành ⚡ If + Phủ định (Nếu không...)';
+    }
+    if (pat.includes('too') || target === 'SO' || orig.includes('too')) {
+      return 'Too + Tính từ + to V ⚡ Đổi thành ⚡ So + Tính từ + that + S + cannot V (Quá đến mức không thể...)';
+    }
+    if (pat.includes('time') || target === 'LAST' || target === 'TIME' || orig.includes('haven\'t') || orig.includes('for three years')) {
+      return 'Haven\'t + V3 + for [thời gian] ⚡ Đổi thành ⚡ The last time I [V-quá khứ] was [thời gian] ago';
+    }
+    if (pat.includes('prefer') || target === 'LIKE' || orig.includes('prefer')) {
+      return 'Prefer A to B ⚡ Đổi thành ⚡ Like A more than B (Thích cái này hơn cái kia)';
+    }
+    if (pat.includes('spend') || target === 'TAKES' || target === 'TOOK' || orig.includes('spend')) {
+      return 'Spend [thời gian] V-ing ⚡ Đổi thành ⚡ It takes/took [thời gian] to V (Mất bao lâu để làm...)';
+    }
+    if (pat.includes('although') || target === 'DESPITE' || target === 'IN SPITE OF') {
+      return 'Although + Mệnh đề (S + V) ⚡ Đổi thành ⚡ Despite / In spite of + V-ing / Cụm danh từ';
+    }
+    return `${q.grammar_pattern || 'Chuyển đổi cấu trúc câu tương đương nghĩa chuẩn B1'}`;
+  },
+
   renderReviewDetails: function() {
     const container = document.getElementById('review-questions-list');
     if (!container || !this.data.currentExam || !this.data.currentExam.flatQuestions) return;
@@ -2796,6 +2849,7 @@ const app = {
       if (isWritingP2) {
         const sampleEnglish = q.sample_answer || `Dear Alex,\n\nThanks for your email! I'm really excited about our trip next weekend. I think we should go by train because it's fast and comfortable. Don't forget to bring your camera and some warm clothes because it might get cold in the evening.\n\nSee you soon,\nSam`;
         const sampleVietnamese = q.sample_answer_vi || `Chào Alex,\n\nCảm ơn bạn đã gửi email! Mình rất háo hức về chuyến đi cuối tuần tới. Mình nghĩ chúng ta nên đi bằng tàu hỏa vì nó nhanh và thoải mái. Đừng quên mang theo máy ảnh và một số áo ấm vì buổi tối trời có thể trở lạnh nhé.\n\nHẹn sớm gặp lại bạn,\nSam`;
+        const templateFormula = `Dear [Tên bạn],\n\nThanks a lot for your email! I am writing to tell you about [Chủ đề bài thi]. I think we should [Đề xuất của bạn] because [Lý do thích hợp]. Don't forget to [Lời nhắc nhở: mang đồ / chuẩn bị]!\n\nWrite back soon and tell me what you think.\nBest regards,\n[Tên của bạn]`;
 
         const el = document.createElement('div');
         el.className = 'p-4 sm:p-6 rounded-3xl border-2 bg-indigo-950/30 border-indigo-700/80 space-y-4 shadow-lg';
@@ -2824,17 +2878,22 @@ const app = {
               <span class="text-amber-300 font-bold flex items-center gap-1.5 text-xs sm:text-sm">
                 <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> BÀI VĂN MẪU THAM KHẢO CHUẨN B1 (Band 8+ Model Answer)
               </span>
-              <span class="text-[10px] text-emerald-300 font-bold px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700">
-                ✨ Chia 2 Bản Song Ngữ
-              </span>
+              <div class="flex items-center gap-2">
+                <button onclick="app.speakText(\`${sampleEnglish.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] sm:text-xs flex items-center gap-1 shadow transition-all cursor-pointer">
+                  <i data-lucide="volume-2" class="w-3 h-3"></i> 🔊 Nghe Đọc Bài Mẫu
+                </button>
+                <span class="text-[10px] text-emerald-300 font-bold px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700">
+                  ✨ Song Ngữ
+                </span>
+              </div>
             </div>
 
             <!-- 2 Columns: 1 English + 1 Vietnamese Translation -->
             <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800 text-xs sm:text-sm">
               <!-- Bản 1: Tiếng Anh -->
               <div class="p-4 space-y-2 bg-slate-950/70">
-                <div class="flex items-center gap-1.5 text-cyan-300 font-extrabold text-xs">
-                  <span>🇬🇧</span> BẢN 1: TIẾNG ANH CHUẨN (ENGLISH):
+                <div class="flex items-center justify-between text-cyan-300 font-extrabold text-xs">
+                  <span class="flex items-center gap-1.5"><span>🇬🇧</span> BẢN 1: TIẾNG ANH CHUẨN (ENGLISH):</span>
                 </div>
                 <div class="text-white leading-relaxed whitespace-pre-wrap font-medium p-3 rounded-xl bg-slate-900 border border-slate-800">
                   ${sampleEnglish}
@@ -2843,12 +2902,27 @@ const app = {
 
               <!-- Bản 2: Dịch Tiếng Việt -->
               <div class="p-4 space-y-2 bg-slate-950/50">
-                <div class="flex items-center gap-1.5 text-emerald-400 font-extrabold text-xs">
-                  <span>🇻🇳</span> BẢN 2: DỊCH NGHĨA TIẾNG VIỆT (TRANSLATION):
+                <div class="flex items-center justify-between text-emerald-400 font-extrabold text-xs">
+                  <span class="flex items-center gap-1.5"><span>🇻🇳</span> BẢN 2: DỊCH NGHĨA TIẾNG VIỆT (TRANSLATION):</span>
                 </div>
                 <div class="text-slate-200 leading-relaxed whitespace-pre-wrap font-normal p-3 rounded-xl bg-slate-900 border border-slate-800">
                   ${sampleVietnamese}
                 </div>
+              </div>
+            </div>
+
+            <!-- BỘ KHUNG MẪU ĐIỀN TỪ ĂN ĐIỂM (PLUG & PLAY TEMPLATE) -->
+            <div class="p-3.5 bg-gradient-to-r from-purple-950/70 via-slate-950 to-indigo-950/70 border-t border-indigo-700/80 text-xs space-y-2">
+              <div class="text-yellow-300 font-black flex items-center justify-between flex-wrap gap-1">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="layout-template" class="w-4 h-4 text-yellow-400"></i> KHUNG MẪU "ĐIỀN TỪ ĂN ĐIỂM" (Dùng cho mọi đề thi tương tự):
+                </span>
+                <button onclick="app.copyTextToClipboard(\`${templateFormula.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="px-2 py-0.5 rounded-lg bg-indigo-800 hover:bg-indigo-700 text-[10px] text-white font-bold flex items-center gap-1 transition-all">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Sao Chép Khung
+                </button>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-950/90 border border-purple-500/60 font-mono text-[11px] sm:text-xs text-slate-100 whitespace-pre-wrap leading-relaxed">
+${templateFormula}
               </div>
             </div>
 
@@ -2900,7 +2974,18 @@ const app = {
       // Step-by-step Vietnamese Solving Guide for Part 1 & MCQ
       let solvingGuideHTML = '';
       if (isWritingP1) {
+        const cheatCode = this.getCheatCodeForPattern(q);
         solvingGuideHTML = `
+          <!-- CHEAT CODE 3 SECONDS -->
+          <div class="p-3 rounded-2xl bg-gradient-to-r from-amber-950/90 via-slate-950 to-amber-950/60 border border-amber-500/80 text-xs space-y-1 shadow-md">
+            <div class="text-amber-300 font-black flex items-center gap-1.5 text-xs">
+              ⚡ BÍ KÍP BỎ TÚI (NHỚ NHANH 3 GIÂY):
+            </div>
+            <div class="text-amber-100 font-semibold text-[11px] sm:text-xs leading-relaxed">
+              👉 ${cheatCode}
+            </div>
+          </div>
+
           <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-2 leading-relaxed font-normal">
             <div class="text-cyan-300 font-bold flex items-center gap-1.5">
               <i data-lucide="help-circle" class="w-4 h-4 text-cyan-400"></i> HƯỚNG DẪN CÁCH GIẢI BÀI TẬP (TIẾNG VIỆT):
