@@ -390,30 +390,38 @@
   <!-- ========================================================================= -->
   <!-- MODAL: HƯỚNG DẪN CÀI ĐẶT APP CHO IPHONE / IPAD (IOS SAFARI) -->
   <!-- ========================================================================= -->
-  <div id="modal-ios-install-guide" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-cyan-500/80 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative animate-scale-up text-center">
-      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center mx-auto shadow-md text-2xl text-white font-bold">
+  <div id="modal-ios-install-guide" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-end sm:items-center justify-center p-4 pb-8 sm:pb-4">
+    <div class="bg-slate-900 border-2 border-cyan-500/90 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative animate-scale-up text-center">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center mx-auto shadow-md text-2xl text-white font-bold animate-pulse-glow">
         📱
       </div>
       <div class="space-y-1">
-        <h3 class="font-extrabold text-lg text-white">Cài Đặt App Vào Màn Hình</h3>
-        <p class="text-xs text-slate-300">Thực hiện 2 bước đơn giản trên Safari:</p>
+        <h3 class="font-extrabold text-lg text-white">Cài Đặt App Vào Màn Hình iPhone</h3>
+        <p class="text-xs text-slate-300">Chỉ mất 2 giây để mở app toàn màn hình:</p>
       </div>
       
       <div class="space-y-2.5 text-left text-xs bg-slate-950 p-4 rounded-2xl border border-slate-800">
         <div class="flex items-start gap-2.5">
           <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">1</div>
-          <p class="text-slate-200">Bấm vào biểu tượng <strong>Chia sẻ <span class="text-cyan-300">📤 (Share)</span></strong> ở thanh dưới cùng của trình duyệt Safari.</p>
+          <p class="text-slate-200">Nhìn xuống dưới, bấm vào nút <strong>Chia sẻ <span class="text-cyan-300 font-bold">📤</span></strong> ở thanh công cụ dưới cùng Safari.</p>
         </div>
         <div class="flex items-start gap-2.5">
           <div class="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold shrink-0">2</div>
-          <p class="text-slate-200">Cuộn xuống và chọn <strong>"Thêm vào MH chính" <span class="text-cyan-300">➕ (Add to Home Screen)</span></strong>.</p>
+          <p class="text-slate-200">Cuộn xuống một chút và chọn <strong>"Thêm vào MH chính" <span class="text-cyan-300 font-bold">➕ (Add to Home Screen)</span></strong>.</p>
         </div>
       </div>
 
       <button onclick="app.closeIOSInstallGuide()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/20 transition-all">
         Đã Hiểu, Tôi Sẽ Thêm Ngay
       </button>
+
+      <!-- Animated Pointer Arrow down to Safari bottom bar -->
+      <div class="pt-2 flex flex-col items-center gap-1 text-cyan-400 animate-bounce-down">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Nút Chia Sẻ Ở Ngay Dưới Này</span>
+        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </div>
     </div>
   </div>
 
