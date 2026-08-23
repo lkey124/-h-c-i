@@ -466,7 +466,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.5.3',
+  APP_VERSION: 'v2.5.4',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -496,6 +496,14 @@ const app = {
         this.validateActiveSessionWithServer();
       }
     });
+
+    // Real-time live session sync heartbeat (every 3 seconds)
+    // If admin deletes account or revokes key, immediately kick out on mobile/desktop
+    setInterval(() => {
+      if (this.data.currentUser) {
+        this.validateActiveSessionWithServer();
+      }
+    }, 3000);
   },
 
   renderAnnouncementBanner: function() {
@@ -791,79 +799,6 @@ const app = {
         } catch(e) {}
       }
     }
-
-  },
-
-  validateActiveSessionWithServer: async function() {
-    const user = this.data.currentUser;
-    if (!user) return;
-
-    try {
-      const accounts = await this.fetchAccountsFromCloud();
-      if (!Array.isArray(accounts) || accounts.length === 0) return;
-
-      const liveAcct = accounts.find(a => 
-        (a.accountId && a.accountId === user.accountId) ||
-        (a.email && user.email && a.email.toLowerCase() === user.email.toLowerCase())
-      );
-
-      // If account was permanently deleted by Admin from server:
-      if (!liveAcct) {
-        console.warn('Account was permanently deleted by Admin from server database. Clearing local session.');
-        this.data.currentUser = null;
-        localStorage.removeItem('eduquest_b1_account');
-        localStorage.removeItem('eduquest_b1_logged_user');
-        try {
-          let all = JSON.parse(localStorage.getItem('eduquest_b1_all_accounts') || '[]');
-          all = all.filter(a => a.accountId !== user.accountId && a.email !== user.email);
-          localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(all));
-        } catch(e) {}
-        this.renderRoadmap();
-        this.updateUserStatsDisplay();
-        return;
-      }
-
-      if (liveAcct.status === 'LOCKED' || liveAcct.status === 'BLOCKED') {
-        this.data.currentUser = null;
-        localStorage.removeItem('eduquest_b1_account');
-        localStorage.removeItem('eduquest_b1_logged_user');
-        this.renderRoadmap();
-        this.updateUserStatsDisplay();
-        this.showCustomAlert({
-          title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
-          message: 'Tài khoản của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
-          icon: '🔒',
-          iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
-          btnText: 'Đã Hiểu'
-        });
-        return;
-      }
-
-      // Check if Admin extended or upgraded the account
-      const oldExp = user.keyExpiresAt ? new Date(user.keyExpiresAt).getTime() : 0;
-      const newExp = liveAcct.keyExpiresAt ? new Date(liveAcct.keyExpiresAt).getTime() : 0;
-
-      if (newExp > oldExp) {
-        const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
-        const remaining = this.getRemainingDays(liveAcct.keyExpiresAt);
-        const dynamicPkg = this.getDynamicPackageName(remaining);
-        this.data.currentUser = liveAcct;
-        localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
-        this.renderRoadmap();
-        this.updateUserStatsDisplay();
-
-        this.showCustomAlert({
-          title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
-          message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
-          icon: '🎁',
-          iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-          btnText: 'Tuyệt Vời, Tiếp Tục Học'
-        });
-      } else {
-        this.data.currentUser = liveAcct;
-        localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
-      }
-    } catch(e) {}
   },
 
   loadUserProgressFromStorage: function() {
@@ -2153,13 +2088,20 @@ const app = {
         (a.email && localUser.email && a.email.toLowerCase() === localUser.email.toLowerCase())
       );
 
-      // Case 1: Account was deleted or purged by Admin
+      // Case 1: Account was permanently deleted or purged by Admin from server
       if (!serverAcct || serverAcct.status === 'DELETED') {
-        this.forceLogoutByAdmin('Tài khoản của bạn đã bị Quản Trị Viên xóa hoặc thu hồi khỏi hệ thống!');
+        const userIdentifier = localUser.email || localUser.name || 'này';
+        this.forceLogoutByAdmin(`Tài khoản <strong>${userIdentifier}</strong> của bạn đã bị Quản Trị Viên xóa hoặc thu hồi khỏi hệ thống.<br><br>• Mọi quyền truy cập và dữ liệu phiên làm việc đã bị hủy.<br>• Vui lòng liên hệ Admin tại <a href="https://binhluu.ai.studio/" target="_blank" class="text-cyan-300 font-bold underline">binhluu.ai.studio</a> hoặc đăng ký tài khoản mới để tiếp tục ôn luyện!`);
         return;
       }
 
-      // Case 2: Key was revoked/deleted by Admin -> Downgraded to free
+      // Case 2: Account is locked / blocked by Admin
+      if (serverAcct.status === 'LOCKED' || serverAcct.status === 'BLOCKED') {
+        this.forceLogoutByAdmin('Tài khoản của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại <a href="https://binhluu.ai.studio/" target="_blank" class="text-cyan-300 font-bold underline">binhluu.ai.studio</a> để được mở lại.');
+        return;
+      }
+
+      // Case 3: Key was revoked/deleted by Admin -> Downgraded to free
       const serverTier = serverAcct.tier || 'free';
       const serverKey = serverAcct.linkedKey;
       if (localUser.tier === 'premium' && (serverTier === 'free' || !serverKey)) {
@@ -2173,7 +2115,7 @@ const app = {
         return;
       }
 
-      // Case 3: Admin extended key or updated details -> Sync to local
+      // Case 4: Admin extended key or updated details -> Sync to local
       if (serverAcct.keyExpiresAt !== localUser.keyExpiresAt || serverAcct.name !== localUser.name || serverAcct.tier !== localUser.tier) {
         this.data.currentUser = { ...this.data.currentUser, ...serverAcct };
         localStorage.setItem('eduquest_b1_account', JSON.stringify(this.data.currentUser));
@@ -2187,19 +2129,22 @@ const app = {
 
   forceLogoutByAdmin: function(reasonMessage) {
     this.stopAllAudios();
+    this.stopExamTimer();
     this.data.currentUser = null;
     localStorage.removeItem('eduquest_b1_account');
     localStorage.removeItem('eduquest_b1_logged_user');
+    localStorage.removeItem('eduquest_b1_all_accounts');
     this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
+    this.showTab('roadmap');
     this.renderRoadmap();
     this.updateUserStatsDisplay();
     this.playSound('fail');
     this.showCustomAlert({
-      title: 'TÀI KHOẢN ĐÃ BỊ THU HỒI',
-      message: reasonMessage || 'Tài khoản của bạn đã bị Quản Trị Viên xóa khỏi hệ thống.',
+      title: '⚠️ TÀI KHOẢN ĐÃ BỊ XÓA',
+      message: reasonMessage || 'Tài khoản của bạn đã bị Quản Trị Viên xóa hoặc thu hồi khỏi hệ thống.',
       icon: '⚠️',
-      iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
-      btnText: 'Tôi Đã Hiểu'
+      iconBg: 'bg-rose-950/90 border border-rose-700 text-rose-400',
+      btnText: 'Tôi Đã Hiểu / Đăng Ký Mới'
     });
   },
 
@@ -2387,6 +2332,11 @@ const app = {
   startExam: function(examId) {
     this.stopAllAudios();
     this.playSound('click');
+
+    // Quick verification with server
+    if (this.data.currentUser) {
+      this.validateActiveSessionWithServer();
+    }
 
     const tier = this.getCurrentTier();
 
