@@ -940,24 +940,21 @@ const app = {
       title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
       message: `
         <div class="text-center py-2 space-y-3">
-          <div class="flex justify-center my-3">
-            <div class="streak-container streak-container-lv${info.level} scale-125">
-              <span class="fire-icon">🔥</span>
-              <span class="streak-count">${streak} Ngày</span>
-            </div>
+          <div class="inline-block p-4 rounded-3xl ${info.badgeClass} shadow-xl scale-125 my-2">
+            ${this.renderTikTokFlameHTML(info.level, 48)}
           </div>
           <div class="font-extrabold text-base text-white">Danh Hiệu: <span class="text-amber-400">Level ${info.level} - ${info.title}</span></div>
           <p class="text-xs text-slate-300">
             ${
               info.level >= 3
-                ? '🔥🔥 Ngọn lửa đang bùng cháy rực rỡ! Hãy duy trì chuỗi học mỗi ngày để đạt mốc 30 ngày mở khóa danh hiệu Huyền Thoại B1!'
+                ? '🔥🔥 Ngọn lửa đang bùng cháy cực đại! Hãy duy trì chuỗi học mỗi ngày để đạt mốc 30 ngày mở khóa danh hiệu Huyền Thoại B1!'
                 : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa tiến hóa lên cấp độ cao hơn!'
             }
           </p>
         </div>
       `,
       icon: info.icon,
-      iconBg: `streak-container streak-container-lv${info.level}`,
+      iconBg: info.badgeClass,
       btnText: 'Tiếp Tục Bùng Cháy 🔥'
     });
   },
@@ -969,7 +966,7 @@ const app = {
         level: 5,
         title: 'Huyền Thoại',
         icon: '👑',
-        containerClass: 'streak-container-lv5',
+        badgeClass: 'streak-aura-lv5 font-black',
         heroClass: 'text-yellow-300 font-extrabold'
       };
     }
@@ -978,7 +975,7 @@ const app = {
         level: 4,
         title: 'Bậc Thầy',
         icon: '🔮',
-        containerClass: 'streak-container-lv4',
+        badgeClass: 'streak-aura-lv4 font-extrabold',
         heroClass: 'text-purple-400 font-extrabold'
       };
     }
@@ -987,7 +984,7 @@ const app = {
         level: 3,
         title: 'Siêu Cháy',
         icon: '💥',
-        containerClass: 'streak-container-lv3',
+        badgeClass: 'streak-aura-lv3 font-black',
         heroClass: 'text-rose-400 font-extrabold'
       };
     }
@@ -996,7 +993,7 @@ const app = {
         level: 2,
         title: 'Nhiệt Huyết',
         icon: '⚡',
-        containerClass: 'streak-container-lv2',
+        badgeClass: 'streak-aura-lv2 font-bold',
         heroClass: 'text-orange-400 font-bold'
       };
     }
@@ -1004,7 +1001,7 @@ const app = {
       level: 1,
       title: 'Khởi Động',
       icon: '🔰',
-      containerClass: 'streak-container-lv1',
+      badgeClass: 'streak-aura-lv1 font-bold',
       heroClass: 'text-amber-300 font-bold'
     };
   },
@@ -1023,6 +1020,7 @@ const app = {
       const isActive = this.isAccountActive(user);
       const streak = this.data.userProgress.streak || 1;
       const streakInfo = this.getStreakLevelInfo(streak);
+      const flameHTML = this.renderTikTokFlameHTML(streakInfo.level, 18);
 
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">${streakInfo.icon} Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
 
@@ -1051,11 +1049,11 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <!-- TIKTOK STREAK FLAME BUTTON (USER'S EXACT TEMPLATE) -->
-            <div class="streak-container ${streakInfo.containerClass}" onclick="app.showStreakCelebration()" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
-              <span class="fire-icon">🔥</span>
-              <span class="streak-count">${streak}</span>
-            </div>
+            <!-- TIKTOK 5-LEVEL STREAK FLAME BUTTON -->
+            <button onclick="app.showStreakCelebration()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${streakInfo.badgeClass} text-xs shrink-0 cursor-pointer active:scale-95 transition-all shadow-md" title="Bấm để xem danh hiệu Level ${streakInfo.level}: ${streakInfo.title}">
+              ${flameHTML}
+              <span class="font-extrabold">${streak} Ngày</span>
+            </button>
 
             <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800 border border-slate-700">
               <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">

@@ -696,7 +696,7 @@
             level: 5,
             title: 'Huyền Thoại',
             icon: '👑',
-            containerClass: 'streak-container-lv5'
+            badgeClass: 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 border-yellow-300 text-black shadow-lg shadow-amber-500/50 font-black animate-pulse'
           };
         }
         if (days >= 14) {
@@ -704,7 +704,7 @@
             level: 4,
             title: 'Bậc Thầy',
             icon: '🔮',
-            containerClass: 'streak-container-lv4'
+            badgeClass: 'bg-purple-950 border-purple-500 text-purple-300 shadow-md shadow-purple-900/50 font-extrabold'
           };
         }
         if (days >= 7) {
@@ -712,7 +712,7 @@
             level: 3,
             title: 'Siêu Cháy',
             icon: '💥',
-            containerClass: 'streak-container-lv3'
+            badgeClass: 'bg-gradient-to-r from-rose-950 via-red-900 to-rose-950 border-rose-500 text-rose-100 shadow-md shadow-rose-900/70 font-black'
           };
         }
         if (days >= 3) {
@@ -720,14 +720,14 @@
             level: 2,
             title: 'Nhiệt Huyết',
             icon: '⚡',
-            containerClass: 'streak-container-lv2'
+            badgeClass: 'bg-orange-950/90 border-orange-600 text-orange-300 shadow-sm font-bold'
           };
         }
         return {
           level: 1,
           title: 'Khởi Động',
           icon: '🔰',
-          containerClass: 'streak-container-lv1'
+          badgeClass: 'bg-amber-950/80 border-amber-700 text-amber-300 shadow-sm font-bold'
         };
       },
 
@@ -795,6 +795,45 @@
         return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
       },
 
+      renderTikTokFlameHTML: function(level, size = 16) {
+        let outerColor = '#f59e0b';
+        let coreColor = '#ffffff';
+        let showSparks = true;
+
+        if (level === 5) {
+          outerColor = 'url(#grad-flame-lv5)';
+          coreColor = '#ffffff';
+        } else if (level === 4) {
+          outerColor = 'url(#grad-flame-lv4)';
+          coreColor = '#f3e8ff';
+        } else if (level === 3) {
+          outerColor = 'url(#grad-flame-lv3)';
+          coreColor = '#ffedd5';
+        } else if (level === 2) {
+          outerColor = 'url(#grad-flame-lv2)';
+          coreColor = '#fef08a';
+        } else {
+          outerColor = 'url(#grad-flame-lv1)';
+          coreColor = '#ffffff';
+          showSparks = false;
+        }
+
+        return `
+          <span class="tiktok-flame-wrapper" style="width: ${size}px; height: ${size}px;">
+            <svg viewBox="0 0 24 24" class="tiktok-flame-outer" style="width: ${size}px; height: ${size}px;">
+              <path fill="${outerColor}" d="M12 2c.5 2.5 2 4.5 4 6 2.5 2 4 4.5 4 8 0 4.4-3.6 8-8 8s-8-3.6-8-8c0-3.5 1.5-6 4-8 2-1.5 3.5-3.5 4-6z"/>
+            </svg>
+            <svg viewBox="0 0 24 24" class="tiktok-flame-core">
+              <path fill="${coreColor}" d="M12 9c.3 1.5 1.2 2.5 2.5 3.5 1.5 1 2.5 2.5 2.5 4.5 0 2.8-2.2 5-5 5s-5-2.2-5-5c0-2 1-3.5 2.5-4.5 1.3-1 2.2-2 2.5-3.5z"/>
+            </svg>
+            ${showSparks ? `
+              <span class="tiktok-spark spark-1"></span>
+              <span class="tiktok-spark spark-2"></span>
+            ` : ''}
+          </span>
+        `;
+      },
+
       renderUserTable: function() {
         const tbody = document.getElementById('admin-user-table-body');
         const countSpan = document.getElementById('count-users');
@@ -820,6 +859,7 @@
           const isActive = u.status === 'ACTIVE' && !isExpired;
           const dynamicPkg = this.getDynamicPackageName(remainingDays);
           const streakInfo = this.getStreakLevelInfo(u.streak || 1);
+          const flameHTML = this.renderTikTokFlameHTML(streakInfo.level, 16);
 
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 transition-colors';
@@ -841,10 +881,10 @@
               </div>
             </td>
             <td class="py-3 px-3">
-              <div class="streak-container ${streakInfo.containerClass} scale-90 origin-left" title="Level ${streakInfo.level}: ${streakInfo.title}">
-                <span class="fire-icon">🔥</span>
-                <span class="streak-count">${u.streak || 1}</span>
-              </div>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs ${streakInfo.badgeClass}" title="Level ${streakInfo.level}: ${streakInfo.title}">
+                ${flameHTML}
+                <span>${u.streak || 1} Ngày (Lv.${streakInfo.level})</span>
+              </span>
             </td>
             <td class="py-3 px-3 text-slate-300 font-bold">${dynamicPkg}</td>
             <td class="py-3 px-3">
