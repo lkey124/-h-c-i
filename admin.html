@@ -82,7 +82,7 @@
           <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 border border-indigo-600/80 shadow-sm shrink-0">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-extrabold text-cyan-300">Phiên Bản:</span>
-            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.3.1</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.3.2</span>
           </div>
 
           <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5">
@@ -1716,26 +1716,62 @@
       },
 
       deleteAccount: function(accountId, acctName) {
+        const normTarget = this.normalizeKey(accountId);
+        const targetAcct = this.accounts.find(a => 
+          a.accountId === accountId || 
+          a.email === accountId || 
+          (a.linkedKey && this.normalizeKey(a.linkedKey) === normTarget)
+        );
+        const displayName = acctName || targetAcct?.name || targetAcct?.email || accountId;
+        const linkedKey = targetAcct?.linkedKey;
+
         this.showCustomConfirm({
           title: 'Xóa Tài Khoản Học Viên?',
-          message: `Bạn có chắc chắn muốn xóa tài khoản <strong>${acctName}</strong>?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Mọi tiến trình học và điểm số của tài khoản này sẽ bị xóa vĩnh viễn!</span>`,
+          message: `Bạn có chắc chắn muốn xóa tài khoản <strong>${displayName}</strong>?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Mọi tiến trình học, tài khoản và điểm số sẽ bị xóa vĩnh viễn khỏi hệ thống!</span>`,
           icon: '🗑️',
           iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
           confirmText: 'Xác Nhận Xóa',
           confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
           onConfirm: async () => {
+            // 1. Add to deleted tracking so it never re-synthesizes
+            if (accountId) this.addDeletedKey(accountId);
+            if (targetAcct?.email) this.addDeletedKey(targetAcct.email);
+            if (linkedKey) this.addDeletedKey(linkedKey);
+
+            // 2. Remove from local accounts list & storage
+            this.accounts = this.accounts.filter(a => 
+              a.accountId !== accountId &&
+              a.email !== accountId &&
+              (targetAcct?.email ? a.email !== targetAcct.email : true) &&
+              (linkedKey ? a.linkedKey !== linkedKey : true)
+            );
+            localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
+
+            // 3. If account had a linked Key in this.users, release / reset it
+            if (linkedKey && Array.isArray(this.users)) {
+              const uIdx = this.users.findIndex(u => this.normalizeKey(u.key) === this.normalizeKey(linkedKey));
+              if (uIdx >= 0) {
+                this.users[uIdx].linkedAccountId = null;
+                this.users[uIdx].linkedEmail = null;
+                this.users[uIdx].linkedName = null;
+                this.users[uIdx].name = 'Chưa Kích Hoạt';
+              }
+              localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
+              await this.saveUsers();
+            }
+
+            // 4. Send delete to server API
             try {
               await fetch('/api/accounts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ deleteAccountId: accountId })
               });
-              this.accounts = this.accounts.filter(a => a.accountId !== accountId);
-              this.renderAccountsTable();
-              this.showToast(`🗑️ Đã xóa tài khoản ${acctName}!`);
-            } catch(e) {
-              this.showToast('❌ Lỗi khi xóa tài khoản');
-            }
+            } catch(e) {}
+
+            this.renderAccountsTable();
+            this.renderUserTable();
+            this.showToast(`🗑️ Đã xóa vĩnh viễn tài khoản ${displayName}!`);
           }
         });
       },

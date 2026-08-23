@@ -71,8 +71,14 @@ module.exports = async (req, res) => {
       return res.json({ success: true, purged, remaining: active.length, accounts: active });
     }
     if (body && body.deleteAccountId) {
+      const delId = body.deleteAccountId;
       const list = readAccounts();
-      inMemoryAccounts = list.filter(a => a.accountId !== body.deleteAccountId);
+      inMemoryAccounts = list.filter(a => 
+        a.accountId !== delId && 
+        a.email !== delId && 
+        (!a.email || a.email.toLowerCase() !== delId.toLowerCase()) &&
+        a.linkedKey !== delId
+      );
       return res.json({ success: true, remaining: inMemoryAccounts.length });
     }
     if (body && body.account) {

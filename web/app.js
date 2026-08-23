@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.3.1',
+  APP_VERSION: 'v2.3.2',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,7 +476,7 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.1',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.2',
           message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa tầng, bộ đếm ngược thời gian thực và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
