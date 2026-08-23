@@ -1196,22 +1196,22 @@ const app = {
 
       if (authSec) {
         authSec.innerHTML = `
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 sm:gap-2 shrink-0">
             <!-- TIKTOK FRAMELESS TIER-SCALED STREAK FLAME BUTTON -->
-            <button onclick="app.showStreakCelebration()" class="streak-frameless-btn" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
+            <button onclick="app.showStreakCelebration()" class="streak-frameless-btn shrink-0" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
               ${flameHTML}
-              <span class="${streakInfo.textClass}">${streak} Ngày</span>
+              <span class="${streakInfo.textClass} text-[11px] sm:text-xs font-black tracking-tight whitespace-nowrap">${streak} Ngày</span>
             </button>
 
-            <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
-              <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
+            <div class="flex items-center gap-1 p-1 pl-1.5 pr-2 sm:pl-2 sm:pr-2.5 rounded-xl bg-slate-800/80 border border-slate-700 shrink-0">
+              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-[10px] sm:text-xs text-white shrink-0">
                 ${user.name.charAt(0).toUpperCase()}
               </div>
-              <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[90px]">${user.name}</span>
+              <span class="text-xs font-bold text-slate-100 hidden md:inline-block truncate max-w-[90px]">${user.name}</span>
             </div>
 
-            <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
-              <i data-lucide="log-out" class="w-4 h-4"></i>
+            <button onclick="app.logout()" class="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
+              <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
           </div>
         `;
