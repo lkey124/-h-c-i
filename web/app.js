@@ -867,72 +867,97 @@ const app = {
       if (level === 5) size = 36;
       else if (level === 4) size = 32;
       else if (level === 3) size = 28;
-      else if (level === 2) size = 22;
-      else size = 18;
+      else if (level === 2) size = 23;
+      else size = 19;
     }
-
-    let outerColor = '#f59e0b';
-    let coreColor = '#ffffff';
-    let showSparks = true;
-
-    if (level === 5) {
-      outerColor = 'url(#grad-flame-lv5)';
-      coreColor = '#ffffff';
-    } else if (level === 4) {
-      outerColor = 'url(#grad-flame-lv4)';
-      coreColor = '#f3e8ff';
-    } else if (level === 3) {
-      outerColor = 'url(#grad-flame-lv3)';
-      coreColor = '#ffedd5';
-    } else if (level === 2) {
-      outerColor = 'url(#grad-flame-lv2)';
-      coreColor = '#fef08a';
-    } else {
-      outerColor = 'url(#grad-flame-lv1)';
-      coreColor = '#ffffff';
-      showSparks = false;
-    }
+    const height = Math.round(size * 1.25);
+    const showEmbers = level >= 2;
 
     return `
-      <span class="tiktok-flame-wrapper" style="width: ${size}px; height: ${size}px;">
-        <svg viewBox="0 0 24 24" class="flame-anim-lv${level}" style="width: ${size}px; height: ${size}px;">
+      <span class="flame-3d-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <span class="flame-heat-bloom"></span>
+        <svg viewBox="0 0 100 130" class="flame-3d-svg" style="width: 100%; height: 100%;">
           <defs>
-            <linearGradient id="grad-flame-lv1" x1="0" y1="1" x2="0" y2="0">
+            <linearGradient id="flame-grad-outer-1" x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%" stop-color="#b45309"/>
-              <stop offset="60%" stop-color="#f59e0b"/>
+              <stop offset="50%" stop-color="#f59e0b"/>
               <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="grad-flame-lv2" x1="0" y1="1" x2="0" y2="0">
+            <linearGradient id="flame-grad-sub-1" x1="0.2" y1="1" x2="0.8" y2="0">
+              <stop offset="0%" stop-color="#d97706"/>
+              <stop offset="60%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#fffbeb"/>
+            </linearGradient>
+
+            <linearGradient id="flame-grad-outer-2" x1="0.5" y1="1" x2="0.5" y2="0">
               <stop offset="0%" stop-color="#c2410c"/>
-              <stop offset="60%" stop-color="#f97316"/>
-              <stop offset="100%" stop-color="#fef08a"/>
+              <stop offset="45%" stop-color="#f97316"/>
+              <stop offset="90%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="grad-flame-lv3" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#9f1239"/>
+            <linearGradient id="flame-grad-sub-2" x1="0.2" y1="1" x2="0.8" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="55%" stop-color="#fb923c"/>
+              <stop offset="100%" stop-color="#ffedd5"/>
+            </linearGradient>
+
+            <linearGradient id="flame-grad-outer-3" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0%" stop-color="#881337"/>
               <stop offset="35%" stop-color="#e11d48"/>
               <stop offset="70%" stop-color="#f43f5e"/>
               <stop offset="100%" stop-color="#ffe4e6"/>
             </linearGradient>
-            <linearGradient id="grad-flame-lv4" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#581c87"/>
-              <stop offset="50%" stop-color="#9333ea"/>
-              <stop offset="100%" stop-color="#f472b6"/>
-            </linearGradient>
-            <linearGradient id="grad-flame-lv5" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#854d0e"/>
-              <stop offset="50%" stop-color="#eab308"/>
+            <linearGradient id="flame-grad-sub-3" x1="0.2" y1="1" x2="0.8" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="50%" stop-color="#fb7185"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
+
+            <linearGradient id="flame-grad-outer-4" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0%" stop-color="#4c1d95"/>
+              <stop offset="40%" stop-color="#7c3aed"/>
+              <stop offset="80%" stop-color="#c084fc"/>
+              <stop offset="100%" stop-color="#f5d0fe"/>
+            </linearGradient>
+            <linearGradient id="flame-grad-sub-4" x1="0.2" y1="1" x2="0.8" y2="0">
+              <stop offset="0%" stop-color="#5b21b6"/>
+              <stop offset="55%" stop-color="#a855f7"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="flame-grad-outer-5" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0%" stop-color="#854d0e"/>
+              <stop offset="40%" stop-color="#eab308"/>
+              <stop offset="80%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <linearGradient id="flame-grad-sub-5" x1="0.2" y1="1" x2="0.8" y2="0">
+              <stop offset="0%" stop-color="#a16207"/>
+              <stop offset="55%" stop-color="#facc15"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <radialGradient id="flame-core-glow-${level}" cx="50%" cy="75%" r="55%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="60%" stop-color="#fffbeb" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#fef08a" stop-opacity="0"/>
+            </radialGradient>
           </defs>
-          <path fill="${outerColor}" d="M12 2c.5 2.5 2 4.5 4 6 2.5 2 4 4.5 4 8 0 4.4-3.6 8-8 8s-8-3.6-8-8c0-3.5 1.5-6 4-8 2-1.5 3.5-3.5 4-6z"/>
+
+          <!-- Outer Organic Flame Body -->
+          <path class="flame-tongue-outer" fill="url(#flame-grad-outer-${level})" d="M50,12 C58,35 80,48 84,74 C90,100 74,124 50,126 C26,124 10,100 16,74 C20,48 42,35 50,12 Z"/>
+
+          <!-- 3D Left & Right Layered Tongues -->
+          <path class="flame-tongue-left" fill="url(#flame-grad-sub-${level})" d="M40,28 C28,48 30,76 42,98 C30,92 24,76 28,58 C32,45 38,34 40,28 Z"/>
+          <path class="flame-tongue-right" fill="url(#flame-grad-sub-${level})" d="M60,22 C74,45 72,74 58,96 C70,88 76,72 70,54 C66,40 62,28 60,22 Z"/>
+
+          <!-- Superheated Core Flame -->
+          <path class="flame-tongue-core" fill="url(#flame-core-glow-${level})" d="M50,42 C58,58 64,76 60,98 C56,112 44,112 40,98 C36,76 42,58 50,42 Z"/>
         </svg>
-        <svg viewBox="0 0 24 24" class="tiktok-flame-core">
-          <path fill="${coreColor}" d="M12 9c.3 1.5 1.2 2.5 2.5 3.5 1.5 1 2.5 2.5 2.5 4.5 0 2.8-2.2 5-5 5s-5-2.2-5-5c0-2 1-3.5 2.5-4.5 1.3-1 2.2-2 2.5-3.5z"/>
-        </svg>
-        ${showSparks ? `
-          <span class="tiktok-spark spark-1"></span>
-          <span class="tiktok-spark spark-2"></span>
-          <span class="tiktok-spark spark-3"></span>
+
+        ${showEmbers ? `
+          <span class="ember-spark ember-1"></span>
+          <span class="ember-spark ember-2"></span>
+          <span class="ember-spark ember-3"></span>
         ` : ''}
       </span>
     `;
