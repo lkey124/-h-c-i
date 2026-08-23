@@ -864,28 +864,147 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 32;
-      else if (level === 4) size = 28;
-      else if (level === 3) size = 25;
-      else if (level === 2) size = 22;
-      else size = 19;
+      if (level === 5) size = 28;
+      else if (level === 4) size = 25;
+      else if (level === 3) size = 23;
+      else if (level === 2) size = 20;
+      else size = 18;
     }
-    const height = Math.round(size * 1.25);
-    const webpSrc = `public/flames/flame_lv${level}.webp`;
-    const gifSrc = `public/flames/flame_lv${level}.gif`;
+    const height = Math.round(size * 1.35);
 
     return `
-      <span class="flame-gif-wrapper flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <picture>
-          <source srcset="${webpSrc}" type="image/webp">
-          <img src="${gifSrc}" alt="Flame Lv${level}" class="flame-gif-img" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
-        </picture>
+      <span class="flame-canvas-wrapper" style="width: ${size}px; height: ${height}px;">
+        <canvas class="flame-canvas-120fps" data-level="${level}" data-size="${size}" width="${size * 2}" height="${height * 2}" style="width: ${size}px; height: ${height}px;"></canvas>
       </span>
     `;
   },
 
-  initAnimeFlameAnimation: function() {
-    // Keep elastic spring burst for buttons
+  init120FpsFlameCanvasEngine: function() {
+    if (window._flame120LoopRunning) return;
+    window._flame120LoopRunning = true;
+
+    // Color pallets per level (Incandescent spectrum)
+    const levelColors = {
+      1: { r: 245, g: 158, b: 11, cr: 254, cg: 240, cb: 138 }, // Amber (Tuần 1: 1-7 ngày)
+      2: { r: 249, g: 115, b: 22, cr: 253, cg: 224, cb: 71 },  // Orange (Tuần 2: 8-14 ngày)
+      3: { r: 255, g: 42,  b: 95, cr: 255, cg: 220, cb: 230 }, // Ruby Red (Tuần 3: 15-21 ngày)
+      4: { r: 168, g: 85,  b: 247, cr: 245, cg: 208, cb: 254 }, // Plasma Purple (Tuần 4: 22-28 ngày)
+      5: { r: 234, g: 179, b: 8,  cr: 255, cg: 255, cb: 255 }  // Sacred Gold (Tuần 5+: >=29 ngày)
+    };
+
+    const canvasParticleMap = new WeakMap();
+
+    function render120Fps() {
+      const canvases = document.querySelectorAll('.flame-canvas-120fps');
+      canvases.forEach(canvas => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const level = parseInt(canvas.getAttribute('data-level'), 10) || 1;
+        const palette = levelColors[level] || levelColors[1];
+
+        let state = canvasParticleMap.get(canvas);
+        if (!state) {
+          state = {
+            particles: [],
+            sparks: [],
+            time: Math.random() * 100
+          };
+          canvasParticleMap.set(canvas, state);
+        }
+
+        state.time += 0.04;
+
+        // Clear transparent
+        ctx.clearRect(0, 0, w, h);
+        ctx.globalCompositeOperation = 'screen';
+
+        const originX = w / 2;
+        const originY = h * 0.88;
+
+        // Spawn flame plasma particles
+        if (state.particles.length < 28) {
+          state.particles.push({
+            x: originX + (Math.random() - 0.5) * (w * 0.25),
+            y: originY,
+            vx: (Math.random() - 0.5) * 0.7,
+            vy: -(Math.random() * 1.5 + 1.2),
+            radius: Math.random() * (w * 0.22) + (w * 0.14),
+            life: 1.0,
+            decay: Math.random() * 0.035 + 0.025,
+            wiggleSpeed: Math.random() * 4 + 2,
+            isCore: Math.random() < 0.35
+          });
+        }
+
+        // Spawn spark particles
+        if (state.sparks.length < (level >= 2 ? 6 : 2)) {
+          state.sparks.push({
+            x: originX + (Math.random() - 0.5) * (w * 0.2),
+            y: originY - (h * 0.2),
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: -(Math.random() * 2.2 + 1.8),
+            size: Math.random() * 2.2 + 1.2,
+            life: 1.0,
+            decay: Math.random() * 0.04 + 0.025
+          });
+        }
+
+        // Update and draw flame particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx + Math.sin(state.time * p.wiggleSpeed + p.y * 0.05) * 0.6;
+          p.y += p.vy;
+          p.radius *= 0.965;
+          p.life -= p.decay;
+
+          if (p.life <= 0 || p.radius <= 0.5) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+          if (p.isCore) {
+            grad.addColorStop(0, `rgba(${palette.cr}, ${palette.cg}, ${palette.cb}, ${p.life * 0.95})`);
+            grad.addColorStop(0.5, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.5})`);
+            grad.addColorStop(1, `rgba(${palette.r}, ${palette.g}, ${palette.b}, 0)`);
+          } else {
+            grad.addColorStop(0, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.8})`);
+            grad.addColorStop(0.6, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.3})`);
+            grad.addColorStop(1, `rgba(${palette.r}, ${palette.g}, ${palette.b}, 0)`);
+          }
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Update and draw sparks
+        for (let i = state.sparks.length - 1; i >= 0; i--) {
+          const s = state.sparks[i];
+          s.x += s.vx;
+          s.y += s.vy;
+          s.life -= s.decay;
+
+          if (s.life <= 0) {
+            state.sparks.splice(i, 1);
+            continue;
+          }
+
+          ctx.fillStyle = `rgba(${palette.cr}, ${palette.cg}, ${palette.cb}, ${s.life * 0.9})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      requestAnimationFrame(render120Fps);
+    }
+
+    requestAnimationFrame(render120Fps);
   },
 
   showStreakCelebration: function() {
@@ -921,57 +1040,53 @@ const app = {
           <p class="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
             ${
               info.level >= 3
-                ? '🔥🔥 Ngọn lửa đang bùng cháy cực đại! Hãy duy trì chuỗi học mỗi ngày để đạt mốc 30 ngày mở khóa danh hiệu Huyền Thoại B1!'
-                : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa bùng cháy lớn hơn và tiến hóa lên cấp độ cao hơn!'
+                ? '🔥🔥 Ngọn lửa đang bùng cháy cực đại! Hãy duy trì chuỗi học mỗi ngày để đạt mốc Tuần 5 mở khóa danh hiệu Huyền Thoại B1!'
+                : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa tiến hóa lên cấp độ cao hơn sau mỗi tuần!'
             }
           </p>
         </div>
       `,
       btnText: 'Tiếp Tục Bùng Cháy 🔥'
     });
-
-    setTimeout(() => {
-      this.initAnimeFlameAnimation();
-    }, 50);
   },
 
   getStreakLevelInfo: function(streak) {
     const days = Math.max(1, parseInt(streak, 10) || 1);
-    if (days >= 30) {
+    if (days >= 29) {
       return {
         level: 5,
-        title: 'Huyền Thoại',
+        title: 'Huyền Thoại (Tuần 5+)',
         textClass: 'streak-text-lv5',
         heroClass: 'text-yellow-300 font-extrabold'
       };
     }
-    if (days >= 14) {
+    if (days >= 22) {
       return {
         level: 4,
-        title: 'Bậc Thầy',
+        title: 'Bậc Thầy (Tuần 4)',
         textClass: 'streak-text-lv4',
         heroClass: 'text-purple-400 font-extrabold'
       };
     }
-    if (days >= 7) {
+    if (days >= 15) {
       return {
         level: 3,
-        title: 'Siêu Cháy',
+        title: 'Siêu Cháy (Tuần 3)',
         textClass: 'streak-text-lv3',
         heroClass: 'text-rose-400 font-extrabold'
       };
     }
-    if (days >= 3) {
+    if (days >= 8) {
       return {
         level: 2,
-        title: 'Nhiệt Huyết',
+        title: 'Nhiệt Huyết (Tuần 2)',
         textClass: 'streak-text-lv2',
         heroClass: 'text-orange-400 font-bold'
       };
     }
     return {
       level: 1,
-      title: 'Khởi Động',
+      title: 'Khởi Động (Tuần 1)',
       textClass: 'streak-text-lv1',
       heroClass: 'text-amber-300 font-bold'
     };
@@ -1049,7 +1164,7 @@ const app = {
       if (progText) progText.innerText = `${passedCount} / ${total} Đề (${percent}%)`;
       if (progBar) progBar.style.width = `${percent}%`;
 
-      this.initAnimeFlameAnimation();
+      this.init120FpsFlameCanvasEngine();
     } else {
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       if (subBadge) subBadge.classList.add('hidden');
