@@ -77,7 +77,14 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- SYSTEM VERSION BADGE -->
+          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 border border-indigo-600/80 shadow-sm shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-extrabold text-cyan-300">Phiên Bản:</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.3.0</span>
+          </div>
+
           <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5">
             <i data-lucide="external-link" class="w-4 h-4"></i> Xem Web Học Viên
           </a>
@@ -1094,8 +1101,19 @@
         };
       },
 
+      findUser: function(keyOrId) {
+        if (!keyOrId) return null;
+        const norm = this.normalizeKey(keyOrId);
+        return this.users.find(u => 
+          (u.id && u.id === keyOrId) ||
+          (u.key && u.key === keyOrId) ||
+          (u.key && this.normalizeKey(u.key) === norm) ||
+          (u.id && this.normalizeKey(u.id) === norm)
+        );
+      },
+
       extendDuration: async function(userId, days) {
-        const user = this.users.find(u => u.id === userId);
+        const user = this.findUser(userId);
         if (!user) return;
         const currentExp = new Date(user.expiresAt);
         const baseDate = currentExp > new Date() ? currentExp : new Date();
@@ -1110,15 +1128,15 @@
       },
 
       openExtendModal: function(userId) {
-        const user = this.users.find(u => u.id === userId);
+        const user = this.findUser(userId);
         if (!user) return;
-        this.currentExtendingUserId = userId;
+        this.currentExtendingUserId = user.key || user.id || userId;
         const modal = document.getElementById('modal-admin-extend');
         const infoEl = document.getElementById('extend-modal-user-info');
         const inp = document.getElementById('inp-extend-days');
         if (infoEl) {
           const isUnregistered = !user.name || user.name === 'Chưa Kích Hoạt' || user.name === 'Chưa Đặt Tên';
-          infoEl.innerHTML = `Học viên: <strong class="text-white">${isUnregistered ? 'Chờ Học Viên Kích Hoạt' : user.name}</strong> • Key: <span class="font-mono text-cyan-300 font-bold">${user.key}</span>`;
+          infoEl.innerHTML = `Học viên: <strong class="text-white">${isUnregistered ? 'Chờ Học Viên Kích Hoạt' : user.name}</strong> • Key: <span class="font-mono text-cyan-300 font-bold">${user.key || user.id}</span>`;
         }
         if (inp) inp.value = '30';
         if (modal) {
@@ -1164,7 +1182,7 @@
       },
 
       toggleStatus: async function(userId) {
-        const user = this.users.find(u => u.id === userId);
+        const user = this.findUser(userId);
         if (!user) return;
         user.status = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
         await this.saveUsers();
@@ -1172,24 +1190,33 @@
       },
 
       deleteUser: function(userId) {
-        const user = this.users.find(u => u.id === userId);
+        const user = this.findUser(userId);
         if (!user) return;
         const isUnregistered = !user.name || user.name === 'Chưa Kích Hoạt' || user.name === 'Chưa Đặt Tên';
         const displayName = isUnregistered ? 'Chờ Kích Hoạt' : user.name;
-        
+        const userKey = user.key || user.id || userId;
+        const normTarget = this.normalizeKey(userKey);
+
         this.showCustomConfirm({
           title: 'Xóa Học Viên & Thu Hồi Key?',
-          message: `Bạn có chắc chắn muốn xóa học viên <strong>${displayName}</strong><br>(Mã Key: <span class="font-mono text-cyan-300 font-bold">${user.key}</span>)?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Quyền truy cập của học viên sẽ bị thu hồi ngay lập tức.</span>`,
+          message: `Bạn có chắc chắn muốn xóa học viên <strong>${displayName}</strong><br>(Mã Key: <span class="font-mono text-cyan-300 font-bold">${userKey}</span>)?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Quyền truy cập của học viên sẽ bị thu hồi ngay lập tức.</span>`,
           icon: '🗑️',
           iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
           confirmText: 'Xác Nhận Xóa',
           confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
           onConfirm: async () => {
-            this.addDeletedKey(user.key);
-            this.addDeletedKey(user.id);
-            this.users = this.users.filter(u => u.id !== userId);
+            if (user.key) this.addDeletedKey(user.key);
+            if (user.id) this.addDeletedKey(user.id);
+            this.users = this.users.filter(u => 
+              u !== user &&
+              u.id !== userId &&
+              u.key !== userId &&
+              (u.key ? this.normalizeKey(u.key) !== normTarget : true)
+            );
+            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
             await this.saveUsers();
-            this.showToast(`🗑️ Đã xóa vĩnh viễn học viên ${displayName}`);
+            this.renderUserTable();
+            this.showToast(`🗑️ Đã xóa vĩnh viễn Key ${userKey}`);
           }
         });
       },
@@ -1204,12 +1231,13 @@
           confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
           onConfirm: async () => {
             this.users.forEach(u => {
-              this.addDeletedKey(u.key);
-              this.addDeletedKey(u.id);
+              if (u.key) this.addDeletedKey(u.key);
+              if (u.id) this.addDeletedKey(u.id);
             });
             this.users = [];
             localStorage.removeItem('eduquest_b1_all_users');
             await this.saveUsers();
+            this.renderUserTable();
             this.showToast('✅ Đã dọn sạch 100% toàn bộ dữ liệu Key!');
           }
         });
@@ -1367,6 +1395,7 @@
               </div>
             `;
 
+          const targetKeyId = u.key || u.id;
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 transition-colors';
           tr.innerHTML = `
@@ -1404,19 +1433,19 @@
             </td>
             <td class="py-3 px-3 text-right">
               <div class="flex items-center justify-end gap-1.5 flex-wrap">
-                <button onclick="adminApp.extendDuration('${u.id}', 30)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 30 ngày">
+                <button onclick="adminApp.extendDuration('${targetKeyId}', 30)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 30 ngày">
                   +1T
                 </button>
-                <button onclick="adminApp.extendDuration('${u.id}', 90)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 90 ngày">
+                <button onclick="adminApp.extendDuration('${targetKeyId}', 90)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 90 ngày">
                   +3T
                 </button>
-                <button onclick="adminApp.extendCustomDuration('${u.id}')" class="px-2 py-1 rounded bg-indigo-950 hover:bg-indigo-900 text-cyan-300 text-[11px] font-bold border border-indigo-700" title="Tùy chỉnh số ngày cộng thêm">
+                <button onclick="adminApp.extendCustomDuration('${targetKeyId}')" class="px-2 py-1 rounded bg-indigo-950 hover:bg-indigo-900 text-cyan-300 text-[11px] font-bold border border-indigo-700" title="Tùy chỉnh số ngày cộng thêm">
                   +Tùy Chỉnh
                 </button>
-                <button onclick="adminApp.toggleStatus('${u.id}')" class="p-1.5 rounded bg-slate-800 hover:bg-amber-950 text-slate-400 hover:text-amber-300 border border-slate-700" title="Khóa / Mở Khóa">
+                <button onclick="adminApp.toggleStatus('${targetKeyId}')" class="p-1.5 rounded bg-slate-800 hover:bg-amber-950 text-slate-400 hover:text-amber-300 border border-slate-700" title="Khóa / Mở Khóa">
                   <i data-lucide="${u.status === 'ACTIVE' ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
                 </button>
-                <button onclick="adminApp.deleteUser('${u.id}')" class="p-1.5 rounded bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700" title="Xóa học viên">
+                <button onclick="adminApp.deleteUser('${targetKeyId}')" class="p-1.5 rounded bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700" title="Xóa Key này">
                   <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </button>
               </div>

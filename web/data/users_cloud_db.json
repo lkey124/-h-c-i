@@ -25,15 +25,6 @@
     "linkedAccountId": null
   },
   {
-    "expiresAt": "2026-11-21T04:00:59.18Z",
-    "durationDays": 90,
-    "key": "B1-WNG8309",
-    "status": "ACTIVE",
-    "linkedEmail": null,
-    "linkedAccountId": null,
-    "createdAt": "2026-08-23T04:00:59.18Z"
-  },
-  {
     "expiresAt": "2026-11-21T03:26:51.955Z",
     "durationDays": 90,
     "key": "B1-YJS4477",

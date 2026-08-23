@@ -457,16 +457,40 @@ const app = {
     this.initIcons();
   },
 
+  APP_VERSION: 'v2.3.0',
+
   // -------------------------------------------------------------
   // INITIALIZATION
   // -------------------------------------------------------------
   init: async function() {
     this.initPWA();
     this.renderAnnouncementBanner();
-    this.loadUsersFromStorage();
-    this.loadActiveUserSession();
-    this.updateDailyStreak();
-    await this.validateActiveSessionWithServer();
+
+    // Check version update & force clean re-login across all devices
+    const currentSessionVer = localStorage.getItem('eduquest_b1_session_version');
+    if (currentSessionVer !== this.APP_VERSION) {
+      localStorage.removeItem('eduquest_b1_account');
+      localStorage.removeItem('eduquest_b1_logged_user');
+      localStorage.setItem('eduquest_b1_session_version', this.APP_VERSION);
+      this.data.currentUser = null;
+      this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
+      setTimeout(() => {
+        this.showCustomAlert({
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.0',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với bộ đếm ngược thời gian thực, câu mẫu chuẩn và đồng bộ bảo mật.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          icon: '🚀',
+          iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
+          btnText: 'Đăng Nhập Lại Ngay',
+          onConfirm: () => this.openLoginModal()
+        });
+      }, 600);
+    } else {
+      this.loadUsersFromStorage();
+      this.loadActiveUserSession();
+      this.updateDailyStreak();
+      await this.validateActiveSessionWithServer();
+    }
+
     await this.syncKeysFromCloud();
     await this.loadExamsDataset();
     this.renderRoadmap();
