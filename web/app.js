@@ -606,11 +606,28 @@ const app = {
             if (this.data.currentUser) {
               const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
               if (!liveUser) {
-                console.warn('Key was removed. Logging out.');
+                console.warn('Key was removed by Admin. Logging out.');
                 this.data.currentUser = null;
                 localStorage.removeItem('eduquest_b1_logged_user');
                 this.renderRoadmap();
                 this.updateUserStatsDisplay();
+                return;
+              }
+
+              // Check if account has been locked by Admin!
+              if (liveUser.status !== 'ACTIVE') {
+                console.warn('Account has been locked by Admin. Logging out.');
+                this.data.currentUser = null;
+                localStorage.removeItem('eduquest_b1_logged_user');
+                this.renderRoadmap();
+                this.updateUserStatsDisplay();
+                this.showCustomAlert({
+                  title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
+                  message: 'Mã Key của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
+                  icon: '🔒',
+                  iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
+                  btnText: 'Đã Hiểu'
+                });
                 return;
               }
 
