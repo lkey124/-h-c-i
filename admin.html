@@ -395,9 +395,54 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- CUSTOM ALERT MODAL -->
+  <!-- ========================================================================= -->
+  <div id="modal-custom-alert" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative animate-scale-up text-center">
+      <div id="custom-alert-icon-wrap" class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-md text-2xl">
+        <span id="custom-alert-icon">ℹ️</span>
+      </div>
+      <div class="space-y-1.5">
+        <h3 id="custom-alert-title" class="font-extrabold text-base sm:text-lg text-white">Thông Báo</h3>
+        <p id="custom-alert-message" class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"></p>
+      </div>
+      <button id="custom-alert-btn" onclick="adminApp.closeCustomAlert()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all">
+        Đã Hiểu
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CUSTOM CONFIRM MODAL -->
+  <!-- ========================================================================= -->
+  <div id="modal-custom-confirm" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-scale-up text-center">
+      <div id="custom-confirm-icon-wrap" class="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-md text-2xl">
+        <span id="custom-confirm-icon">❓</span>
+      </div>
+      <div class="space-y-1.5">
+        <h3 id="custom-confirm-title" class="font-extrabold text-base sm:text-lg text-white">Xác Nhận</h3>
+        <p id="custom-confirm-message" class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button id="custom-confirm-cancel-btn" onclick="adminApp.closeCustomConfirm()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm border border-slate-700 transition-all">
+          Hủy Bỏ
+        </button>
+        <button id="custom-confirm-ok-btn" onclick="adminApp.executeConfirmAction()" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-600/30 transition-all">
+          Xác Nhận
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="admin-toast-container" class="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
   <script>
     const adminApp = {
       users: [],
+      pendingConfirmAction: null,
 
       init: async function() {
         this.loadUsersLocal();
@@ -412,6 +457,89 @@
         if (window.lucide) lucide.createIcons();
       },
 
+      showToast: function(msg) {
+        const container = document.getElementById('admin-toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'px-4 py-3 rounded-2xl bg-slate-900/95 border border-indigo-500/80 shadow-2xl text-xs sm:text-sm font-bold text-white flex items-center gap-2 backdrop-blur-md animate-scale-up pointer-events-auto transition-all';
+        toast.innerHTML = msg;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(10px)';
+          setTimeout(() => toast.remove(), 300);
+        }, 2500);
+      },
+
+      showCustomAlert: function(opts) {
+        const modal = document.getElementById('modal-custom-alert');
+        const iconWrap = document.getElementById('custom-alert-icon-wrap');
+        const iconEl = document.getElementById('custom-alert-icon');
+        const titleEl = document.getElementById('custom-alert-title');
+        const msgEl = document.getElementById('custom-alert-message');
+        const btnEl = document.getElementById('custom-alert-btn');
+
+        if (titleEl) titleEl.innerText = opts.title || 'Thông Báo';
+        if (msgEl) msgEl.innerHTML = opts.message || '';
+        if (iconEl) iconEl.innerText = opts.icon || 'ℹ️';
+        if (iconWrap) iconWrap.className = `w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-md text-2xl ${opts.iconBg || 'bg-indigo-950 border border-indigo-700 text-indigo-400'}`;
+        if (btnEl) btnEl.innerText = opts.btnText || 'Đã Hiểu';
+
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      },
+
+      closeCustomAlert: function() {
+        const modal = document.getElementById('modal-custom-alert');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+      },
+
+      showCustomConfirm: function(opts) {
+        const modal = document.getElementById('modal-custom-confirm');
+        const iconWrap = document.getElementById('custom-confirm-icon-wrap');
+        const iconEl = document.getElementById('custom-confirm-icon');
+        const titleEl = document.getElementById('custom-confirm-title');
+        const msgEl = document.getElementById('custom-confirm-message');
+        const okBtn = document.getElementById('custom-confirm-ok-btn');
+        const cancelBtn = document.getElementById('custom-confirm-cancel-btn');
+
+        if (titleEl) titleEl.innerText = opts.title || 'Xác Nhận';
+        if (msgEl) msgEl.innerHTML = opts.message || '';
+        if (iconEl) iconEl.innerText = opts.icon || '❓';
+        if (iconWrap) iconWrap.className = `w-12 h-12 rounded-2xl flex items-center justify-center mx-auto shadow-md text-2xl ${opts.iconBg || 'bg-rose-950 border border-rose-700 text-rose-400'}`;
+        if (cancelBtn) cancelBtn.innerText = opts.cancelText || 'Hủy Bỏ';
+        if (okBtn) {
+          okBtn.innerText = opts.confirmText || 'Xác Nhận';
+          okBtn.className = `w-full py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm shadow-lg transition-all ${opts.confirmBtnClass || 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'}`;
+        }
+
+        this.pendingConfirmAction = opts.onConfirm || null;
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      },
+
+      closeCustomConfirm: function() {
+        const modal = document.getElementById('modal-custom-confirm');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+        this.pendingConfirmAction = null;
+      },
+
+      executeConfirmAction: function() {
+        const action = this.pendingConfirmAction;
+        this.closeCustomConfirm();
+        if (typeof action === 'function') action();
+      },
+
       unlockAdminGateway: function(e) {
         e.preventDefault();
         const pin = document.getElementById('admin-pin-input').value.trim();
@@ -419,7 +547,12 @@
           sessionStorage.setItem('eduquest_admin_unlocked', 'true');
           this.showDashboard();
         } else {
-          alert('❌ Mã PIN không chính xác!');
+          this.showCustomAlert({
+            title: 'MÃ PIN KHÔNG CHÍNH XÁC',
+            message: 'Mã bảo mật quản trị viên không chính xác. Vui lòng kiểm tra lại.',
+            icon: '❌',
+            iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400'
+          });
         }
       },
 
@@ -595,7 +728,7 @@
         };
 
         localStorage.setItem('eduquest_b1_banner_config', JSON.stringify(this.bannerConfig));
-        alert('🎉 Đã lưu và đồng bộ Banner Thông Báo & Màu Sắc thành công!\nTrang chủ học viên sẽ cập nhật ngay.');
+        this.showToast('🎉 Đã lưu và đồng bộ Banner Thông Báo & Màu Sắc thành công!');
       },
 
       normalizeKey: function(str) {
@@ -821,10 +954,15 @@
       },
 
       copyKey: function(key) {
+        if (!key) return;
         navigator.clipboard.writeText(key).then(() => {
-          alert(`📋 Đã copy Mã Key: ${key}`);
+          this.showToast(`📋 Đã sao chép mã Key: <strong class="text-cyan-300 font-mono">${key}</strong>`);
         }).catch(() => {
-          prompt('Copy mã Key:', key);
+          this.showCustomAlert({
+            title: 'MÃ KEY BẢN QUYỀN',
+            message: `Mã Key của học viên:<br><strong class="text-cyan-300 font-mono text-base tracking-wider">${key}</strong>`,
+            icon: '📋'
+          });
         });
       },
 
@@ -884,7 +1022,8 @@
         user.package = this.getDynamicPackageName(remaining);
         user.status = 'ACTIVE';
         await this.saveUsers();
-        alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!\n• Gói hiện tại: ${user.package} (Còn ${remaining} ngày)`);
+        const displayName = (!user.name || user.name === 'Chưa Kích Hoạt') ? 'Học viên' : user.name;
+        this.showToast(`✅ Đã gia hạn +${days} ngày cho ${displayName}!`);
       },
 
       openExtendModal: function(userId) {
@@ -925,7 +1064,12 @@
         const inp = document.getElementById('inp-extend-days');
         const days = parseInt(inp?.value, 10);
         if (isNaN(days) || days <= 0) {
-          alert('⚠️ Vui lòng chọn hoặc nhập số ngày hợp lệ (lớn hơn 0)!');
+          this.showCustomAlert({
+            title: 'SỐ NGÀY KHÔNG HỢP LỆ',
+            message: 'Vui lòng chọn hoặc nhập số ngày gia hạn hợp lệ (lớn hơn 0).',
+            icon: '⚠️',
+            iconBg: 'bg-amber-950/80 border border-amber-700 text-amber-400'
+          });
           return;
         }
         this.closeExtendModal();
@@ -941,30 +1085,51 @@
         if (!user) return;
         user.status = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
         await this.saveUsers();
+        this.showToast(user.status === 'ACTIVE' ? `🔓 Đã mở khóa tài khoản ${user.name}` : `🔒 Đã tạm khóa tài khoản ${user.name}`);
       },
 
-      deleteUser: async function(userId) {
+      deleteUser: function(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
-        if (confirm(`Bạn có chắc chắn muốn xóa học viên ${user.name} (Key: ${user.key})?`)) {
-          this.addDeletedKey(user.key);
-          this.addDeletedKey(user.id);
-          this.users = this.users.filter(u => u.id !== userId);
-          await this.saveUsers();
-          alert(`🗑️ Đã xóa vĩnh viễn học viên ${user.name} (Key: ${user.key})!`);
-        }
+        const isUnregistered = !user.name || user.name === 'Chưa Kích Hoạt' || user.name === 'Chưa Đặt Tên';
+        const displayName = isUnregistered ? 'Chờ Kích Hoạt' : user.name;
+        
+        this.showCustomConfirm({
+          title: 'Xóa Học Viên & Thu Hồi Key?',
+          message: `Bạn có chắc chắn muốn xóa học viên <strong>${displayName}</strong><br>(Mã Key: <span class="font-mono text-cyan-300 font-bold">${user.key}</span>)?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Quyền truy cập của học viên sẽ bị thu hồi ngay lập tức.</span>`,
+          icon: '🗑️',
+          iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
+          confirmText: 'Xác Nhận Xóa',
+          confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
+          onConfirm: async () => {
+            this.addDeletedKey(user.key);
+            this.addDeletedKey(user.id);
+            this.users = this.users.filter(u => u.id !== userId);
+            await this.saveUsers();
+            this.showToast(`🗑️ Đã xóa vĩnh viễn học viên ${displayName}`);
+          }
+        });
       },
 
-      clearAllData: async function() {
-        if (confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách key học viên?')) {
-          this.users.forEach(u => {
-            this.addDeletedKey(u.key);
-            this.addDeletedKey(u.id);
-          });
-          this.users = [];
-          await this.saveUsers();
-          alert('✅ Đã dọn sạch 100% toàn bộ dữ liệu key!');
-        }
+      clearAllData: function() {
+        this.showCustomConfirm({
+          title: '⚠️ Dọn Sạch Toàn Bộ Key?',
+          message: 'Bạn có chắc chắn muốn <strong>xóa sạch 100% toàn bộ danh sách Key</strong> học viên?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Toàn bộ học viên sẽ bị thu hồi quyền truy cập và không thể hoàn tác!</span>',
+          icon: '⚠️',
+          iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
+          confirmText: 'Xóa Sạch Tất Cả',
+          confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
+          onConfirm: async () => {
+            this.users.forEach(u => {
+              this.addDeletedKey(u.key);
+              this.addDeletedKey(u.id);
+            });
+            this.users = [];
+            localStorage.removeItem('eduquest_b1_all_users');
+            await this.saveUsers();
+            this.showToast('✅ Đã dọn sạch 100% toàn bộ dữ liệu Key!');
+          }
+        });
       },
 
       getDaysRemaining: function(expiresAt) {
@@ -1230,14 +1395,7 @@
         document.body.appendChild(a);
         a.click();
         a.remove();
-      },
-
-      clearAllData: async function() {
-        if (confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách key học viên?')) {
-          this.users = [];
-          await this.saveUsers();
-          alert('✅ Đã dọn sạch toàn bộ dữ liệu!');
-        }
+        this.showToast('📁 Đã tải xuống file sao lưu dữ liệu JSON!');
       }
     };
 
