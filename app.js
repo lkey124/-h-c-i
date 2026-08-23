@@ -1648,35 +1648,77 @@ const app = {
     const emailInp = document.getElementById('login-email-input');
     const errBox = document.getElementById('login-error-msg');
     const btn = document.getElementById('btn-email-step');
-    const email = (emailInp?.value || '').trim().toLowerCase();
+    const rawInput = (emailInp?.value || '').trim();
 
-    if (!email || !email.includes('@')) {
-      if (errBox) { errBox.innerText = 'Vui lòng nhập địa chỉ email hợp lệ!'; errBox.classList.remove('hidden'); }
+    if (!rawInput) {
+      if (errBox) { errBox.innerText = 'Vui lòng nhập Email hoặc Mã Key!'; errBox.classList.remove('hidden'); }
       return;
     }
     if (errBox) errBox.classList.add('hidden');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang kiểm tra...'; this.initIcons(); }
 
+    const isEmail = rawInput.includes('@');
+    const cleanEmail = rawInput.toLowerCase();
+    const cleanKeyNorm = rawInput.replace(/[- _]/g, '').toUpperCase();
+
     try {
-      // Fetch all accounts and find by email
+      await this.syncKeysFromCloud();
       const accounts = await this.fetchAccountsFromCloud();
-      const found = accounts.find(a => (a.email || '').toLowerCase() === email);
+      
+      // 1. Match by Email or Linked Key in accounts list
+      let found = accounts.find(a => {
+        if (isEmail && a.email && a.email.toLowerCase() === cleanEmail) return true;
+        if (a.linkedKey && (a.linkedKey === rawInput || a.linkedKey.replace(/[- _]/g, '').toUpperCase() === cleanKeyNorm)) return true;
+        return false;
+      });
+
+      // 2. Match by standalone Key in this.data.users list
+      if (!found && Array.isArray(this.data.users)) {
+        const matchedKey = this.data.users.find(u => {
+          const uKeyNorm = (u.key || u.id || '').replace(/[- _]/g, '').toUpperCase();
+          if (uKeyNorm && uKeyNorm === cleanKeyNorm) return true;
+          if (isEmail && u.linkedEmail && u.linkedEmail.toLowerCase() === cleanEmail) return true;
+          return false;
+        });
+
+        if (matchedKey && matchedKey.name && matchedKey.name !== 'Chưa Kích Hoạt') {
+          found = {
+            accountId: matchedKey.linkedAccountId || ('ACC-' + (matchedKey.key || matchedKey.id)),
+            email: matchedKey.linkedEmail || (isEmail ? cleanEmail : (matchedKey.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
+            name: matchedKey.name,
+            tier: 'premium',
+            linkedKey: matchedKey.key,
+            keyExpiresAt: matchedKey.expiresAt,
+            createdAt: matchedKey.createdAt || new Date().toISOString(),
+            lastActiveDate: new Date().toISOString(),
+            streak: matchedKey.streak || 1,
+            progress: { passedSets: {}, unlockedUpTo: 1 },
+            status: matchedKey.status || 'ACTIVE'
+          };
+          await this.pushAccountToCloud(found);
+        }
+      }
 
       if (found) {
-        // Login existing account
+        // Restore account with full name and progress
         this.loginWithAccount(found);
         this.closeLoginModal();
         this.playSound('pass');
+        const isPrem = this.getCurrentTier() === 'premium';
         this.showCustomAlert({
           title: 'CHÀO MỪNG TRỞ LẠI!',
-          message: `Học viên <strong>${found.name}</strong> đã đăng nhập thành công! ${this.getCurrentTier() === 'premium' ? '⭐ Tài khoản Premium đang hoạt động.' : '🆓 Tài khoản Free – Bài 1 sẵn sàng!'}`,
+          message: `Học viên <strong>${found.name}</strong> đã đăng nhập thành công!<br><br>${isPrem ? '⭐ Tài khoản <strong>Premium</strong> đang hoạt động.' : '🆓 Tài khoản Free – Bài 1 sẵn sàng!'}`,
           icon: '👋',
           iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-          btnText: 'Bắt Đầu Học'
+          btnText: 'Vào Học Ngay'
         });
       } else {
+        if (!isEmail) {
+          if (errBox) { errBox.innerText = `Không tìm thấy mã Key "${rawInput}". Vui lòng kiểm tra lại hoặc nhập đúng Email!`; errBox.classList.remove('hidden'); }
+          return;
+        }
         // New email → show name registration step
-        this.data.pendingEmail = email;
+        this.data.pendingEmail = cleanEmail;
         document.getElementById('login-step-email')?.classList.add('hidden');
         document.getElementById('login-step-name')?.classList.remove('hidden');
         const nameInp = document.getElementById('login-name-input');
@@ -1929,20 +1971,67 @@ const app = {
   },
 
   fetchAccountsFromCloud: async function() {
+    let accountsList = [];
     const urls = ['/api/accounts', '/data/accounts_db.json'];
     for (const url of urls) {
       try {
         const res = await fetch(url + '?t=' + Date.now());
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data)) return data;
+          const list = Array.isArray(data) ? data : (data.accounts || data.data || []);
+          if (Array.isArray(list) && list.length > 0) {
+            accountsList = list;
+            break;
+          }
         }
       } catch (e) {}
     }
-    return [];
+
+    // Also check local accounts database in localStorage
+    try {
+      const localSaved = localStorage.getItem('eduquest_b1_all_accounts');
+      if (localSaved) {
+        const parsed = JSON.parse(localSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map(accountsList.map(a => [(a.email || '').toLowerCase(), a]));
+          parsed.forEach(a => {
+            const k = (a.email || '').toLowerCase();
+            if (k && !map.has(k)) map.set(k, a);
+          });
+          accountsList = Array.from(map.values());
+        }
+      }
+    } catch(e) {}
+
+    // Also check registered users in this.data.users (Keys list)
+    if (Array.isArray(this.data.users) && this.data.users.length > 0) {
+      const map = new Map(accountsList.map(a => [(a.email || '').toLowerCase(), a]));
+      this.data.users.forEach(u => {
+        const email = (u.linkedEmail || (u.name ? u.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com' : '')).toLowerCase();
+        if (email && !map.has(email) && u.name && u.name !== 'Chưa Kích Hoạt') {
+          map.set(email, {
+            accountId: u.linkedAccountId || ('ACC-' + (u.key || u.id)),
+            email: email,
+            name: u.name,
+            tier: 'premium',
+            linkedKey: u.key,
+            keyExpiresAt: u.expiresAt,
+            createdAt: u.createdAt || new Date().toISOString(),
+            lastActiveDate: u.lastActiveDate || new Date().toISOString(),
+            streak: u.streak || 1,
+            progress: { passedSets: {}, unlockedUpTo: 1 },
+            status: u.status || 'ACTIVE'
+          });
+        }
+      });
+      accountsList = Array.from(map.values());
+    }
+
+    return accountsList;
   },
 
   pushAccountToCloud: async function(account) {
+    if (!account) return;
     try {
       await fetch('/api/accounts', {
         method: 'POST',
@@ -1950,7 +2039,23 @@ const app = {
         body: JSON.stringify({ account })
       });
     } catch (e) {}
-    // Also update localStorage
+
+    // Multi-account persistent cache in localStorage
+    try {
+      let all = [];
+      const saved = localStorage.getItem('eduquest_b1_all_accounts');
+      if (saved) all = JSON.parse(saved);
+      if (!Array.isArray(all)) all = [];
+      const idx = all.findIndex(a => 
+        (a.accountId && a.accountId === account.accountId) ||
+        (a.email && account.email && a.email.toLowerCase() === account.email.toLowerCase())
+      );
+      if (idx >= 0) all[idx] = account;
+      else all.push(account);
+      localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(all));
+    } catch(e) {}
+
+    // Update active user in localStorage
     localStorage.setItem('eduquest_b1_account', JSON.stringify(account));
   },
 
