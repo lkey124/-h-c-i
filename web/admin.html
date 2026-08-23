@@ -82,7 +82,7 @@
           <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 border border-indigo-600/80 shadow-sm shrink-0">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-extrabold text-cyan-300">Phiên Bản:</span>
-            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.4.1</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.4.2</span>
           </div>
 
           <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5">
@@ -1598,7 +1598,6 @@
       accounts: [],
 
       syncAccountsFromCloud: async function() {
-        const deletedKeys = this.getDeletedKeys();
         let loadedAccounts = [];
         const urls = ['/api/accounts', '/data/accounts_db.json'];
         for (const url of urls) {
@@ -1615,36 +1614,8 @@
           } catch(e) {}
         }
 
-        // Check localStorage accounts
-        try {
-          const localAccts = localStorage.getItem('eduquest_b1_all_accounts');
-          if (localAccts) {
-            const parsed = JSON.parse(localAccts);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              const map = new Map(loadedAccounts.map(a => [a.accountId || a.email, a]));
-              parsed.forEach(a => {
-                const k = a.accountId || a.email;
-                if (k && !map.has(k)) map.set(k, a);
-              });
-              loadedAccounts = Array.from(map.values());
-            }
-          }
-        } catch(e) {}
-
-        // Filter out any deleted accounts
-        const filtered = (loadedAccounts || []).filter(a => {
-          if (!a) return false;
-          const aIdNorm = this.normalizeKey(a.accountId);
-          const emailNorm = this.normalizeKey(a.email);
-          const keyNorm = this.normalizeKey(a.linkedKey);
-          if (aIdNorm && deletedKeys.includes(aIdNorm)) return false;
-          if (emailNorm && deletedKeys.includes(emailNorm)) return false;
-          if (keyNorm && deletedKeys.includes(keyNorm)) return false;
-          return true;
-        });
-
-        this.accounts = filtered;
-        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(filtered));
+        this.accounts = loadedAccounts;
+        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
         this.renderAccountsTable();
       },
 

@@ -75,8 +75,6 @@ module.exports = async (req, res) => {
   acct.tier = 'premium';
   acct.linkedKey = keyObj.key || rawKey;
   acct.keyExpiresAt = keyObj.expiresAt;
-  acct.lastActiveDate = new Date().toISOString();
-
   const kIdx = keys.findIndex(k => norm(k.key || k.id) === normEntered);
   if (kIdx >= 0) keys[kIdx] = keyObj; else keys.push(keyObj);
   const aIdx = accounts.findIndex(a => a.accountId === accountId);
@@ -84,6 +82,12 @@ module.exports = async (req, res) => {
 
   inMemoryKeys = keys;
   inMemoryAccounts = accounts;
+
+  try {
+    fs.writeFileSync(KEYS_PATH, JSON.stringify(keys, null, 2), 'utf8');
+    fs.writeFileSync(CLOUD_KEYS_PATH, JSON.stringify(keys, null, 2), 'utf8');
+    fs.writeFileSync(ACCTS_PATH, JSON.stringify(accounts, null, 2), 'utf8');
+  } catch(e) {}
 
   return res.json({ ok: true, account: acct, keyInfo: keyObj });
 };

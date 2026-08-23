@@ -17,6 +17,12 @@ export default async function handler(req, res) {
     try {
       const keysData = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       inMemoryKeys = Array.isArray(keysData) ? keysData : [];
+      try {
+        const p1 = path.join(process.cwd(), 'data', 'users_cloud_db.json');
+        const p2 = path.join(process.cwd(), 'data', 'keys_db.json');
+        fs.writeFileSync(p1, JSON.stringify(inMemoryKeys, null, 2), 'utf8');
+        fs.writeFileSync(p2, JSON.stringify(inMemoryKeys, null, 2), 'utf8');
+      } catch(e) {}
       return res.status(200).json({ success: true, count: inMemoryKeys.length });
     } catch (e) {
       return res.status(500).json({ error: e.message });

@@ -68,6 +68,7 @@ module.exports = async (req, res) => {
       const list = readAccounts();
       const { active, purged } = performCleanup(list);
       inMemoryAccounts = active;
+      try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
       return res.json({ success: true, purged, remaining: active.length, accounts: active });
     }
     if (body && body.deleteAccountId) {
@@ -79,6 +80,7 @@ module.exports = async (req, res) => {
         (!a.email || a.email.toLowerCase() !== delId.toLowerCase()) &&
         a.linkedKey !== delId
       );
+      try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
       return res.json({ success: true, remaining: inMemoryAccounts.length });
     }
     if (body && body.account) {
@@ -87,14 +89,17 @@ module.exports = async (req, res) => {
       if (idx >= 0) list[idx] = body.account;
       else list.push(body.account);
       inMemoryAccounts = list;
+      try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
       return res.json({ success: true, account: body.account });
     }
     if (body && Array.isArray(body.accounts)) {
       inMemoryAccounts = body.accounts;
+      try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
       return res.json({ success: true, count: inMemoryAccounts.length });
     }
     if (Array.isArray(body)) {
       inMemoryAccounts = body;
+      try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
       return res.json({ success: true, count: inMemoryAccounts.length });
     }
     return res.status(400).json({ error: 'Invalid body' });

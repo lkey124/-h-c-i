@@ -44,9 +44,12 @@
     "durationDays": 90,
     "key": "B1-VIP-2026",
     "status": "ACTIVE",
-    "linkedEmail": null,
-    "linkedAccountId": null,
-    "createdAt": "2026-08-23T00:00:00Z"
+    "linkedEmail": "binhluu64@gmail.com",
+    "linkedAccountId": "ACC-1787466313845-UR49Y",
+    "createdAt": "2026-08-23T00:00:00Z",
+    "name": "BINH",
+    "linkedName": "BINH",
+    "streak": 1
   },
   {
     "key": "B1-REALTIME468",
