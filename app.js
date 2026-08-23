@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.4.0',
+  APP_VERSION: 'v2.4.1',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,8 +476,8 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.4.0',
-          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với kiến trúc Real-Time Events (Tự động cập nhật Đăng Ký & Nâng Cấp Key tức thì giữa Client & Admin).<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.4.1',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất: hiển thị shop binhluu.ai.studio toàn diện trên điện thoại và tối ưu giao diện học viên.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
           btnText: 'Đăng Nhập Lại Ngay',

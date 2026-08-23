@@ -14,5 +14,25 @@
     "linkedKey": "B1-REALTIME468",
     "keyExpiresAt": "2026-11-21T06:24:45.233Z",
     "lastActiveDate": "2026-08-23T06:24:45.834385+00:00"
+  },
+  {
+    "accountId": "ACC-1787466313845-UR49Y",
+    "email": "binhluu64@gmail.com",
+    "name": "BINH",
+    "tier": "free",
+    "linkedKey": null,
+    "keyExpiresAt": null,
+    "freeExamSubmitted": false,
+    "createdAt": "2026-08-23T06:25:13.845Z",
+    "streak": 1,
+    "lastActiveDate": "2026-08-23T06:25:32.092Z",
+    "progress": {
+      "unlockedUpTo": 1,
+      "passedSets": {},
+      "streak": 1,
+      "exp": 0,
+      "attempts": []
+    },
+    "status": "ACTIVE"
   }
 ]

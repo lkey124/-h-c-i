@@ -1,18 +1,5 @@
 [
   {
-    "id": "USR-1787462216121",
-    "name": "Chưa Kích Hoạt",
-    "key": "B1-EBC1611",
-    "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T05:16:56.121Z",
-    "expiresAt": "2026-11-21T05:16:56.121Z",
-    "streak": 1,
-    "status": "ACTIVE",
-    "linkedAccountId": null,
-    "linkedEmail": null,
-    "linkedName": null
-  },
-  {
     "id": "USR-HONGANH-6854",
     "name": "HỒNG ANH",
     "key": "B1-3BM6854",
@@ -60,5 +47,17 @@
     "linkedEmail": null,
     "linkedAccountId": null,
     "createdAt": "2026-08-23T00:00:00Z"
+  },
+  {
+    "key": "B1-REALTIME468",
+    "name": "NGUYỄN VĂN AN",
+    "createdAt": "2026-08-23T06:24:45.233Z",
+    "expiresAt": "2026-11-21T06:24:45.233Z",
+    "status": "ACTIVE",
+    "durationDays": 90,
+    "linkedName": "NGUYỄN VĂN AN",
+    "linkedAccountId": "ACC-TEST-1787466282711",
+    "linkedEmail": "realtime_student_1787466282711@gmail.com",
+    "streak": 1
   }
 ]
