@@ -864,13 +864,13 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 34;
-      else if (level === 4) size = 30;
-      else if (level === 3) size = 26;
+      if (level === 5) size = 32;
+      else if (level === 4) size = 28;
+      else if (level === 3) size = 25;
       else if (level === 2) size = 22;
       else size = 19;
     }
-    const height = size;
+    const height = Math.round(size * 1.2);
     const gifSrc = `public/flames/flame_lv${level}.gif`;
 
     return `

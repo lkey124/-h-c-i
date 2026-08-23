@@ -801,7 +801,7 @@
           else if (level === 2) size = 19;
           else size = 16;
         }
-        const height = size;
+        const height = Math.round(size * 1.2);
         const gifSrc = `public/flames/flame_lv${level}.gif`;
 
         return `
