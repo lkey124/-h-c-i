@@ -1,5 +1,5 @@
 // Service Worker for Bình Lưu - Luyện Đề B1 Vượt Ải PWA
-const CACHE_NAME = 'b1-mastery-v2.3.0';
+const CACHE_NAME = 'b1-mastery-v2.5.5';
 const ASSETS_TO_CACHE = [
   '/icons/app-logo.png',
   '/icons/icon-192.png',
@@ -27,8 +27,15 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Always network-first for HTML, JS, CSS, APIs
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+
+  // ALWAYS BYPASS CACHE FOR APIs AND DATABASE JSONs
+  if (url.pathname.startsWith('/api/') || url.pathname.includes('.json')) {
+    return;
+  }
+
+  // Network-first for everything else
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );

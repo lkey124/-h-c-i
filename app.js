@@ -466,7 +466,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.5.4',
+  APP_VERSION: 'v2.5.5',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -1606,36 +1606,6 @@ const app = {
         return false;
       });
 
-      // Search in keys list
-      if (!found && Array.isArray(this.data.users)) {
-        const matchedKey = this.data.users.find(u => {
-          const uKeyNorm = (u.key || u.id || '').replace(/[- _]/g, '').toUpperCase();
-          if (uKeyNorm && uKeyNorm === cleanKeyNorm) return true;
-          if (u.name && u.name.trim().toLowerCase() === cleanLower && u.name !== 'Chưa Kích Hoạt') return true;
-          if (u.linkedName && u.linkedName.trim().toLowerCase() === cleanLower) return true;
-          if (u.linkedEmail && u.linkedEmail.trim().toLowerCase() === cleanLower) return true;
-          return false;
-        });
-
-        if (matchedKey && matchedKey.name && matchedKey.name !== 'Chưa Kích Hoạt') {
-          found = {
-            accountId: matchedKey.linkedAccountId || ('ACC-' + (matchedKey.key || matchedKey.id)),
-            email: matchedKey.linkedEmail || (isEmail ? cleanLower : (matchedKey.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
-            name: matchedKey.name || matchedKey.linkedName,
-            tier: 'premium',
-            linkedKey: matchedKey.key,
-            password: matchedKey.password || null,
-            keyExpiresAt: matchedKey.expiresAt,
-            createdAt: matchedKey.createdAt || new Date().toISOString(),
-            lastActiveDate: new Date().toISOString(),
-            streak: matchedKey.streak || 1,
-            progress: { passedSets: {}, unlockedUpTo: 1 },
-            status: matchedKey.status || 'ACTIVE'
-          };
-          await this.pushAccountToCloud(found);
-        }
-      }
-
       if (found) {
         // Account exists -> Ask for Password
         this.data.pendingAccount = found;
@@ -1986,7 +1956,7 @@ const app = {
   },
 
   fetchAccountsFromCloud: async function() {
-    let accountsList = [];
+    let serverAccounts = null;
     const urls = ['/api/accounts', '/data/accounts_db.json'];
     for (const url of urls) {
       try {
@@ -1994,55 +1964,33 @@ const app = {
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data) ? data : (data.accounts || data.data || []);
-          if (Array.isArray(list) && list.length > 0) {
-            accountsList = list;
+          if (Array.isArray(list)) {
+            serverAccounts = list;
             break;
           }
         }
       } catch (e) {}
     }
 
-    // Also check local accounts database in localStorage
+    if (serverAccounts !== null) {
+      // Server is the Single Source of Truth!
+      // Update local storage strictly to match server (purging deleted accounts)
+      try {
+        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(serverAccounts));
+      } catch(e) {}
+      return serverAccounts;
+    }
+
+    // Offline fallback ONLY when network completely fails
     try {
       const localSaved = localStorage.getItem('eduquest_b1_all_accounts');
       if (localSaved) {
         const parsed = JSON.parse(localSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const map = new Map(accountsList.map(a => [(a.email || '').toLowerCase(), a]));
-          parsed.forEach(a => {
-            const k = (a.email || '').toLowerCase();
-            if (k && !map.has(k)) map.set(k, a);
-          });
-          accountsList = Array.from(map.values());
-        }
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch(e) {}
 
-    // Also check registered users in this.data.users (Keys list)
-    if (Array.isArray(this.data.users) && this.data.users.length > 0) {
-      const map = new Map(accountsList.map(a => [(a.email || '').toLowerCase(), a]));
-      this.data.users.forEach(u => {
-        const email = (u.linkedEmail || (u.name ? u.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com' : '')).toLowerCase();
-        if (email && !map.has(email) && u.name && u.name !== 'Chưa Kích Hoạt') {
-          map.set(email, {
-            accountId: u.linkedAccountId || ('ACC-' + (u.key || u.id)),
-            email: email,
-            name: u.name,
-            tier: 'premium',
-            linkedKey: u.key,
-            keyExpiresAt: u.expiresAt,
-            createdAt: u.createdAt || new Date().toISOString(),
-            lastActiveDate: u.lastActiveDate || new Date().toISOString(),
-            streak: u.streak || 1,
-            progress: { passedSets: {}, unlockedUpTo: 1 },
-            status: u.status || 'ACTIVE'
-          });
-        }
-      });
-      accountsList = Array.from(map.values());
-    }
-
-    return accountsList;
+    return [];
   },
 
   pushAccountToCloud: async function(account, isNewRegistration = false) {

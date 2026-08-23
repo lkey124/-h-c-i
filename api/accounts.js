@@ -85,12 +85,39 @@ module.exports = async (req, res) => {
     }
     if (body && body.account) {
       const list = readAccounts();
-      const idx = list.findIndex(a => a.accountId === body.account.accountId);
-      if (idx >= 0) list[idx] = body.account;
-      else list.push(body.account);
+      const acct = body.account;
+      const targetEmail = (acct.email || '').trim().toLowerCase();
+      const targetId = acct.accountId;
+      
+      const idx = list.findIndex(a => 
+        (targetId && a.accountId === targetId) ||
+        (targetEmail && a.email && a.email.trim().toLowerCase() === targetEmail)
+      );
+
+      if (idx >= 0) {
+        const existing = list[idx];
+        // Preserve linkedKey and premium status if existing had them
+        if (existing.linkedKey && !acct.linkedKey) {
+          acct.linkedKey = existing.linkedKey;
+          acct.keyExpiresAt = existing.keyExpiresAt;
+          acct.tier = existing.tier || 'premium';
+        } else if (existing.tier === 'premium' && acct.tier === 'free' && existing.keyExpiresAt) {
+          try {
+            const exp = new Date(existing.keyExpiresAt);
+            if (exp > new Date()) {
+              acct.tier = 'premium';
+              acct.linkedKey = existing.linkedKey;
+              acct.keyExpiresAt = existing.keyExpiresAt;
+            }
+          } catch(e) {}
+        }
+        list[idx] = { ...existing, ...acct };
+      } else {
+        list.push(acct);
+      }
       inMemoryAccounts = list;
       try { fs.writeFileSync(DB_PATH, JSON.stringify(inMemoryAccounts, null, 2), 'utf8'); } catch(e) {}
-      return res.json({ success: true, account: body.account });
+      return res.json({ success: true, account: acct });
     }
     if (body && Array.isArray(body.accounts)) {
       inMemoryAccounts = body.accounts;

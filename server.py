@@ -251,9 +251,36 @@ class CleanHandler(BaseHTTPRequestHandler):
                     accounts_list = self.read_json_file(ACCOUNTS_FILE)
                     acct = body["account"]
                     is_new = body.get("isNewRegistration", False)
-                    idx = next((i for i, a in enumerate(accounts_list) if isinstance(a, dict) and a.get("accountId") == acct.get("accountId")), -1)
+                    target_email = (acct.get("email") or "").strip().lower()
+                    target_id = acct.get("accountId")
+                    
+                    idx = -1
+                    for i, a in enumerate(accounts_list):
+                        if isinstance(a, dict):
+                            if target_id and a.get("accountId") == target_id:
+                                idx = i
+                                break
+                            if target_email and a.get("email") and a.get("email").strip().lower() == target_email:
+                                idx = i
+                                break
+
                     if idx >= 0:
-                        accounts_list[idx] = acct
+                        existing = accounts_list[idx]
+                        # Preserve linkedKey and premium tier if existing had them and incoming didn't specify or was downgraded accidentally
+                        if existing.get("linkedKey") and not acct.get("linkedKey"):
+                            acct["linkedKey"] = existing.get("linkedKey")
+                            acct["keyExpiresAt"] = existing.get("keyExpiresAt")
+                            acct["tier"] = existing.get("tier", "premium")
+                        elif existing.get("tier") == "premium" and acct.get("tier") == "free" and existing.get("keyExpiresAt"):
+                            try:
+                                exp = datetime.fromisoformat(existing["keyExpiresAt"].replace("Z", "+00:00"))
+                                if exp > datetime.now(timezone.utc):
+                                    acct["tier"] = "premium"
+                                    acct["linkedKey"] = existing.get("linkedKey")
+                                    acct["keyExpiresAt"] = existing.get("keyExpiresAt")
+                            except:
+                                pass
+                        accounts_list[idx] = {**existing, **acct}
                     else:
                         accounts_list.append(acct)
                         is_new = True
