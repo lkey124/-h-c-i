@@ -215,134 +215,169 @@ body {
 }
 
 /* ============================================================= */
-/* TIKTOK STREAK FIRE ENGINE (MULTI-LAYER FLAMES & SPARKS) */
+/* TIKTOK STREAK FIRE ENGINE (THE EXACT USER SPECIFICATION) */
 /* ============================================================= */
-@keyframes tiktokFlameDance {
-  0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 6px var(--flame-glow)); }
-  25% { transform: scale(1.12, 1.2) rotate(4deg) skewX(-3deg); }
-  50% { transform: scale(0.94, 0.96) rotate(-4deg); filter: drop-shadow(0 0 18px var(--flame-glow)); }
-  75% { transform: scale(1.08, 1.15) rotate(3deg) skewX(3deg); }
-  100% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 6px var(--flame-glow)); }
+
+/* Khung chứa biểu tượng chuỗi */
+.streak-container {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #2b1f1f, #1a1a1c);
+    padding: 6px 14px;
+    border-radius: 30px;
+    box-shadow: 0 0 15px rgba(255, 69, 0, 0.35);
+    border: 1px solid rgba(255, 87, 34, 0.45);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
 }
 
-@keyframes tiktokCorePulse {
-  0% { transform: scale(0.85) translateY(0); opacity: 0.8; }
-  50% { transform: scale(1.25) translateY(-3px); opacity: 1; filter: drop-shadow(0 0 10px #ffffff); }
-  100% { transform: scale(0.85) translateY(0); opacity: 0.8; }
+.streak-container:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.55);
 }
 
-@keyframes sparkFly1 {
-  0% { transform: translate(0, 0) scale(1); opacity: 1; }
-  100% { transform: translate(-10px, -30px) scale(0); opacity: 0; }
-}
-@keyframes sparkFly2 {
-  0% { transform: translate(0, 0) scale(1); opacity: 1; }
-  100% { transform: translate(10px, -34px) scale(0); opacity: 0; }
-}
-@keyframes sparkFly3 {
-  0% { transform: translate(0, 0) scale(0.8); opacity: 1; }
-  100% { transform: translate(0px, -24px) scale(0); opacity: 0; }
+.streak-container:active {
+    transform: scale(0.95);
 }
 
-.tiktok-flame-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
+/* Biểu tượng ngọn lửa với animation bập bùng */
+.fire-icon {
+    font-size: 20px;
+    margin-right: 6px;
+    display: inline-block;
+    transform-origin: bottom center;
+    animation: burnFire 0.8s ease-in-out infinite alternate;
 }
 
-.tiktok-flame-outer {
-  animation: tiktokFlameDance 1s infinite ease-in-out;
-  transform-origin: bottom center;
+/* Số đếm chuỗi */
+.streak-count {
+    color: #ffcc00;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
+    font-family: inherit;
+    letter-spacing: 0.5px;
 }
 
-.tiktok-flame-core {
-  position: absolute;
-  bottom: 8%;
-  left: 25%;
-  width: 50%;
-  height: 50%;
-  animation: tiktokCorePulse 0.7s infinite ease-in-out;
-  transform-origin: bottom center;
-  pointer-events: none;
+/* Định nghĩa chuyển động ngọn lửa */
+@keyframes burnFire {
+    0% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 2px #ff3b00);
+    }
+    50% {
+        transform: scale(1.18) rotate(-4deg) translateY(-2px);
+        filter: drop-shadow(0 0 10px #ff7700);
+    }
+    100% {
+        transform: scale(0.94) rotate(4deg) translateY(1px);
+        filter: drop-shadow(0 0 6px #ffaa00);
+    }
 }
 
-.tiktok-spark {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  pointer-events: none;
+/* LEVEL 1: 1-2 NGÀY (LỬA KHỞI ĐỘNG VÀNG AMBER) */
+.streak-container-lv1 {
+    background: linear-gradient(135deg, #2b1f1f, #1a1a1c);
+    border: 1px solid rgba(255, 170, 0, 0.4);
+    box-shadow: 0 0 12px rgba(255, 170, 0, 0.3);
 }
 
-.spark-1 {
-  top: 10%;
-  left: 15%;
-  background: #ffedd5;
-  box-shadow: 0 0 8px #f97316;
-  animation: sparkFly1 0.9s infinite ease-out;
+/* LEVEL 2: 3-6 NGÀY (LỬA CAM NHIỆT HUYẾT) */
+.streak-container-lv2 {
+    background: linear-gradient(135deg, #38150c, #1f0b07);
+    border: 1px solid rgba(255, 87, 34, 0.6);
+    box-shadow: 0 0 16px rgba(255, 87, 34, 0.45);
 }
 
-.spark-2 {
-  top: 15%;
-  right: 15%;
-  background: #fef08a;
-  box-shadow: 0 0 8px #ef4444;
-  animation: sparkFly2 1.2s infinite ease-out 0.3s;
+/* LEVEL 3: 7-13 NGÀY (LỬA ĐỎ SIÊU CHÁY BÙNG NỔ TIKTOK) */
+.streak-container-lv3 {
+    background: linear-gradient(135deg, #420816, #1f040a);
+    box-shadow: 0 0 22px rgba(244, 63, 94, 0.75), inset 0 0 10px rgba(225, 29, 72, 0.4);
+    border: 1.5px solid #f43f5e;
+}
+.streak-container-lv3 .fire-icon {
+    font-size: 22px;
+    animation: burnFireRed 0.6s ease-in-out infinite alternate;
+}
+.streak-container-lv3 .streak-count {
+    color: #ff3366;
+    text-shadow: 0 0 10px rgba(244, 63, 94, 0.9);
 }
 
-.spark-3 {
-  top: 5%;
-  left: 45%;
-  background: #ffffff;
-  box-shadow: 0 0 8px #fbbf24;
-  animation: sparkFly3 0.8s infinite ease-out 0.15s;
+@keyframes burnFireRed {
+    0% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 4px #ff0055);
+    }
+    50% {
+        transform: scale(1.28) rotate(-6deg) translateY(-3px);
+        filter: drop-shadow(0 0 16px #ff0033) drop-shadow(0 0 8px #ff758f);
+    }
+    100% {
+        transform: scale(0.92) rotate(5deg) translateY(1px);
+        filter: drop-shadow(0 0 8px #e11d48);
+    }
 }
 
-/* 5 TIKTOK STREAK AURA TIERS */
-.streak-aura-lv1 {
-  --flame-glow: rgba(245, 158, 11, 0.7);
-  background: linear-gradient(135deg, #451a03 0%, #1e1b4b 100%);
-  border: 1.5px solid #d97706;
-  box-shadow: 0 0 10px rgba(217, 119, 6, 0.4);
+/* LEVEL 4: 14-29 NGÀY (LỬA TÍM PLASMA BẬC THẦY) */
+.streak-container-lv4 {
+    background: linear-gradient(135deg, #2e0854, #120324);
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.7), inset 0 0 10px rgba(147, 51, 234, 0.4);
+    border: 1.5px solid #c084fc;
+}
+.streak-container-lv4 .fire-icon {
+    font-size: 22px;
+    animation: burnFirePurple 0.7s ease-in-out infinite alternate;
+}
+.streak-container-lv4 .streak-count {
+    color: #d8b4fe;
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.9);
 }
 
-.streak-aura-lv2 {
-  --flame-glow: rgba(249, 115, 22, 0.85);
-  background: linear-gradient(135deg, #7c2d12 0%, #431407 100%);
-  border: 1.5px solid #ea580c;
-  box-shadow: 0 0 15px rgba(234, 88, 12, 0.6);
+@keyframes burnFirePurple {
+    0% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 4px #9333ea);
+    }
+    50% {
+        transform: scale(1.22) rotate(-5deg) translateY(-2px);
+        filter: drop-shadow(0 0 14px #c084fc);
+    }
+    100% {
+        transform: scale(0.94) rotate(4deg) translateY(1px);
+        filter: drop-shadow(0 0 7px #a855f7);
+    }
 }
 
-.streak-aura-lv3 {
-  --flame-glow: rgba(244, 63, 94, 1);
-  background: linear-gradient(135deg, #881337 0%, #4c0519 40%, #991b1b 100%);
-  border: 2px solid #f43f5e;
-  box-shadow: 0 0 22px rgba(244, 63, 94, 0.9), inset 0 0 10px rgba(225, 29, 72, 0.6);
-  animation: pulseFireGlow 1.2s infinite alternate ease-in-out;
+/* LEVEL 5: 30+ NGÀY (LỬA HOÀNG KIM HUYỀN THOẠI) */
+.streak-container-lv5 {
+    background: linear-gradient(135deg, #78350f, #331404);
+    box-shadow: 0 0 26px rgba(250, 204, 21, 0.85), inset 0 0 12px rgba(253, 224, 71, 0.5);
+    border: 1.5px solid #fde047;
+}
+.streak-container-lv5 .fire-icon {
+    font-size: 24px;
+    animation: burnFireGold 0.55s ease-in-out infinite alternate;
+}
+.streak-container-lv5 .streak-count {
+    color: #fef08a;
+    text-shadow: 0 0 12px rgba(250, 204, 21, 1);
 }
 
-.streak-aura-lv4 {
-  --flame-glow: rgba(168, 85, 247, 1);
-  background: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #1e1b4b 100%);
-  border: 2px solid #c084fc;
-  box-shadow: 0 0 24px rgba(168, 85, 247, 0.95), inset 0 0 12px rgba(147, 51, 234, 0.6);
-  animation: pulseFireGlow 1.2s infinite alternate ease-in-out;
-}
-
-.streak-aura-lv5 {
-  --flame-glow: rgba(250, 204, 21, 1);
-  background: linear-gradient(135deg, #ca8a04 0%, #eab308 50%, #fef08a 100%);
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 30px rgba(234, 179, 8, 1), inset 0 0 15px rgba(254, 240, 138, 0.9);
-  color: #1e1b4b !important;
-  animation: pulseFireGlow 0.9s infinite alternate ease-in-out;
-}
-
-@keyframes pulseFireGlow {
-  0% { transform: scale(1); filter: brightness(1); }
-  100% { transform: scale(1.03); filter: brightness(1.2); }
+@keyframes burnFireGold {
+    0% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 6px #eab308);
+    }
+    50% {
+        transform: scale(1.35) rotate(-6deg) translateY(-4px);
+        filter: drop-shadow(0 0 18px #fde047) drop-shadow(0 0 10px #ffffff);
+    }
+    100% {
+        transform: scale(0.94) rotate(5deg) translateY(1px);
+        filter: drop-shadow(0 0 9px #ca8a04);
+    }
 }
 
 /* Mobile Inputs: Prevent auto zoom on iOS */
