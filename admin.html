@@ -82,7 +82,7 @@
           <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 border border-indigo-600/80 shadow-sm shrink-0">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-extrabold text-cyan-300">Phiên Bản:</span>
-            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.4.3</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.4.4</span>
           </div>
 
           <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5">
@@ -1332,6 +1332,28 @@
             );
             localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
             await this.saveUsers();
+
+            // Also downgrade/unlink in accounts list
+            if (user.linkedAccountId || user.linkedEmail || user.key) {
+              const targetKeyNorm = this.normalizeKey(user.key || user.id);
+              this.accounts.forEach(a => {
+                if (a.accountId === user.linkedAccountId || a.email === user.linkedEmail || (a.linkedKey && this.normalizeKey(a.linkedKey) === targetKeyNorm)) {
+                  a.tier = 'free';
+                  a.linkedKey = null;
+                  a.keyExpiresAt = null;
+                }
+              });
+              localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
+              try {
+                fetch('/api/accounts', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ accounts: this.accounts })
+                });
+              } catch(e) {}
+              this.renderAccountsTable();
+            }
+
             this.renderUserTable();
             this.showToast(`🗑️ Đã xóa vĩnh viễn Key ${userKey}`);
           }

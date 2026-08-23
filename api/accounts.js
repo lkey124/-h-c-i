@@ -73,7 +73,7 @@ module.exports = async (req, res) => {
     }
     if (body && body.deleteAccountId) {
       const delId = body.deleteAccountId;
-      const list = readAccounts();
+      const list = Array.isArray(body.accounts) ? body.accounts : readAccounts();
       inMemoryAccounts = list.filter(a => 
         a.accountId !== delId && 
         a.email !== delId && 

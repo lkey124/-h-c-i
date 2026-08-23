@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.4.3',
+  APP_VERSION: 'v2.4.4',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -791,52 +791,68 @@ const app = {
 
     try {
       const accounts = await this.fetchAccountsFromCloud();
+      if (!Array.isArray(accounts) || accounts.length === 0) return;
+
       const liveAcct = accounts.find(a => 
         (a.accountId && a.accountId === user.accountId) ||
         (a.email && user.email && a.email.toLowerCase() === user.email.toLowerCase())
       );
 
-      if (liveAcct) {
-        if (liveAcct.status === 'LOCKED' || liveAcct.status === 'BLOCKED') {
-          this.data.currentUser = null;
-          localStorage.removeItem('eduquest_b1_account');
-          localStorage.removeItem('eduquest_b1_logged_user');
-          this.renderRoadmap();
-          this.updateUserStatsDisplay();
-          this.showCustomAlert({
-            title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
-            message: 'Tài khoản của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
-            icon: '🔒',
-            iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
-            btnText: 'Đã Hiểu'
-          });
-          return;
-        }
+      // If account was permanently deleted by Admin from server:
+      if (!liveAcct) {
+        console.warn('Account was permanently deleted by Admin from server database. Clearing local session.');
+        this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_account');
+        localStorage.removeItem('eduquest_b1_logged_user');
+        try {
+          let all = JSON.parse(localStorage.getItem('eduquest_b1_all_accounts') || '[]');
+          all = all.filter(a => a.accountId !== user.accountId && a.email !== user.email);
+          localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(all));
+        } catch(e) {}
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        return;
+      }
 
-        // Check if Admin extended or upgraded the account
-        const oldExp = user.keyExpiresAt ? new Date(user.keyExpiresAt).getTime() : 0;
-        const newExp = liveAcct.keyExpiresAt ? new Date(liveAcct.keyExpiresAt).getTime() : 0;
+      if (liveAcct.status === 'LOCKED' || liveAcct.status === 'BLOCKED') {
+        this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_account');
+        localStorage.removeItem('eduquest_b1_logged_user');
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        this.showCustomAlert({
+          title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
+          message: 'Tài khoản của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
+          icon: '🔒',
+          iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
+          btnText: 'Đã Hiểu'
+        });
+        return;
+      }
 
-        if (newExp > oldExp) {
-          const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
-          const remaining = this.getRemainingDays(liveAcct.keyExpiresAt);
-          const dynamicPkg = this.getDynamicPackageName(remaining);
-          this.data.currentUser = liveAcct;
-          localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
-          this.renderRoadmap();
-          this.updateUserStatsDisplay();
+      // Check if Admin extended or upgraded the account
+      const oldExp = user.keyExpiresAt ? new Date(user.keyExpiresAt).getTime() : 0;
+      const newExp = liveAcct.keyExpiresAt ? new Date(liveAcct.keyExpiresAt).getTime() : 0;
 
-          this.showCustomAlert({
-            title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
-            message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
-            icon: '🎁',
-            iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-            btnText: 'Tuyệt Vời, Tiếp Tục Học'
-          });
-        } else {
-          this.data.currentUser = liveAcct;
-          localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
-        }
+      if (newExp > oldExp) {
+        const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
+        const remaining = this.getRemainingDays(liveAcct.keyExpiresAt);
+        const dynamicPkg = this.getDynamicPackageName(remaining);
+        this.data.currentUser = liveAcct;
+        localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+
+        this.showCustomAlert({
+          title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
+          message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
+          icon: '🎁',
+          iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+          btnText: 'Tuyệt Vời, Tiếp Tục Học'
+        });
+      } else {
+        this.data.currentUser = liveAcct;
+        localStorage.setItem('eduquest_b1_account', JSON.stringify(liveAcct));
       }
     } catch(e) {}
   },

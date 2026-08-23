@@ -225,7 +225,7 @@ class CleanHandler(BaseHTTPRequestHandler):
                 elif isinstance(body, dict) and "deleteAccountId" in body:
                     del_id = body["deleteAccountId"]
                     del_norm = norm_key(del_id)
-                    accounts_list = self.read_json_file(ACCOUNTS_FILE)
+                    accounts_list = body.get("accounts") if (isinstance(body.get("accounts"), list) and len(body.get("accounts")) >= 0) else self.read_json_file(ACCOUNTS_FILE)
                     accounts_list = [a for a in accounts_list if isinstance(a, dict) and a.get("accountId") != del_id and a.get("email") != del_id and norm_key(a.get("linkedKey")) != del_norm]
                     self.write_json_file(ACCOUNTS_FILE, accounts_list)
 
@@ -240,6 +240,11 @@ class CleanHandler(BaseHTTPRequestHandler):
                                     k["linkedName"] = None
                                     k["name"] = "Chưa Kích Hoạt"
                         self.write_json_file(kfile, klist)
+
+                    record_event("account:deleted", {
+                        "accountId": del_id,
+                        "time": datetime.now(timezone.utc).isoformat()
+                    })
 
                     self.send_json({"success": True, "remaining": len(accounts_list)})
                 elif isinstance(body, dict) and "account" in body and isinstance(body["account"], dict):
