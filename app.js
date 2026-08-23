@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.3.3',
+  APP_VERSION: 'v2.3.4',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,8 +476,8 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.3',
-          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa năng 3 trong 1 (Email / Tên / Key), đếm ngược thời gian thực và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.4',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa năng 3 trong 1 (Email / Tên / Key), xóa tài khoản vĩnh viễn và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
           btnText: 'Đăng Nhập Lại Ngay',

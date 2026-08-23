@@ -82,7 +82,7 @@
           <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 border border-indigo-600/80 shadow-sm shrink-0">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-extrabold text-cyan-300">Phiên Bản:</span>
-            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.3.3</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-900 border border-indigo-500 text-white font-mono font-black text-xs">v2.3.4</span>
           </div>
 
           <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5">
@@ -1532,7 +1532,8 @@
       accounts: [],
 
       syncAccountsFromCloud: async function() {
-        let loadedAccounts = null;
+        const deletedKeys = this.getDeletedKeys();
+        let loadedAccounts = [];
         const urls = ['/api/accounts', '/data/accounts_db.json'];
         for (const url of urls) {
           try {
@@ -1548,56 +1549,36 @@
           } catch(e) {}
         }
 
-        // Also check localStorage
+        // Check localStorage accounts
         try {
           const localAccts = localStorage.getItem('eduquest_b1_all_accounts');
           if (localAccts) {
             const parsed = JSON.parse(localAccts);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              if (!loadedAccounts) loadedAccounts = parsed;
-              else {
-                const map = new Map(loadedAccounts.map(a => [a.accountId || a.email, a]));
-                parsed.forEach(a => {
-                  const k = a.accountId || a.email;
-                  if (k && !map.has(k)) map.set(k, a);
-                });
-                loadedAccounts = Array.from(map.values());
-              }
+              const map = new Map(loadedAccounts.map(a => [a.accountId || a.email, a]));
+              parsed.forEach(a => {
+                const k = a.accountId || a.email;
+                if (k && !map.has(k)) map.set(k, a);
+              });
+              loadedAccounts = Array.from(map.values());
             }
           }
         } catch(e) {}
 
-        // Fallback: If accounts is empty, auto-synthesize from active/registered Keys in this.users
-        const existingKeySet = new Set((loadedAccounts || []).map(a => this.normalizeKey(a.linkedKey)));
-        if (Array.isArray(this.users)) {
-          const synthesized = [];
-          this.users.forEach(u => {
-            const uKeyNorm = this.normalizeKey(u.key || u.id);
-            if (uKeyNorm && !existingKeySet.has(uKeyNorm)) {
-              const displayName = u.name || u.linkedName || 'Học Viên Mới';
-              const isUnregistered = displayName === 'Chưa Kích Hoạt' || displayName === 'Chưa Đặt Tên';
-              synthesized.push({
-                accountId: u.linkedAccountId || ('ACC-' + (u.key || u.id)),
-                email: u.linkedEmail || (isUnregistered ? 'chua_dang_ky@gmail.com' : (displayName.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
-                name: isUnregistered ? 'Chờ Kích Hoạt' : displayName,
-                tier: 'premium',
-                linkedKey: u.key || u.id,
-                keyExpiresAt: u.expiresAt,
-                createdAt: u.createdAt || new Date().toISOString(),
-                lastActiveDate: u.lastActiveDate || u.createdAt || new Date().toISOString(),
-                streak: u.streak || 1,
-                progress: { passedSets: {}, unlockedUpTo: 1 },
-                status: u.status || 'ACTIVE'
-              });
-            }
-          });
-          if (synthesized.length > 0) {
-            loadedAccounts = [...(loadedAccounts || []), ...synthesized];
-          }
-        }
+        // Filter out any deleted accounts
+        const filtered = (loadedAccounts || []).filter(a => {
+          if (!a) return false;
+          const aIdNorm = this.normalizeKey(a.accountId);
+          const emailNorm = this.normalizeKey(a.email);
+          const keyNorm = this.normalizeKey(a.linkedKey);
+          if (aIdNorm && deletedKeys.includes(aIdNorm)) return false;
+          if (emailNorm && deletedKeys.includes(emailNorm)) return false;
+          if (keyNorm && deletedKeys.includes(keyNorm)) return false;
+          return true;
+        });
 
-        this.accounts = loadedAccounts || [];
-        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
+        this.accounts = filtered;
+        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(filtered));
         this.renderAccountsTable();
       },
 
@@ -1716,14 +1697,14 @@
       },
 
       deleteAccount: function(accountId, acctName) {
-        const normTarget = this.normalizeKey(accountId);
         const targetAcct = this.accounts.find(a => 
           a.accountId === accountId || 
           a.email === accountId || 
-          (a.linkedKey && this.normalizeKey(a.linkedKey) === normTarget)
+          (a.linkedKey && this.normalizeKey(a.linkedKey) === this.normalizeKey(accountId))
         );
         const displayName = acctName || targetAcct?.name || targetAcct?.email || accountId;
-        const linkedKey = targetAcct?.linkedKey;
+        const targetEmail = targetAcct?.email;
+        const targetKey = targetAcct?.linkedKey;
 
         this.showCustomConfirm({
           title: 'Xóa Tài Khoản Học Viên?',
@@ -1733,23 +1714,23 @@
           confirmText: 'Xác Nhận Xóa',
           confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
           onConfirm: async () => {
-            // 1. Add to deleted tracking so it never re-synthesizes
+            // 1. Add all identifiers to deleted tracking so it never re-synthesizes
             if (accountId) this.addDeletedKey(accountId);
-            if (targetAcct?.email) this.addDeletedKey(targetAcct.email);
-            if (linkedKey) this.addDeletedKey(linkedKey);
+            if (targetEmail) this.addDeletedKey(targetEmail);
+            if (targetKey) this.addDeletedKey(targetKey);
 
             // 2. Remove from local accounts list & storage
             this.accounts = this.accounts.filter(a => 
               a.accountId !== accountId &&
               a.email !== accountId &&
-              (targetAcct?.email ? a.email !== targetAcct.email : true) &&
-              (linkedKey ? a.linkedKey !== linkedKey : true)
+              (targetEmail ? a.email !== targetEmail : true) &&
+              (targetKey ? a.linkedKey !== targetKey : true)
             );
             localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
 
             // 3. If account had a linked Key in this.users, release / reset it
-            if (linkedKey && Array.isArray(this.users)) {
-              const uIdx = this.users.findIndex(u => this.normalizeKey(u.key) === this.normalizeKey(linkedKey));
+            if (targetKey && Array.isArray(this.users)) {
+              const uIdx = this.users.findIndex(u => this.normalizeKey(u.key) === this.normalizeKey(targetKey));
               if (uIdx >= 0) {
                 this.users[uIdx].linkedAccountId = null;
                 this.users[uIdx].linkedEmail = null;
@@ -1760,12 +1741,12 @@
               await this.saveUsers();
             }
 
-            // 4. Send delete to server API
+            // 4. Overwrite accounts on server
             try {
               await fetch('/api/accounts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ deleteAccountId: accountId })
+                body: JSON.stringify({ accounts: this.accounts, deleteAccountId: accountId })
               });
             } catch(e) {}
 
