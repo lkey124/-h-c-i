@@ -310,6 +310,54 @@
         </div>
       </div>
 
+      <!-- ========================================================================= -->
+      <!-- BẢNG QUẢN LÝ TÀI KHOẢN HỌC VIÊN & TỰ ĐỘNG XÓA THEO VÒNG ĐỜI -->
+      <!-- ========================================================================= -->
+      <div class="rounded-3xl bg-slate-900 border border-emerald-800/80 p-5 sm:p-7 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="font-extrabold text-lg sm:text-xl text-white flex items-center gap-2">
+                <i data-lucide="user-check" class="w-5 h-5 text-emerald-400"></i> Quản Lý Tài Khoản Học Viên (<span id="count-accounts">0</span>)
+              </h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                Auto-Purge Active
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 mt-0.5">
+              📌 <strong>Quy tắc:</strong> Tài khoản Free không đăng nhập &gt; 30 ngày sẽ bị xóa • Tài khoản có Key hết hạn qua 1 tuần sẽ xóa
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="adminApp.runAccountsCleanup()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg flex items-center gap-1.5 transition-all">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 🧹 Quét & Dọn Dẹp Quá Hạn
+            </button>
+            <button onclick="adminApp.syncAccountsFromCloud()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tải Lại DS
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 font-bold">
+                <th class="py-3 px-3">Họ Tên & Email</th>
+                <th class="py-3 px-3">Gói Tài Khoản</th>
+                <th class="py-3 px-3">Mã Key Liên Kết</th>
+                <th class="py-3 px-3">Đăng Nhập Cuối</th>
+                <th class="py-3 px-3">Tiến Trình (Bài Đã Làm)</th>
+                <th class="py-3 px-3">Trạng Thái & Hạn Xóa</th>
+                <th class="py-3 px-3 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="admin-accounts-table-body" class="divide-y divide-slate-800/60 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -448,6 +496,7 @@
       init: async function() {
         this.loadUsersLocal();
         await this.syncFromCloud();
+        await this.syncAccountsFromCloud();
         if (sessionStorage.getItem('eduquest_admin_unlocked') === 'true') {
           this.showDashboard();
         }
@@ -567,6 +616,7 @@
         document.getElementById('admin-pin-gateway').classList.add('hidden');
         document.getElementById('admin-dashboard').classList.remove('hidden');
         this.renderUserTable();
+        this.syncAccountsFromCloud();
         this.generateRandomKey();
         this.loadBannerConfig();
       },
@@ -1286,22 +1336,34 @@
           const streakInfo = this.getStreakLevelInfo(u.streak || 1);
           const flameHTML = this.renderTikTokFlameHTML(streakInfo.level);
 
-          const isUnregistered = !u.name || u.name === 'Chưa Kích Hoạt' || u.name === 'Chưa Đặt Tên' || u.name === 'Học Viên Mới';
-          const nameColHTML = isUnregistered
+          let displayName = u.name;
+          if (!displayName || displayName === 'Chưa Kích Hoạt' || displayName === 'Chưa Đặt Tên' || displayName === 'Học Viên Mới') {
+            if (u.linkedName) {
+              displayName = u.linkedName;
+            } else if (u.linkedAccountId && Array.isArray(this.accounts)) {
+              const matched = this.accounts.find(a => a.accountId === u.linkedAccountId);
+              if (matched && matched.name) displayName = matched.name;
+            }
+          }
+          const isLinked = !!(displayName && displayName !== 'Chưa Kích Hoạt' && displayName !== 'Chưa Đặt Tên' && displayName !== 'Học Viên Mới');
+          const nameColHTML = isLinked
             ? `
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                  ${displayName.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-white font-bold">${displayName}</span>
+                  ${u.linkedEmail ? `<span class="text-[10px] text-slate-400 font-mono">${u.linkedEmail}</span>` : ''}
+                </div>
+              </div>
+            `
+            : `
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-lg bg-amber-900/60 text-amber-300 flex items-center justify-center font-bold text-xs">
                   ?
                 </div>
                 <span class="px-2 py-0.5 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-300 text-[11px] font-bold">Chờ Kích Hoạt</span>
-              </div>
-            `
-            : `
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
-                  ${u.name.charAt(0).toUpperCase()}
-                </div>
-                <span>${u.name}</span>
               </div>
             `;
 
@@ -1421,14 +1483,194 @@
       },
 
       exportDataJSON: function() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.users, null, 2));
+        const exportPayload = {
+          keys: this.users,
+          accounts: this.accounts || []
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
         const a = document.createElement('a');
         a.setAttribute("href", dataStr);
-        a.setAttribute("download", `tienganh_b1_keys_backup_${new Date().toISOString().slice(0,10)}.json`);
+        a.setAttribute("download", `tienganh_b1_backup_${new Date().toISOString().slice(0,10)}.json`);
         document.body.appendChild(a);
         a.click();
         a.remove();
-        this.showToast('📁 Đã tải xuống file sao lưu dữ liệu JSON!');
+        this.showToast('📁 Đã tải xuống file sao lưu dữ liệu Keys & Tài khoản JSON!');
+      },
+
+      // =========================================================================
+      // STUDENT ACCOUNTS MANAGEMENT & AUTO CLEANUP (FREE 30 DAYS / PREMIUM 7 DAYS)
+      // =========================================================================
+      accounts: [],
+
+      syncAccountsFromCloud: async function() {
+        try {
+          const res = await fetch('/api/accounts?t=' + Date.now());
+          if (res.ok) {
+            const data = await res.json();
+            this.accounts = Array.isArray(data) ? data : (data.accounts || []);
+          }
+        } catch(e) {
+          console.warn('Sync accounts error:', e);
+        }
+        this.renderAccountsTable();
+      },
+
+      renderAccountsTable: function() {
+        const tbody = document.getElementById('admin-accounts-table-body');
+        const countSpan = document.getElementById('count-accounts');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (countSpan) countSpan.innerText = this.accounts.length;
+
+        if (this.accounts.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center py-8 text-slate-400 font-normal">
+                Chưa có tài khoản học viên nào đăng ký.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const now = Date.now();
+        const DAY_MS = 86400000;
+
+        this.accounts.forEach(acct => {
+          const tier = acct.tier || 'free';
+          const isPremium = tier === 'premium' && acct.keyExpiresAt;
+          const keyExpiry = acct.keyExpiresAt ? new Date(acct.keyExpiresAt).getTime() : null;
+          const lastActive = new Date(acct.lastActiveDate || acct.createdAt || Date.now()).getTime();
+          const inactiveDays = Math.floor((now - lastActive) / DAY_MS);
+
+          let statusBadge = '';
+          let isEligibleForPurge = false;
+
+          if (isPremium) {
+            const keyRemainingDays = Math.ceil((keyExpiry - now) / DAY_MS);
+            if (keyRemainingDays > 0) {
+              // Key still active
+              statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">🟢 Active (Còn ${keyRemainingDays} ngày Key)</span>`;
+            } else {
+              // Key expired: check 7-day grace period
+              const daysAfterKeyExpiry = Math.floor((now - keyExpiry) / DAY_MS);
+              const graceDaysLeft = Math.max(0, 7 - daysAfterKeyExpiry);
+              if (daysAfterKeyExpiry > 7) {
+                isEligibleForPurge = true;
+                statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-700">🔴 Quá Hạn > 7 Ngày (Sẽ Xóa)</span>`;
+              } else {
+                statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-700">⚠️ Ân Hạn (Còn ${graceDaysLeft}/7 ngày xóa)</span>`;
+              }
+            }
+          } else {
+            // Free account: 30-day inactivity rule
+            const daysUntilDelete = Math.max(0, 30 - inactiveDays);
+            if (inactiveDays > 30) {
+              isEligibleForPurge = true;
+              statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-700">🔴 Không Dùng > 30 Ngày (Sẽ Xóa)</span>`;
+            } else {
+              statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">🟢 Hoạt Động (Còn ${daysUntilDelete} ngày xóa)</span>`;
+            }
+          }
+
+          const passedCount = acct.progress?.passedSets ? Object.keys(acct.progress.passedSets).length : 0;
+          const unlockedUpTo = acct.progress?.unlockedUpTo || 1;
+
+          const tr = document.createElement('tr');
+          tr.className = `hover:bg-slate-800/40 transition-colors ${isEligibleForPurge ? 'bg-rose-950/20' : ''}`;
+          tr.innerHTML = `
+            <td class="py-3 px-3">
+              <div class="font-bold text-white">${acct.name || 'Chưa Đặt Tên'}</div>
+              <div class="text-[11px] text-cyan-300 font-mono">${acct.email || 'N/A'}</div>
+            </td>
+            <td class="py-3 px-3">
+              ${tier === 'premium'
+                ? '<span class="px-2 py-0.5 rounded-lg bg-amber-950 text-amber-300 border border-amber-700 text-[10px] font-black">⭐ PREMIUM</span>'
+                : '<span class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold">🆓 FREE</span>'
+              }
+            </td>
+            <td class="py-3 px-3 font-mono text-cyan-300 text-xs">
+              ${acct.linkedKey ? `<span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 font-bold">${acct.linkedKey}</span>` : '<span class="text-slate-500">-</span>'}
+            </td>
+            <td class="py-3 px-3 text-slate-300 text-xs">
+              <div>${new Date(acct.lastActiveDate || acct.createdAt || Date.now()).toLocaleDateString('vi-VN')}</div>
+              <div class="text-[10px] text-slate-500">Cách đây ${inactiveDays} ngày</div>
+            </td>
+            <td class="py-3 px-3 text-xs">
+              <span class="text-emerald-400 font-bold">Đã đạt: ${passedCount} đề</span>
+              <span class="text-slate-500 text-[10px] block">Mở khóa đến: Đề ${unlockedUpTo}</span>
+            </td>
+            <td class="py-3 px-3">
+              ${statusBadge}
+            </td>
+            <td class="py-3 px-3 text-right">
+              <button onclick="adminApp.deleteAccount('${acct.accountId}', '${acct.name || acct.email}')" class="p-1.5 rounded bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800" title="Xóa tài khoản">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        this.initIcons();
+      },
+
+      deleteAccount: function(accountId, acctName) {
+        this.showCustomConfirm({
+          title: 'Xóa Tài Khoản Học Viên?',
+          message: `Bạn có chắc chắn muốn xóa tài khoản <strong>${acctName}</strong>?<br><br><span class="text-rose-400 text-xs font-semibold">⚠️ Mọi tiến trình học và điểm số của tài khoản này sẽ bị xóa vĩnh viễn!</span>`,
+          icon: '🗑️',
+          iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
+          confirmText: 'Xác Nhận Xóa',
+          confirmBtnClass: 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white',
+          onConfirm: async () => {
+            try {
+              await fetch('/api/accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deleteAccountId: accountId })
+              });
+              this.accounts = this.accounts.filter(a => a.accountId !== accountId);
+              this.renderAccountsTable();
+              this.showToast(`🗑️ Đã xóa tài khoản ${acctName}!`);
+            } catch(e) {
+              this.showToast('❌ Lỗi khi xóa tài khoản');
+            }
+          }
+        });
+      },
+
+      runAccountsCleanup: async function() {
+        this.showCustomConfirm({
+          title: '🧹 Quét & Dọn Dẹp Tài Khoản Quá Hạn?',
+          message: `Hệ thống sẽ tự động quét và <strong>xóa vĩnh viễn</strong>:<br>
+          • Các tài khoản <strong>FREE không đăng nhập &gt; 30 ngày (1 tháng)</strong><br>
+          • Các tài khoản <strong>đã hết hạn Key qua 7 ngày (1 tuần)</strong><br><br>
+          <span class="text-amber-400 text-xs font-semibold">Tài khoản còn hạn Key hoặc đang hoạt động sẽ được giữ nguyên 100%.</span>`,
+          icon: '🧹',
+          iconBg: 'bg-amber-950/80 border border-amber-700 text-amber-400',
+          confirmText: 'Chạy Dọn Dẹp Ngay',
+          confirmBtnClass: 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30 text-white',
+          onConfirm: async () => {
+            try {
+              const res = await fetch('/api/accounts/cleanup', { method: 'POST' });
+              const data = await res.json();
+              if (data.success) {
+                this.accounts = data.accounts || [];
+                this.renderAccountsTable();
+                this.showCustomAlert({
+                  title: '🎉 DỌN DẸP HOÀN TẤT!',
+                  message: `Đã quét và xóa thành công <strong>${data.purged} tài khoản quá hạn</strong>.<br>Số tài khoản đang hoạt động còn lại: <strong>${data.remaining}</strong>.`,
+                  icon: '✨',
+                  iconBg: 'bg-emerald-950/80 border border-emerald-700 text-emerald-400'
+                });
+              }
+            } catch(e) {
+              this.showToast('❌ Lỗi kết nối máy chủ');
+            }
+          }
+        });
       }
     };
 

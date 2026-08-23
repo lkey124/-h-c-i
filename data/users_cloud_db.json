@@ -1,62 +1,27 @@
 [
   {
-    "id": "USR-1787457659180",
-    "name": "LƯU VĂN BÌNH",
-    "key": "B1-WNG8309",
+    "id": "USR-1787462216121",
+    "name": "BINH",
+    "key": "B1-EBC1611",
     "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T04:00:59.180Z",
-    "expiresAt": "2026-11-21T04:00:59.180Z",
+    "createdAt": "2026-08-23T05:16:56.121Z",
+    "expiresAt": "2026-11-21T05:16:56.121Z",
     "streak": 1,
-    "status": "ACTIVE"
-  },
-  {
-    "id": "USR-1787455611955",
-    "name": "Chưa Kích Hoạt",
-    "key": "B1-YJS4477",
-    "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T03:26:51.955Z",
-    "expiresAt": "2026-11-21T03:26:51.955Z",
-    "streak": 1,
-    "status": "ACTIVE"
-  },
-  {
-    "id": "USR-1787455592623",
-    "name": "Chưa Kích Hoạt",
-    "key": "B1-VO33360",
-    "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T03:26:32.623Z",
-    "expiresAt": "2026-11-21T03:26:32.623Z",
-    "streak": 1,
-    "status": "ACTIVE"
-  },
-  {
-    "id": "USR-1787454611086",
-    "name": "LƯU VĂN BÌNH",
-    "key": "B1-VIP-TUDAT",
-    "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T03:10:11.086Z",
-    "expiresAt": "2026-11-21T03:10:11.086Z",
-    "streak": 1,
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "linkedAccountId": "ACC-1787462130633-0TRF3",
+    "linkedEmail": "binhluu64@gmail.com"
   },
   {
     "id": "USR-HONGANH-6854",
     "name": "HỒNG ANH",
     "key": "B1-3BM6854",
     "package": "Gói 5 Tháng",
-    "createdAt": "2026-08-23T00:00:00.000Z",
-    "expiresAt": "2027-01-20T00:00:00.000Z",
+    "createdAt": "2026-08-23T00:00:00Z",
+    "expiresAt": "2027-01-20T00:00:00Z",
     "streak": 1,
-    "status": "ACTIVE"
-  },
-  {
-    "id": "USR-BINHLUU-VIP",
-    "name": "Bình Lưu",
-    "key": "B1-VIP-2026",
-    "package": "Gói 3 Tháng",
-    "createdAt": "2026-08-23T00:00:00.000Z",
-    "expiresAt": "2026-11-20T00:00:00.000Z",
-    "streak": 1,
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "durationDays": 150,
+    "linkedEmail": null,
+    "linkedAccountId": null
   }
 ]

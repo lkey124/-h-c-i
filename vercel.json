@@ -1,6 +1,12 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "functions": {
+    "api/keys.js": { "runtime": "nodejs18.x" },
+    "api/accounts.js": { "runtime": "nodejs18.x" },
+    "api/link-key.js": { "runtime": "nodejs18.x" },
+    "api/admin-keys.js": { "runtime": "nodejs18.x" }
+  },
   "rewrites": [
     { "source": "/", "destination": "/web/index.html" },
     { "source": "/admin", "destination": "/web/admin.html" },

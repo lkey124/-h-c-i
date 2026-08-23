@@ -470,6 +470,7 @@ const app = {
     await this.loadExamsDataset();
     this.renderRoadmap();
     this.updateUserStatsDisplay();
+    this.startSubscriptionCountdown();
     this.initIcons();
   },
 
@@ -1058,6 +1059,20 @@ const app = {
 
   loadActiveUserSession: function() {
     try {
+      // Try new account system first
+      const savedAccount = localStorage.getItem('eduquest_b1_account');
+      if (savedAccount) {
+        const account = JSON.parse(savedAccount);
+        if (account && account.accountId) {
+          this.data.currentUser = account;
+          // Load progress from account object
+          this.data.userProgress = account.progress
+            ? { ...account.progress, streak: account.progress.streak || account.streak || 1 }
+            : { unlockedUpTo: 1, passedSets: {}, streak: account.streak || 1, exp: 0, attempts: [] };
+          return;
+        }
+      }
+      // Fallback: old key-based session (legacy)
       const savedUser = localStorage.getItem('eduquest_b1_logged_user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
@@ -1102,11 +1117,14 @@ const app = {
     const candidateUrls = ['/data/exams_50_dataset.json', 'data/exams_50_dataset.json', '/api/exams', '../data/exams_50_dataset.json'];
     for (const url of candidateUrls) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url + '?v=' + Date.now());
         if (response.ok) {
           const json = await response.json();
           if (json && json.exams && json.exams.length > 0) {
             this.data.exams = json.exams;
+            return;
+          } else if (Array.isArray(json) && json.length > 0) {
+            this.data.exams = json;
             return;
           }
         }
@@ -1289,6 +1307,83 @@ const app = {
     };
   },
 
+  startSubscriptionCountdown: function() {
+    if (this.data.subTimerInterval) {
+      clearInterval(this.data.subTimerInterval);
+      this.data.subTimerInterval = null;
+    }
+
+    const updateTimerUI = () => {
+      const user = this.data.currentUser;
+      const subBadge = document.getElementById('badge-subscription-status');
+      const subText = document.getElementById('stat-subscription-days');
+      const profileDays = document.getElementById('profile-days-left');
+
+      if (!user) {
+        if (subBadge) subBadge.classList.add('hidden');
+        return;
+      }
+
+      const expStr = user.keyExpiresAt || user.expiresAt;
+      const tier = this.getCurrentTier();
+
+      if (tier !== 'premium' || !expStr) {
+        if (subBadge) {
+          subBadge.classList.remove('hidden');
+          subBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 text-xs font-bold cursor-pointer transition-all shrink-0';
+        }
+        if (subText) subText.innerText = '🆓 Gói Free';
+        if (profileDays) profileDays.innerText = 'Tài khoản miễn phí (Làm thử Bài 1)';
+        return;
+      }
+
+      const expTime = new Date(expStr).getTime();
+      const now = Date.now();
+      const diff = expTime - now;
+
+      if (diff <= 0) {
+        if (subBadge) {
+          subBadge.classList.remove('hidden');
+          subBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950 border border-rose-700 text-rose-300 text-xs font-bold animate-pulse cursor-pointer transition-all shrink-0';
+        }
+        if (subText) subText.innerText = '⚠️ Key Đã Hết Hạn';
+        if (profileDays) {
+          profileDays.className = 'font-bold text-rose-400 text-sm';
+          profileDays.innerText = 'Đã hết hạn';
+        }
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const hh = hours.toString().padStart(2, '0');
+      const mm = minutes.toString().padStart(2, '0');
+      const ss = seconds.toString().padStart(2, '0');
+
+      const countdownText = days > 0
+        ? `⏳ Còn ${days} ngày ${hh}:${mm}:${ss}`
+        : `⏳ Còn ${hh}:${mm}:${ss}`;
+
+      if (subBadge) {
+        subBadge.classList.remove('hidden');
+        subBadge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-cyan-300 text-xs font-bold cursor-pointer transition-all shrink-0 shadow-sm';
+      }
+      if (subText) {
+        subText.innerHTML = `<span class="text-white font-mono font-bold tracking-tight">${countdownText}</span>`;
+      }
+      if (profileDays) {
+        profileDays.className = 'font-bold text-emerald-400 text-sm font-mono';
+        profileDays.innerText = `${days} ngày ${hh}h ${mm}m ${ss}s`;
+      }
+    };
+
+    updateTimerUI();
+    this.data.subTimerInterval = setInterval(updateTimerUI, 1000);
+  },
+
   updateUserStatsDisplay: function() {
     const user = this.data.currentUser;
     const heroBadge = document.getElementById('hero-user-badge');
@@ -1298,9 +1393,11 @@ const app = {
     const statusBadge = document.getElementById('roadmap-status-badge');
 
     if (user) {
-      const remainingDays = this.getRemainingDays(user.expiresAt);
+      const expDateStr = user.keyExpiresAt || user.expiresAt;
+      const remainingDays = this.getRemainingDays(expDateStr);
       const dynamicPackageName = this.getDynamicPackageName(remainingDays);
-      const isActive = this.isAccountActive(user);
+      const tier = this.getCurrentTier(); // 'guest', 'free', 'premium'
+      const isPremiumActive = tier === 'premium' && remainingDays > 0;
       const streak = this.data.userProgress.streak || 1;
       const streakInfo = this.getStreakLevelInfo(streak);
       const flameHTML = this.renderTikTokFlameHTML(streakInfo.level);
@@ -1310,10 +1407,12 @@ const app = {
         heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i> <strong class="text-white truncate max-w-[130px] sm:max-w-[200px]">${user.name}</strong> <span class="text-slate-500">•</span> <span class="${streakInfo.heroClass} whitespace-nowrap">🔥 ${streak} Ngày</span>`;
       }
 
-      if (isActive) {
+      if (isPremiumActive) {
         if (subBadge) {
           subBadge.classList.remove('hidden');
-          subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold';
+          subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all';
+          subBadge.setAttribute('onclick', 'app.openLinkKeyModal()');
+          subBadge.setAttribute('title', 'Bấm để Gia Hạn hoặc Nhập Key Mới');
         }
         if (subText) subText.innerText = `⏳ ${dynamicPackageName} (Còn ${remainingDays} ngày)`;
         if (statusBadge) {
@@ -1323,16 +1422,22 @@ const app = {
       } else {
         if (subBadge) {
           subBadge.classList.remove('hidden');
-          subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-950 border border-rose-700 text-rose-300 text-xs font-bold animate-pulse';
+          subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-700 text-rose-300 text-xs font-bold animate-pulse cursor-pointer transition-all';
+          subBadge.setAttribute('onclick', 'app.openLinkKeyModal()');
+          subBadge.setAttribute('title', 'Bấm để Nhập Key Mới kích hoạt');
         }
-        if (subText) subText.innerText = '⚠️ Key Đã Hết Hạn';
+        if (subText) subText.innerText = '⚠️ Key Hết Hạn · [Nhập Key Mới]';
         if (statusBadge) {
-          statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950 text-rose-300 border border-rose-800 text-xs font-bold';
-          statusBadge.innerHTML = '<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Key Đã Hết Hạn';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950 text-amber-300 border border-amber-800 text-xs font-bold cursor-pointer';
+          statusBadge.setAttribute('onclick', 'app.openLinkKeyModal()');
+          statusBadge.innerHTML = '<i data-lucide="key" class="w-3.5 h-3.5"></i> Nhập Key Mở Đề';
         }
       }
 
       if (authSec) {
+        const tierBadge = isPremiumActive
+          ? `<span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-300 text-[10px] font-black">⭐ PREMIUM</span>`
+          : `<span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-300 text-[10px] font-black">🆓 FREE</span>`;
         authSec.innerHTML = `
           <div class="flex items-center gap-1 sm:gap-2 shrink-0">
             <!-- TIKTOK FRAMELESS TIER-SCALED STREAK FLAME BUTTON -->
@@ -1341,14 +1446,18 @@ const app = {
               <span class="${streakInfo.textClass} text-[11px] sm:text-xs font-black tracking-tight whitespace-nowrap">${streak} Ngày</span>
             </button>
 
-            <div class="flex items-center gap-1 p-1 pl-1.5 pr-2 sm:pl-2 sm:pr-2.5 rounded-xl bg-slate-800/80 border border-slate-700 shrink-0">
-              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-[10px] sm:text-xs text-white shrink-0">
+            ${tierBadge}
+
+            <!-- USER PROFILE BUTTON (CLICK TO VIEW DAYS & KEY MANAGEMENT) -->
+            <button onclick="app.openUserProfileModal()" class="flex items-center gap-1.5 p-1 pl-1.5 pr-2 sm:pl-2 sm:pr-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 hover:border-indigo-500/60 cursor-pointer shrink-0 transition-all shadow-sm" title="Xem Thời Hạn & Đổi Key">
+              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-[10px] sm:text-xs text-white shrink-0 shadow">
                 ${user.name.charAt(0).toUpperCase()}
               </div>
-              <span class="text-xs font-bold text-slate-100 hidden md:inline-block truncate max-w-[90px]">${user.name}</span>
-            </div>
+              <span class="text-xs font-bold text-slate-100 hidden md:inline-block truncate max-w-[100px]">${user.name}</span>
+              <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 hidden md:inline-block"></i>
+            </button>
 
-            <button onclick="app.logout()" class="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
+            <button onclick="app.logout()" class="p-1.5 sm:p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất">
               <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
             </button>
           </div>
@@ -1365,6 +1474,7 @@ const app = {
       if (progBar) progBar.style.width = `${percent}%`;
 
       this.initAnimeFlameAnimation();
+      this.startSubscriptionCountdown();
     } else {
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       if (subBadge) subBadge.classList.add('hidden');
@@ -1375,7 +1485,7 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <button onclick="app.openLoginModal()" class="px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all shrink-0">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i> Nhập Key
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Đăng Ký / Nhập Key
           </button>
         `;
       }
@@ -1387,32 +1497,420 @@ const app = {
     this.initIcons();
   },
 
-  openLoginModal: function() {
+  // -----------------------------------------------------------------------
+  // USER PROFILE MODAL (NAME CLICK: VIEW DAYS & KEY MANAGEMENT)
+  // -----------------------------------------------------------------------
+
+  openUserProfileModal: function() {
     this.playSound('click');
-    const modal = document.getElementById('modal-login');
-    const errBox = document.getElementById('login-error-msg');
-    if (errBox) errBox.classList.add('hidden');
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+    const user = this.data.currentUser;
+    if (!user) {
+      this.openLoginModal();
+      return;
     }
+
+    const modal = document.getElementById('modal-user-profile');
+    if (!modal) return;
+
+    const expDateStr = user.keyExpiresAt || user.expiresAt;
+    const remainingDays = this.getRemainingDays(expDateStr);
+    const dynamicPkg = this.getDynamicPackageName(remainingDays);
+    const tier = this.getCurrentTier();
+    const isPremium = tier === 'premium' && remainingDays > 0;
+
+    const total = this.data.exams?.length || 50;
+    const passedCount = Object.keys(this.data.userProgress?.passedSets || {}).length;
+    const percent = Math.min(100, Math.round((passedCount / total) * 100));
+
+    // Populate Modal Elements
+    const avatar = document.getElementById('profile-avatar');
+    const nameEl = document.getElementById('profile-name');
+    const emailEl = document.getElementById('profile-email');
+    const tierBadge = document.getElementById('profile-tier-badge');
+    const daysEl = document.getElementById('profile-days-left');
+    const keyEl = document.getElementById('profile-current-key');
+    const progEl = document.getElementById('profile-progress');
+
+    if (avatar) avatar.innerText = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+    if (nameEl) nameEl.innerText = user.name || 'Học Viên';
+    if (emailEl) emailEl.innerText = user.email || 'Chưa liên kết email';
+
+    if (tierBadge) {
+      if (isPremium) {
+        tierBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-600 text-amber-300 text-xs font-black';
+        tierBadge.innerHTML = '⭐ GÓI PREMIUM';
+      } else {
+        tierBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-600 text-slate-300 text-xs font-black';
+        tierBadge.innerHTML = '🆓 GÓI FREE';
+      }
+    }
+
+    if (daysEl) {
+      if (isPremium) {
+        daysEl.className = 'font-bold text-emerald-400 text-sm';
+        daysEl.innerText = `Còn ${remainingDays} ngày (${dynamicPkg})`;
+      } else {
+        daysEl.className = 'font-bold text-slate-400 text-xs';
+        daysEl.innerText = 'Tài khoản miễn phí';
+      }
+    }
+
+    if (keyEl) {
+      keyEl.innerText = user.linkedKey || user.key || '(Chưa nhập Key)';
+    }
+
+    if (progEl) {
+      progEl.innerText = `${passedCount} / ${total} Đề (${percent}%)`;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
     this.initIcons();
   },
 
-  closeLoginModal: function() {
-    const modal = document.getElementById('modal-login');
+  closeUserProfileModal: function() {
+    const modal = document.getElementById('modal-user-profile');
     if (modal) {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
     }
   },
 
-  // (Cleaned - single strict handleLogin is maintained above)
+  // -----------------------------------------------------------------------
+  // NEW ACCOUNT SYSTEM: Email-based registration + Key linking
+  // -----------------------------------------------------------------------
+
+  openLoginModal: function() {
+    this.playSound('click');
+    // Reset to step 1
+    this.backToEmailStep();
+    const errBox = document.getElementById('login-error-msg');
+    if (errBox) { errBox.innerText = ''; errBox.classList.add('hidden'); }
+    const modal = document.getElementById('modal-login');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    this.initIcons();
+  },
+
+  closeLoginModal: function() {
+    const modal = document.getElementById('modal-login');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  },
+
+  backToEmailStep: function() {
+    document.getElementById('login-step-email')?.classList.remove('hidden');
+    document.getElementById('login-step-name')?.classList.add('hidden');
+    document.getElementById('login-step-key')?.classList.add('hidden');
+  },
+
+  showLegacyKeyLogin: function() {
+    document.getElementById('login-step-email')?.classList.add('hidden');
+    document.getElementById('login-step-name')?.classList.add('hidden');
+    document.getElementById('login-step-key')?.classList.remove('hidden');
+    const inp = document.getElementById('login-license-key');
+    if (inp) inp.value = '';
+    const errBox = document.getElementById('login-error-msg');
+    if (errBox) { errBox.innerText = ''; errBox.classList.add('hidden'); }
+  },
+
+  handleEmailStep: async function() {
+    const emailInp = document.getElementById('login-email-input');
+    const errBox = document.getElementById('login-error-msg');
+    const btn = document.getElementById('btn-email-step');
+    const email = (emailInp?.value || '').trim().toLowerCase();
+
+    if (!email || !email.includes('@')) {
+      if (errBox) { errBox.innerText = 'Vui lòng nhập địa chỉ email hợp lệ!'; errBox.classList.remove('hidden'); }
+      return;
+    }
+    if (errBox) errBox.classList.add('hidden');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang kiểm tra...'; this.initIcons(); }
+
+    try {
+      // Fetch all accounts and find by email
+      const accounts = await this.fetchAccountsFromCloud();
+      const found = accounts.find(a => (a.email || '').toLowerCase() === email);
+
+      if (found) {
+        // Login existing account
+        this.loginWithAccount(found);
+        this.closeLoginModal();
+        this.playSound('pass');
+        this.showCustomAlert({
+          title: 'CHÀO MỪNG TRỞ LẠI!',
+          message: `Học viên <strong>${found.name}</strong> đã đăng nhập thành công! ${this.getCurrentTier() === 'premium' ? '⭐ Tài khoản Premium đang hoạt động.' : '🆓 Tài khoản Free – Bài 1 sẵn sàng!'}`,
+          icon: '👋',
+          iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+          btnText: 'Bắt Đầu Học'
+        });
+      } else {
+        // New email → show name registration step
+        this.data.pendingEmail = email;
+        document.getElementById('login-step-email')?.classList.add('hidden');
+        document.getElementById('login-step-name')?.classList.remove('hidden');
+        const nameInp = document.getElementById('login-name-input');
+        if (nameInp) nameInp.value = '';
+        this.initIcons();
+      }
+    } catch (e) {
+      if (errBox) { errBox.innerText = 'Không thể kết nối server. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-right" class="w-4 h-4"></i> Tiếp Tục'; this.initIcons(); }
+    }
+  },
+
+  handleRegister: async function() {
+    const nameInp = document.getElementById('login-name-input');
+    const errBox = document.getElementById('login-error-msg');
+    const btn = document.getElementById('btn-register');
+    const name = (nameInp?.value || '').trim().toUpperCase();
+
+    if (!name || name.length < 2) {
+      if (errBox) { errBox.innerText = 'Vui lòng nhập Họ và Tên (ít nhất 2 ký tự)!'; errBox.classList.remove('hidden'); }
+      return;
+    }
+    const email = this.data.pendingEmail;
+    if (!email) { this.backToEmailStep(); return; }
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang tạo tài khoản...'; this.initIcons(); }
+
+    const accountId = 'ACC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+    const account = {
+      accountId, email, name,
+      tier: 'free',
+      linkedKey: null,
+      keyExpiresAt: null,
+      freeExamSubmitted: false,
+      createdAt: new Date().toISOString(),
+      streak: 1,
+      lastActiveDate: new Date().toISOString().split('T')[0],
+      progress: { unlockedUpTo: 1, passedSets: {}, streak: 1, exp: 0, attempts: [] },
+      status: 'ACTIVE'
+    };
+
+    try {
+      await this.pushAccountToCloud(account);
+      this.loginWithAccount(account);
+      this.closeLoginModal();
+      this.playSound('pass');
+      this.showCustomAlert({
+        title: '🎉 TẠO TÀI KHOẢN THÀNH CÔNG!',
+        message: `Chào mừng học viên <strong>${name}</strong>! Tài khoản <strong>Miễn Phí</strong> đã được tạo. Bạn có thể làm thử <strong>Bài 1</strong> ngay bây giờ. Để mở toàn bộ 50 bài, hãy nhập Key bản quyền.`,
+        icon: '🐘',
+        iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+        btnText: 'Bắt Đầu Bài 1!'
+      });
+    } catch (e) {
+      if (errBox) { errBox.innerText = 'Lỗi tạo tài khoản. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4"></i> Tạo Tài Khoản & Bắt Đầu'; this.initIcons(); }
+    }
+  },
+
+  loginWithAccount: function(account) {
+    this.data.currentUser = account;
+    account.lastActiveDate = new Date().toISOString();
+
+    // Check if premium is still active
+    if (account.tier === 'premium' && account.keyExpiresAt) {
+      const remaining = this.getRemainingDays(account.keyExpiresAt);
+      if (remaining <= 0) account.tier = 'free'; // Key expired, downgrade to free (keep progress)
+    }
+    // Load progress from account
+    this.data.userProgress = account.progress
+      ? { ...account.progress, streak: account.progress.streak || account.streak || 1 }
+      : { unlockedUpTo: 1, passedSets: {}, streak: account.streak || 1, exp: 0, attempts: [] };
+    // Also update lastActiveDate streak
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (!this.data.userProgress.lastActiveDate) {
+      this.data.userProgress.lastActiveDate = todayStr;
+    } else if (this.data.userProgress.lastActiveDate !== todayStr) {
+      const lastDate = new Date(this.data.userProgress.lastActiveDate);
+      const today = new Date(todayStr);
+      const diffDays = Math.round((today - lastDate) / 86400000);
+      if (diffDays === 1) this.data.userProgress.streak = (this.data.userProgress.streak || 1) + 1;
+      else if (diffDays > 1) this.data.userProgress.streak = 1;
+      this.data.userProgress.lastActiveDate = todayStr;
+    }
+    // Save to localStorage for quick restore and push updated lastActiveDate
+    localStorage.setItem('eduquest_b1_account', JSON.stringify(account));
+    this.pushAccountToCloud(account);
+    this.renderRoadmap();
+    this.updateUserStatsDisplay();
+    this.initIcons();
+  },
+
+  getCurrentTier: function() {
+    const user = this.data.currentUser;
+    if (!user) return 'guest';
+    if (user.tier === 'premium' && user.keyExpiresAt) {
+      if (this.getRemainingDays(user.keyExpiresAt) > 0) return 'premium';
+    }
+    return 'free';
+  },
+
+  openLinkKeyModal: function() {
+    this.playSound('click');
+    const errBox = document.getElementById('link-key-error-msg');
+    if (errBox) { errBox.innerText = ''; errBox.classList.add('hidden'); }
+    const inp = document.getElementById('link-key-input');
+    if (inp) inp.value = '';
+    const modal = document.getElementById('modal-link-key');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    this.initIcons();
+  },
+
+  closeLinkKeyModal: function() {
+    const modal = document.getElementById('modal-link-key');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  },
+
+  handleLinkKey: async function() {
+    const user = this.data.currentUser;
+    if (!user) { this.closeLinkKeyModal(); this.openLoginModal(); return; }
+
+    const keyInp = document.getElementById('link-key-input');
+    const errBox = document.getElementById('link-key-error-msg');
+    const btn = document.getElementById('btn-link-key');
+    const rawKey = (keyInp?.value || '').trim().toUpperCase();
+
+    if (!rawKey) {
+      if (errBox) { errBox.innerText = 'Vui lòng nhập mã Key!'; errBox.classList.remove('hidden'); }
+      return;
+    }
+    if (errBox) errBox.classList.add('hidden');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang xác thực...'; this.initIcons(); }
+
+    try {
+      const res = await fetch('/api/link-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountId: user.accountId, key: rawKey })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        // Merge returned account data with current progress (never overwrite progress)
+        const updatedAccount = { ...data.account, progress: this.data.userProgress };
+        await this.pushAccountToCloud(updatedAccount);
+        this.loginWithAccount(updatedAccount);
+        this.closeLinkKeyModal();
+        this.playSound('pass');
+        const remaining = this.getRemainingDays(data.account.keyExpiresAt);
+        this.showCustomAlert({
+          title: '⭐ KÍCH HOẠT PREMIUM THÀNH CÔNG!',
+          message: `Học viên <strong>${updatedAccount.name}</strong> đã mở khóa <strong>toàn bộ 50 bộ đề</strong>! Key còn <strong>${remaining} ngày</strong> sử dụng. Hãy chinh phục B1 ngay!`,
+          icon: '🎉',
+          iconBg: 'bg-amber-950/80 border border-amber-600/60 text-amber-400',
+          btnText: 'Vượt Ải Ngay!'
+        });
+      } else {
+        if (errBox) { errBox.innerHTML = `❌ <strong>${data.error || 'Key không hợp lệ!'}</strong>`; errBox.classList.remove('hidden'); }
+        this.playSound('fail');
+      }
+    } catch (e) {
+      if (errBox) { errBox.innerText = 'Lỗi kết nối. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="zap" class="w-4 h-4"></i> Kích Hoạt Premium Ngay'; this.initIcons(); }
+    }
+  },
+
+  // Legacy key login (fallback, no email required)
+  handleLegacyKeyLogin: async function() {
+    const keyInp = document.getElementById('login-license-key');
+    const errBox = document.getElementById('login-error-msg');
+    const btn = document.getElementById('btn-submit-login');
+    if (!keyInp) return;
+
+    const rawInput = (keyInp.value || '').trim();
+    if (!rawInput) {
+      if (errBox) { errBox.innerText = 'Vui lòng nhập mã Key!'; errBox.classList.remove('hidden'); }
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang xác thực...'; this.initIcons(); }
+
+    // Sync keys from cloud first
+    await this.syncKeysFromCloud();
+    this.loadUsersFromStorage();
+    const user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
+
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Kích Hoạt & Bắt Đầu Học'; this.initIcons(); }
+
+    if (user) {
+      if (user.status !== 'ACTIVE') {
+        this.playSound('fail');
+        if (errBox) { errBox.innerHTML = `❌ <strong>Mã Key "${rawInput}" đã bị Khóa!</strong>`; errBox.classList.remove('hidden'); }
+        return;
+      }
+      const remainingDays = this.getRemainingDays(user.expiresAt);
+      if (remainingDays <= 0) {
+        this.playSound('fail');
+        if (errBox) { errBox.innerHTML = `⚠️ <strong>Key "${rawInput}" đã Hết Hạn!</strong><div class="mt-1">Liên hệ Admin tại binhluu.ai.studio để gia hạn.</div>`; errBox.classList.remove('hidden'); }
+        return;
+      }
+      if (errBox) errBox.classList.add('hidden');
+      const cleanName = (user.name || '').trim();
+      if (!cleanName || cleanName === 'Chưa Kích Hoạt' || cleanName === 'Chưa Đặt Tên') {
+        this.data.pendingLoginUser = user;
+        this.closeLoginModal();
+        const nameModal = document.getElementById('modal-name-registration');
+        if (nameModal) { nameModal.classList.remove('hidden'); nameModal.classList.add('flex'); }
+        this.initIcons();
+        return;
+      }
+      this.data.currentUser = user;
+      localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
+      this.loadUserProgressFromStorage();
+      this.updateDailyStreak();
+      this.closeLoginModal();
+      this.renderRoadmap();
+      this.updateUserStatsDisplay();
+      this.playSound('pass');
+      this.showCustomAlert({
+        title: 'KÍCH HOẠT THÀNH CÔNG!',
+        message: `Chào mừng học viên <strong>${user.name}</strong>! Key còn <strong>${remainingDays} ngày</strong>.`,
+        icon: '🎉', iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400', btnText: 'Bắt Đầu Vượt Ải'
+      });
+    } else {
+      this.playSound('fail');
+      if (errBox) { errBox.innerHTML = `❌ <strong>Mã Key "${rawInput}" không tồn tại!</strong><div class="mt-1">Vui lòng kiểm tra lại hoặc liên hệ Admin tại binhluu.ai.studio.</div>`; errBox.classList.remove('hidden'); }
+    }
+  },
+
+  // Keep old handleLogin as alias for legacy
+  handleLogin: function(event) {
+    if (event) event.preventDefault();
+    return this.handleLegacyKeyLogin();
+  },
+
+  fetchAccountsFromCloud: async function() {
+    const urls = ['/api/accounts', '/data/accounts_db.json'];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url + '?t=' + Date.now());
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) return data;
+        }
+      } catch (e) {}
+    }
+    return [];
+  },
+
+  pushAccountToCloud: async function(account) {
+    try {
+      await fetch('/api/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account })
+      });
+    } catch (e) {}
+    // Also update localStorage
+    localStorage.setItem('eduquest_b1_account', JSON.stringify(account));
+  },
 
   logout: function() {
     this.showCustomConfirm({
       title: 'Đăng Xuất Tài Khoản?',
-      message: 'Bạn có chắc chắn muốn đăng xuất? Bạn có thể nhập lại mã Key bất kỳ lúc nào.',
+      message: 'Bạn có chắc chắn muốn đăng xuất?',
       icon: '👋',
       iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
       cancelText: 'Hủy Bỏ',
@@ -1421,8 +1919,9 @@ const app = {
         this.stopAllAudios();
         this.saveUserProgressToStorage();
         this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_account');
         localStorage.removeItem('eduquest_b1_logged_user');
-        this.loadUserProgressFromStorage();
+        this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
         this.renderRoadmap();
         this.updateUserStatsDisplay();
         this.playSound('click');
@@ -1466,18 +1965,46 @@ const app = {
     const container = document.getElementById('exams-grid');
     if (!container) return;
 
+    if (!this.data.exams || this.data.exams.length === 0) {
+      this.loadExamsDataset().then(() => {
+        if (this.data.exams && this.data.exams.length > 0) {
+          this.renderRoadmap();
+        }
+      });
+      return;
+    }
+
     container.innerHTML = '';
     const filtered = this.data.exams.filter(ex => {
       if (this.data.currentLevelFilter === 'all') return true;
       return ex.level_number === parseInt(this.data.currentLevelFilter);
     });
 
-    const isLoggedIn = !!this.data.currentUser;
+    const tier = this.getCurrentTier(); // 'guest', 'free', 'premium'
+    const freeExamDone = !!(this.data.currentUser?.freeExamSubmitted);
+    const userProgress = this.data.userProgress || { passedSets: {}, unlockedUpTo: 1 };
+    const passedSets = userProgress.passedSets || {};
 
     filtered.forEach(ex => {
-      const isUnlocked = isLoggedIn && (ex.set_number <= this.data.userProgress.unlockedUpTo);
-      const passInfo = this.data.userProgress.passedSets[ex.exam_id];
+      const isBai1 = ex.set_number === 1;
+      const passInfo = passedSets[ex.exam_id];
       const isPassed = passInfo && passInfo.score >= 50;
+
+      // Determine access level (Progression Rule: must pass >= 50% to unlock next)
+      let isUnlocked, canStart, needsKey;
+      if (tier === 'premium') {
+        isUnlocked = (ex.set_number <= (userProgress.unlockedUpTo || 1));
+        canStart = isUnlocked;
+        needsKey = false;
+      } else if (tier === 'free') {
+        isUnlocked = isBai1;
+        canStart = isBai1 && !freeExamDone;
+        needsKey = !isBai1;
+      } else { // guest
+        isUnlocked = false;
+        canStart = false;
+        needsKey = true;
+      }
 
       let levelBadge = 'bg-emerald-950 text-emerald-300 border-emerald-700/60';
       if (ex.level_number === 2) levelBadge = 'bg-amber-950 text-amber-300 border-amber-700/60';
@@ -1488,21 +2015,59 @@ const app = {
         isUnlocked ? 'border-slate-800' : 'locked'
       }`;
 
+      // Button logic
+      let actionBtn;
+      if (tier === 'guest') {
+        actionBtn = `<button onclick="app.openLoginModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1 border border-slate-700">
+          <i data-lucide="user-plus" class="w-3 h-3"></i> Đăng Ký / Nhập Key
+        </button>`;
+      } else if (tier === 'premium') {
+        if (isUnlocked) {
+          actionBtn = `<button onclick="app.startExam('${ex.exam_id}')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center gap-1 transition-all">
+            ${isPassed ? 'Làm Lại' : 'Bắt Đầu'} <i data-lucide="play" class="w-3 h-3"></i>
+          </button>`;
+        } else {
+          actionBtn = `<button disabled class="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-500 font-semibold text-xs cursor-not-allowed flex items-center gap-1 border border-slate-800" title="Cần đạt Đề ${ex.set_number - 1} để mở khóa">
+            <i data-lucide="lock" class="w-3 h-3"></i> Khóa · Cần Đạt Đề ${ex.set_number - 1}
+          </button>`;
+        }
+      } else if (tier === 'free') {
+        if (isBai1) {
+          if (freeExamDone) {
+            actionBtn = `<button onclick="app.openLinkKeyModal()" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-amber-950 text-slate-400 hover:text-amber-300 font-bold text-xs flex items-center gap-1 border border-slate-700 hover:border-amber-700 transition-all" title="Nhập Key để làm lại">
+              <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-400"></i> Đã Nộp · Cần Key làm lại
+            </button>`;
+          } else {
+            actionBtn = `<button onclick="app.startExam('${ex.exam_id}')" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md flex items-center gap-1 transition-all">
+              <i data-lucide="play" class="w-3 h-3"></i> Làm Bài Thử
+            </button>`;
+          }
+        } else {
+          actionBtn = `<button onclick="app.openLinkKeyModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-amber-950 text-slate-400 hover:text-amber-300 font-bold text-xs flex items-center gap-1 border border-slate-700 hover:border-amber-700 transition-all">
+            <i data-lucide="key" class="w-3 h-3"></i> Cần Key
+          </button>`;
+        }
+      }
+
+      // Lock badge
+      let lockBadge;
+      if (isPassed) {
+        lockBadge = `<span class="text-emerald-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-[11px]"><i data-lucide="check-circle-2" class="w-3 h-3"></i> ${passInfo.score}%</span>`;
+      } else if (isUnlocked) {
+        lockBadge = `<span class="text-cyan-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-[11px]"><i data-lucide="unlock" class="w-3 h-3"></i> Mở</span>`;
+      } else if (tier === 'premium') {
+        lockBadge = `<span class="text-slate-500 flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[11px]"><i data-lucide="lock" class="w-3 h-3"></i> Khóa (≥50%)</span>`;
+      } else {
+        lockBadge = `<span class="text-amber-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/60 border border-amber-800/60 text-[11px]"><i data-lucide="key" class="w-3 h-3"></i> Cần Key</span>`;
+      }
+
       card.innerHTML = `
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${levelBadge}">
               ${ex.level}
             </span>
-            <div class="flex items-center gap-1 text-xs font-bold">
-              ${
-                isPassed 
-                  ? `<span class="text-emerald-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-800 text-[11px]"><i data-lucide="check-circle-2" class="w-3 h-3"></i> ${passInfo.score}%</span>`
-                  : isUnlocked 
-                    ? `<span class="text-cyan-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-800 text-[11px]"><i data-lucide="unlock" class="w-3 h-3"></i> Mở</span>` 
-                    : `<span class="text-slate-500 flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[11px]"><i data-lucide="lock" class="w-3 h-3"></i> Khóa</span>`
-              }
-            </div>
+            <div class="flex items-center gap-1 text-xs font-bold">${lockBadge}</div>
           </div>
 
           <div>
@@ -1513,19 +2078,7 @@ const app = {
 
         <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
           <span class="text-xs text-slate-400 font-mono font-bold">${ex.exam_id}</span>
-          ${
-            isLoggedIn
-              ? isUnlocked
-                ? `<button onclick="app.startExam('${ex.exam_id}')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md flex items-center gap-1 transition-all">
-                    ${isPassed ? 'Làm Lại' : 'Bắt Đầu'} <i data-lucide="play" class="w-3 h-3"></i>
-                  </button>`
-                : `<button disabled class="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-500 font-semibold text-xs cursor-not-allowed flex items-center gap-1 border border-slate-800">
-                    <i data-lucide="lock" class="w-3 h-3"></i> Khóa
-                  </button>`
-              : `<button onclick="app.openLoginModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1 border border-slate-700">
-                  <i data-lucide="key" class="w-3 h-3"></i> Nhập Key
-                </button>`
-          }
+          ${actionBtn}
         </div>
       `;
 
@@ -1539,28 +2092,64 @@ const app = {
     this.stopAllAudios();
     this.playSound('click');
 
-    if (!this.data.currentUser) {
-      this.showCustomAlert({
-        title: 'Yêu Cầu Nhập Key',
-        message: 'Vui lòng nhập mã Key bản quyền để mở khóa phòng thi!',
-        icon: '🔑',
-        onConfirm: () => this.openLoginModal()
-      });
-      return;
-    }
+    const tier = this.getCurrentTier();
 
-    if (!this.isAccountActive(this.data.currentUser)) {
+    if (tier === 'guest') {
       this.showCustomAlert({
-        title: 'KEY ĐÃ HẾT HẠN SỬ DỤNG',
-        message: 'Mã Key của bạn đã hết hạn thời gian học. Vui lòng liên hệ Admin qua <strong>binhluu.ai.studio</strong> để gia hạn ngày học!',
-        icon: '⚠️',
-        iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400'
+        title: 'Tạo Tài Khoản Miễn Phí',
+        message: 'Đăng ký tài khoản miễn phí để làm thử <strong>Bài 1</strong>! Nhập Key để mở toàn bộ 50 bài.',
+        icon: '🐘',
+        iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
+        btnText: 'Đăng Ký Ngay',
+        onConfirm: () => this.openLoginModal()
       });
       return;
     }
 
     const rawExam = this.data.exams.find(e => e.exam_id === examId);
     if (!rawExam) return;
+
+    const isBai1 = rawExam.set_number === 1;
+    const freeExamDone = !!(this.data.currentUser?.freeExamSubmitted);
+
+    if (tier === 'free') {
+      if (!isBai1) {
+        this.showCustomAlert({
+          title: '🔑 Cần Key Bản Quyền',
+          message: `<strong>Tài khoản Free</strong> chỉ được làm thử Bài 1. Để mở bài <strong>${rawExam.title}</strong>, hãy nhập Key bản quyền từ Admin.`,
+          icon: '⭐',
+          iconBg: 'bg-amber-950/80 border border-amber-600/60 text-amber-400',
+          btnText: 'Nhập Key Ngay',
+          onConfirm: () => this.openLinkKeyModal()
+        });
+        return;
+      }
+      if (isBai1 && freeExamDone) {
+        this.showCustomAlert({
+          title: '✅ Bạn Đã Nộp Bài 1 Rồi',
+          message: 'Tài khoản Free chỉ được làm thử Bài 1 một lần. Hãy nhập <strong>Key bản quyền</strong> để làm lại và mở khóa toàn bộ 50 bài!',
+          icon: '⭐',
+          iconBg: 'bg-amber-950/80 border border-amber-600/60 text-amber-400',
+          btnText: 'Nhập Key Upgrade',
+          onConfirm: () => this.openLinkKeyModal()
+        });
+        return;
+      }
+    }
+
+    if (tier === 'premium') {
+      const unlockedUpTo = this.data.userProgress.unlockedUpTo || 1;
+      if (rawExam.set_number > unlockedUpTo) {
+        this.showCustomAlert({
+          title: '🔒 BỘ ĐỀ CHƯA MỞ KHÓA',
+          message: `Bạn cần hoàn thành và đạt tối thiểu <strong>≥ 50%</strong> ở <strong>Đề ${rawExam.set_number - 1}</strong> để mở khóa bài này!`,
+          icon: '🛡️',
+          iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
+          btnText: 'Đã Hiểu'
+        });
+        return;
+      }
+    }
 
     this.data.currentExam = this.randomizeExamData(rawExam);
     this.data.userAnswers = {};
@@ -1842,6 +2431,19 @@ const app = {
     });
 
     this.saveUserProgressToStorage();
+
+    // Sync progress to account object (new account system)
+    if (this.data.currentUser && this.data.currentUser.accountId) {
+      const isBai1 = exam.set_number === 1;
+      const tier = this.getCurrentTier();
+      if (tier === 'free' && isBai1) {
+        this.data.currentUser.freeExamSubmitted = true;
+      }
+      this.data.currentUser.progress = { ...this.data.userProgress };
+      this.pushAccountToCloud(this.data.currentUser);
+      localStorage.setItem('eduquest_b1_account', JSON.stringify(this.data.currentUser));
+    }
+
     this.updateUserStatsDisplay();
     this.showResultModal(totalScore, isPassed, lisScore, reaScore, wriScore);
   },
@@ -1891,38 +2493,107 @@ const app = {
     const questions = this.data.currentExam.flatQuestions;
 
     questions.forEach((q, idx) => {
-      if (q.skillType === 'writing_p2') return;
-
       const userAns = this.data.userAnswers[q.id];
-      const isCorrect = q.skillType === 'writing_p1'
-        ? (userAns || '').trim().toLowerCase() === (q.correct_answer || '').toLowerCase()
+      const isWritingP1 = q.skillType === 'writing_p1';
+      const isWritingP2 = q.skillType === 'writing_p2';
+
+      if (isWritingP2) {
+        const el = document.createElement('div');
+        el.className = 'p-4 sm:p-6 rounded-3xl border-2 bg-indigo-950/30 border-indigo-700/80 space-y-3.5 shadow-lg';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full bg-indigo-900 text-indigo-200 border border-indigo-600">
+              ✍️ BÀI VIẾT TỰ LUẬN / EMAIL
+            </span>
+            <span class="text-xs text-slate-300 font-bold">Câu ${idx + 1} • ${q.partTitle || 'Part 2 - Writing Task'}</span>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 leading-relaxed">
+            <span class="text-cyan-300 font-bold">Đề bài:</span> ${q.prompt}
+          </div>
+
+          ${userAns ? `
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-1">
+              <div class="text-slate-400 font-semibold">Bài bạn đã nộp:</div>
+              <div class="whitespace-pre-wrap font-mono text-slate-100">${userAns}</div>
+            </div>
+          ` : ''}
+
+          ${q.sample_answer ? `
+            <div class="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/70 to-slate-900 border border-emerald-500/80 space-y-2">
+              <div class="text-amber-300 font-bold flex items-center gap-1.5 text-xs sm:text-sm">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Bài Viết Mẫu Chuẩn Điểm Cao (Band B1 Sample Answer):
+              </div>
+              <div class="text-white text-xs sm:text-sm leading-relaxed font-normal p-3 rounded-xl bg-slate-950/80 border border-emerald-800/60 whitespace-pre-wrap font-medium">
+                ${q.sample_answer}
+              </div>
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(el);
+        return;
+      }
+      
+      const normStr = str => (str || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+      const isCorrect = isWritingP1
+        ? (normStr(userAns) === normStr(q.correct_answer) || (normStr(userAns) && normStr(userAns).includes(normStr(q.correct_answer))))
         : userAns === q.correct_answer;
 
       const el = document.createElement('div');
       el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3 shadow-lg`;
+
+      let modelSentenceHTML = '';
+      if (isWritingP1) {
+        const promptTemplate = q.prompt || '';
+        const highlightedSentence = promptTemplate.includes('___')
+          ? promptTemplate.replace(/_{2,}/, `<span class="px-2 py-0.5 mx-1 rounded-lg bg-emerald-500 text-slate-950 font-black shadow-sm">${q.correct_answer}</span>`)
+          : `${promptTemplate} <span class="px-2 py-0.5 mx-1 rounded-lg bg-emerald-500 text-slate-950 font-black shadow-sm">${q.correct_answer}</span>`;
+
+        modelSentenceHTML = `
+          <!-- HIGHLIGHTED MODEL SENTENCE BOX FOR LEARNING -->
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-indigo-950/70 border-2 border-indigo-500/80 space-y-1.5 shadow-inner">
+            <div class="text-amber-300 font-extrabold text-xs flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-amber-400 animate-pulse"></i> CÂU MẪU CHUẨN HOÀN CHỈNH (Học Viên Ghi Nhớ):
+            </div>
+            <div class="text-white font-bold text-xs sm:text-base leading-relaxed bg-slate-950/90 p-3 rounded-xl border border-indigo-700/60">
+              "${highlightedSentence}"
+            </div>
+          </div>
+        `;
+      }
 
       el.innerHTML = `
         <div class="flex items-center justify-between">
           <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-900 text-emerald-200 border border-emerald-600' : 'bg-rose-900 text-rose-200 border border-rose-600'}">
             ${isCorrect ? '✓ TRẢ LỜI ĐÚNG' : '✗ TRẢ LỜI SAI'}
           </span>
-          <span class="text-xs text-slate-300 font-bold">Câu ${idx + 1} • ${q.partTitle}</span>
+          <span class="text-xs text-slate-300 font-bold">Câu ${idx + 1} • ${q.partTitle || (isWritingP1 ? 'Part 1 - Viết Lại Câu' : '')}</span>
         </div>
+
+        ${isWritingP1 && q.original ? `
+          <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-700 text-xs text-slate-200 space-y-1">
+            <div><span class="text-slate-400 font-semibold">Câu gốc:</span> <strong class="text-white font-bold">"${q.original}"</strong></div>
+            <div><span class="text-slate-400 font-semibold">Từ khóa bắt buộc:</span> <span class="px-2 py-0.5 rounded-lg bg-amber-950 text-amber-300 border border-amber-700 font-mono font-bold">${q.target_word}</span></div>
+          </div>
+        ` : ''}
 
         <div class="font-semibold text-xs sm:text-base text-white leading-snug">${q.question || q.prompt}</div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
           <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-            <span class="text-slate-300 font-medium">Bạn đã chọn:</span> <strong class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold ml-1">${userAns || 'Chưa chọn'}</strong>
+            <span class="text-slate-300 font-medium">Bạn đã ${isWritingP1 ? 'viết' : 'chọn'}:</span> <strong class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold ml-1">${userAns || '(Chưa điền)'}</strong>
           </div>
           <div class="p-2.5 rounded-2xl bg-slate-900 border border-slate-700">
-            <span class="text-slate-300 font-medium">Đáp án đúng:</span> <strong class="text-emerald-400 font-bold ml-1">${q.correct_answer}</strong>
+            <span class="text-slate-300 font-medium">Đáp án chuẩn B1:</span> <strong class="text-emerald-400 font-bold ml-1">${q.correct_answer}</strong>
           </div>
         </div>
 
-        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1 leading-relaxed font-normal">
+        ${modelSentenceHTML}
+
+        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1.5 leading-relaxed font-normal">
+          ${q.grammar_pattern ? `<div class="text-amber-300 font-semibold">📌 Cấu trúc ngữ pháp: <span class="font-mono text-cyan-200">${q.grammar_pattern}</span></div>` : ''}
           <div class="text-cyan-300 font-bold flex items-center gap-1.5">💡 Giải thích chi tiết:</div>
-          <div>${q.explanation || 'Đối chiếu ngữ pháp và ngữ cảnh bài đọc/nghe.'}</div>
+          <div>${q.explanation || 'Đối chiếu ngữ pháp và ngữ cảnh chuẩn đề thi B1.'}</div>
           ${q.tapescript ? `<div class="mt-2 text-slate-300 italic p-2 rounded-xl bg-slate-900/80 border border-slate-800">🎧 Tapescript: "${q.tapescript}"</div>` : ''}
         </div>
       `;
@@ -1932,6 +2603,13 @@ const app = {
     this.initIcons();
   },
 
+  returnToRoadmap: function() {
+    this.playSound('click');
+    this.renderRoadmap();
+    this.showTab('roadmap');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
   retakeCurrentExam: function() {
     if (this.data.currentExam) {
       this.startExam(this.data.currentExam.exam_id);
@@ -1939,7 +2617,10 @@ const app = {
   },
 
   showNextExamOrRoadmap: function() {
+    this.playSound('click');
+    this.renderRoadmap();
     this.showTab('roadmap');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
   renderHistory: function() {

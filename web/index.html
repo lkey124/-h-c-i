@@ -71,11 +71,11 @@
           <i data-lucide="volume-2" id="icon-sound" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
         </button>
 
-        <!-- Subscription Remaining Days Badge -->
-        <div id="badge-subscription-status" class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/80 border border-indigo-700 text-cyan-300 text-xs font-bold shadow-sm">
-          <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span id="stat-subscription-days">Chưa Kích Hoạt</span>
-        </div>
+        <!-- Subscription Countdown Live Timer Badge -->
+        <button id="badge-subscription-status" onclick="app.openUserProfileModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 text-cyan-300 text-xs font-bold shadow-sm cursor-pointer transition-all shrink-0" title="Bấm để xem chi tiết hoặc Đổi Key">
+          <i data-lucide="timer" class="w-3.5 h-3.5 text-cyan-400 animate-pulse"></i>
+          <span id="stat-subscription-days" class="font-mono tracking-tight font-bold">Chưa Kích Hoạt</span>
+        </button>
 
         <!-- Logged In User / Login Trigger Button -->
         <div id="user-auth-section" class="flex items-center shrink-0">
@@ -252,10 +252,13 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
-          <button onclick="app.retakeCurrentExam()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm border border-slate-700 flex items-center justify-center gap-2">
+          <button onclick="app.returnToRoadmap()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 flex items-center justify-center gap-2 transition-all shadow-md">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Trở Về Lộ Trình 50 Đề
+          </button>
+          <button onclick="app.retakeCurrentExam()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 text-indigo-200 hover:text-white font-bold text-xs sm:text-sm border border-indigo-700/60 flex items-center justify-center gap-2 transition-all">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Làm Lại Đề Này
           </button>
-          <button onclick="app.showNextExamOrRoadmap()" id="btn-next-exam" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2">
+          <button onclick="app.showNextExamOrRoadmap()" id="btn-next-exam" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
             Làm Bộ Đề Tiếp Theo <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
@@ -268,6 +271,13 @@
         </h3>
         <div id="review-questions-list" class="space-y-4">
           <!-- Rendered by app.js -->
+        </div>
+
+        <!-- Bottom Return Button -->
+        <div class="pt-4 pb-8 flex items-center justify-center gap-3">
+          <button onclick="app.returnToRoadmap()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-xl flex items-center gap-2 transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Hoàn Tất Xem Điểm · Về Lộ Trình 50 Đề
+          </button>
         </div>
       </div>
     </section>
@@ -288,7 +298,7 @@
   </main>
 
   <!-- ========================================================================= -->
-  <!-- MODAL: KÍCH HOẠT MÃ KEY BẢN QUYỀN -->
+  <!-- MODAL: ĐĂNG KÝ / ĐĂNG NHẬP TÀI KHOẢN CÁ NHÂN (2 BƯỚC) -->
   <!-- ========================================================================= -->
   <div id="modal-login" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-slate-900 border-2 border-indigo-700/80 rounded-3xl max-w-md w-full p-5 sm:p-7 space-y-4 shadow-2xl relative my-auto">
@@ -297,34 +307,130 @@
       </button>
 
       <div class="text-center space-y-1">
-        <div class="w-12 h-12 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md">
-          <i data-lucide="key" class="w-6 h-6 text-indigo-400"></i>
+        <div class="flex items-center justify-center mx-auto pb-0.5">
+          <img src="/icons/app-logo.png" alt="Logo Voi B1" class="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-md">
         </div>
-        <h3 class="font-bold text-lg sm:text-xl text-white">Kích Hoạt Key Bản Quyền</h3>
-        <p class="text-xs text-slate-300 font-medium">Nhập mã Key do Admin cấp để vào học ngay</p>
+        <h3 id="login-modal-title" class="font-bold text-lg sm:text-xl text-white">Bắt Đầu Học B1</h3>
+        <p id="login-modal-sub" class="text-xs text-slate-300 font-medium">Đăng ký miễn phí hoặc đăng nhập bằng email</p>
       </div>
 
       <!-- Inline Error Box -->
-      <div id="login-error-msg" class="hidden p-3 rounded-xl bg-rose-950/90 border border-rose-700 text-rose-200 text-xs font-medium space-y-1">
-        <!-- Error text rendered dynamically -->
+      <div id="login-error-msg" class="hidden p-3 rounded-xl bg-rose-950/90 border border-rose-700 text-rose-200 text-xs font-medium"></div>
+
+      <!-- STEP 1: Email Input -->
+      <div id="login-step-email" class="space-y-3.5 pt-1">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">Email của bạn:</label>
+          <input type="email" id="login-email-input" placeholder="email@gmail.com" autocomplete="email" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm focus:outline-none focus:border-indigo-500">
+        </div>
+        <button onclick="app.handleEmailStep()" id="btn-email-step" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="arrow-right" class="w-4 h-4"></i> Tiếp Tục
+        </button>
       </div>
 
-      <!-- Single Key Activation Form -->
-      <form onsubmit="app.handleLogin(event)" class="space-y-3.5 pt-1">
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300">Mã Key Kích Hoạt Của Bạn:</label>
-          <input type="text" id="login-license-key" placeholder="Ví dụ: B1-VIP-8899..." autocapitalize="characters" autocorrect="off" spellcheck="false" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-mono font-bold text-sm tracking-wider focus:outline-none focus:border-indigo-500 uppercase">
+      <!-- STEP 2: Name Input (đăng ký mới) -->
+      <div id="login-step-name" class="hidden space-y-3.5 pt-1">
+        <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-medium">
+          ✅ Email mới! Tạo tài khoản <strong>miễn phí</strong> — làm thử Bài 1 ngay.
         </div>
-        <button type="submit" id="btn-submit-login" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
-          <i data-lucide="check-circle" class="w-4 h-4"></i> Kích Hoạt & Bắt Đầu Học
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">Họ và Tên:</label>
+          <input type="text" id="login-name-input" placeholder="Ví dụ: NGUYỄN VĂN AN" autocapitalize="words" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm tracking-wide focus:outline-none focus:border-indigo-500 uppercase">
+        </div>
+        <button onclick="app.handleRegister()" id="btn-register" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="user-plus" class="w-4 h-4"></i> Tạo Tài Khoản & Bắt Đầu
         </button>
-      </form>
+        <button onclick="app.backToEmailStep()" class="w-full py-2 text-xs text-slate-400 hover:text-white">← Quay lại</button>
+      </div>
 
-      <!-- Store Link -->
       <div class="pt-3 border-t border-slate-800 text-center">
         <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
           <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mua Key Bản Quyền Tại binhluu.ai.studio
         </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: NHẬP KEY ĐỂ NÂNG CẤP PREMIUM -->
+  <!-- ========================================================================= -->
+  <div id="modal-link-key" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-2 border-amber-600/80 rounded-3xl max-w-md w-full p-5 sm:p-7 space-y-4 shadow-2xl relative">
+      <button onclick="app.closeLinkKeyModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-2xl bg-amber-950 border border-amber-700 flex items-center justify-center mx-auto shadow-md text-2xl">⭐</div>
+        <h3 class="font-bold text-lg sm:text-xl text-white">Mở Khóa Full 50 Đề</h3>
+        <p class="text-xs text-slate-300 font-medium">Nhập Key do Admin cấp để nâng cấp Premium</p>
+      </div>
+      <div id="link-key-error-msg" class="hidden p-3 rounded-xl bg-rose-950/90 border border-rose-700 text-rose-200 text-xs font-medium"></div>
+      <div class="space-y-3.5 pt-1">
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">Mã Key của bạn:</label>
+          <input type="text" id="link-key-input" placeholder="B1-XXXXXXXX" autocapitalize="characters" autocorrect="off" spellcheck="false" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-amber-300 font-mono font-bold text-sm tracking-wider focus:outline-none focus:border-amber-500 uppercase">
+        </div>
+        <button onclick="app.handleLinkKey()" id="btn-link-key" class="w-full py-3.5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="zap" class="w-4 h-4"></i> Kích Hoạt Premium Ngay
+        </button>
+      </div>
+      <div class="pt-3 border-t border-slate-800 text-center">
+        <a href="https://binhluu.ai.studio/" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
+          <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mua Key Tại binhluu.ai.studio
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: HỒ SƠ HỌC VIÊN & QUẢN LÝ KEY (HIỂN THỊ KHI BẤM VÀO TÊN) -->
+  <!-- ========================================================================= -->
+  <div id="modal-user-profile" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-2 border-indigo-500/80 rounded-3xl max-w-sm w-full p-5 sm:p-6 space-y-4 shadow-2xl relative">
+      <button onclick="app.closeUserProfileModal()" class="absolute top-4 right-4 p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Profile Header -->
+      <div class="text-center space-y-2 pt-2">
+        <div id="profile-avatar" class="w-14 h-14 rounded-2xl bg-indigo-600 text-white font-black text-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-600/30">
+          B
+        </div>
+        <div>
+          <h3 id="profile-name" class="font-extrabold text-lg sm:text-xl text-white">BINH</h3>
+          <p id="profile-email" class="text-xs text-slate-400 font-mono mt-0.5">student@gmail.com</p>
+        </div>
+        <div id="profile-tier-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-600 text-amber-300 text-xs font-black">
+          ⭐ GÓI PREMIUM
+        </div>
+      </div>
+
+      <!-- Account Info Cards -->
+      <div class="space-y-2 pt-1 text-xs">
+        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-medium">⏳ Thời hạn còn lại:</span>
+          <span id="profile-days-left" class="font-bold text-emerald-400 text-sm">Còn 90 ngày</span>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-medium">🔑 Key đang dùng:</span>
+          <span id="profile-current-key" class="font-mono font-bold text-amber-300">B1-EBC1611</span>
+        </div>
+
+        <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400 font-medium">🎯 Tiến độ vượt ải:</span>
+          <span id="profile-progress" class="font-bold text-cyan-300">1 / 50 Đề</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-2">
+        <button onclick="app.closeUserProfileModal(); app.openLinkKeyModal()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="key" class="w-4 h-4"></i> Nhập Key Mới / Đổi Key
+        </button>
+        <button onclick="app.closeUserProfileModal(); app.logout()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Đăng Xuất Tài Khoản
+        </button>
       </div>
     </div>
   </div>
@@ -335,22 +441,16 @@
   <div id="modal-name-registration" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="bg-slate-900 border-2 border-indigo-600/80 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-4 shadow-2xl relative animate-scale-up">
       <div class="text-center space-y-1.5">
-        <div class="w-14 h-14 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md text-2xl">
-          👋
-        </div>
+        <div class="w-14 h-14 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md text-2xl">👋</div>
         <h3 class="font-extrabold text-lg sm:text-xl text-white">Chào Mừng Học Viên Mới!</h3>
-        <p class="text-xs text-slate-300 leading-relaxed font-normal">
-          Mã Key của bạn đã được kích hoạt thành công. Vui lòng nhập <strong>Họ & Tên</strong> để lưu tiến trình học và hiển thị bảng điểm.
-        </p>
+        <p class="text-xs text-slate-300 leading-relaxed font-normal">Mã Key của bạn đã được kích hoạt thành công. Vui lòng nhập <strong>Họ & Tên</strong> để lưu tiến trình học.</p>
       </div>
-
       <form onsubmit="app.handleNameRegistration(event)" class="space-y-3.5 pt-1">
         <div class="space-y-1.5">
           <label class="text-xs font-bold text-slate-300">Họ và Tên Của Bạn:</label>
           <input type="text" id="inp-register-student-name" placeholder="Ví dụ: NGUYỄN VĂN AN..." autocapitalize="words" required class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm tracking-wide focus:outline-none focus:border-indigo-500 uppercase">
         </div>
-
-        <button type="submit" id="btn-submit-register-name" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+        <button type="submit" id="btn-submit-register-name" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
           <i data-lucide="check-circle" class="w-4 h-4"></i> Xác Nhận & Vào Học Ngay
         </button>
       </form>
