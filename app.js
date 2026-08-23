@@ -694,12 +694,14 @@ const app = {
       const savedUser = localStorage.getItem('eduquest_b1_logged_user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
-        const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, parsed.key || parsed.id));
-        this.data.currentUser = liveUser || null;
-        if (!liveUser) {
-          localStorage.removeItem('eduquest_b1_logged_user');
-        } else {
+        const remainingDays = this.getRemainingDays(parsed.expiresAt);
+        if (remainingDays > 0 && parsed.status === 'ACTIVE') {
+          const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, parsed.key || parsed.id));
+          this.data.currentUser = liveUser || parsed;
           this.loadUserProgressFromStorage();
+        } else {
+          this.data.currentUser = null;
+          localStorage.removeItem('eduquest_b1_logged_user');
         }
       } else {
         this.data.currentUser = null;
@@ -1566,10 +1568,10 @@ const app = {
         `;
       } else if (q.skillType === 'reading') {
         card.innerHTML = `
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="px-2.5 py-1 rounded-xl bg-cyan-950 text-cyan-300 font-black text-xs border border-cyan-700">Câu ${qNumber} (Đọc)</span>
-              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="px-2.5 py-1 rounded-xl bg-cyan-950 text-cyan-300 font-black text-xs border border-cyan-700 whitespace-nowrap shrink-0">Câu ${qNumber} (Đọc)</span>
+              <span class="text-xs text-slate-300 font-bold truncate">${q.partTitle}</span>
             </div>
           </div>
 
@@ -1593,10 +1595,10 @@ const app = {
         `;
       } else if (q.skillType === 'writing_p1') {
         card.innerHTML = `
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="px-2.5 py-1 rounded-xl bg-amber-950 text-amber-300 font-black text-xs border border-amber-700">Câu ${qNumber} (Viết)</span>
-              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="px-2.5 py-1 rounded-xl bg-amber-950 text-amber-300 font-black text-xs border border-amber-700 whitespace-nowrap shrink-0">Câu ${qNumber} (Viết)</span>
+              <span class="text-xs text-slate-300 font-bold truncate">${q.partTitle}</span>
             </div>
           </div>
 
@@ -1610,10 +1612,10 @@ const app = {
         `;
       } else if (q.skillType === 'writing_p2') {
         card.innerHTML = `
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="px-2.5 py-1 rounded-xl bg-rose-950 text-rose-300 font-black text-xs border border-rose-700">Câu ${qNumber} (Viết Luận)</span>
-              <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="px-2.5 py-1 rounded-xl bg-rose-950 text-rose-300 font-black text-xs border border-rose-700 whitespace-nowrap shrink-0">Câu ${qNumber} (Viết Luận)</span>
+              <span class="text-xs text-slate-300 font-bold truncate">${q.partTitle}</span>
             </div>
           </div>
 
