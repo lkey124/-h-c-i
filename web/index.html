@@ -317,30 +317,61 @@
       <!-- Inline Error Box -->
       <div id="login-error-msg" class="hidden p-3 rounded-xl bg-rose-950/90 border border-rose-700 text-rose-200 text-xs font-medium"></div>
 
-      <!-- STEP 1: Email / Name Input -->
+      <!-- STEP 1: Email / Username Input -->
       <div id="login-step-email" class="space-y-3.5 pt-1">
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300">Email hoặc Tên của bạn:</label>
-          <input type="text" id="login-email-input" placeholder="Ví dụ: hocvien@gmail.com hoặc NGUYEN VAN A..." autocomplete="username" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm focus:outline-none focus:border-indigo-500">
+          <label class="text-xs font-bold text-slate-300">Email của bạn:</label>
+          <input type="email" id="login-email-input" placeholder="Ví dụ: hocvien@gmail.com..." autocomplete="email" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm focus:outline-none focus:border-indigo-500">
         </div>
         <button onclick="app.handleEmailStep()" id="btn-email-step" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
-          <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập / Tiếp Tục
+          <i data-lucide="arrow-right" class="w-4 h-4"></i> Tiếp Tục
         </button>
       </div>
 
-      <!-- STEP 2: Name Input (đăng ký mới) -->
-      <div id="login-step-name" class="hidden space-y-3.5 pt-1">
-        <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-medium">
-          ✅ Email mới! Tạo tài khoản <strong>miễn phí</strong> — làm thử Bài 1 ngay.
+      <!-- STEP 2A: Password Login (Tài khoản đã tồn tại) -->
+      <div id="login-step-password" class="hidden space-y-3.5 pt-1">
+        <div class="p-3 rounded-xl bg-indigo-950/60 border border-indigo-700 text-indigo-300 text-xs font-medium flex items-center justify-between">
+          <span>👋 Chào mừng: <strong id="login-existing-name" class="text-white">...</strong></span>
+          <span class="text-[10px] text-cyan-300 font-mono" id="login-existing-email"></span>
         </div>
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-300">Họ và Tên:</label>
+          <label class="text-xs font-bold text-slate-300">Nhập Mật Khẩu:</label>
+          <div class="relative">
+            <input type="password" id="login-password-input" placeholder="Nhập mật khẩu của bạn..." autocomplete="current-password" class="w-full px-4 py-3.5 pr-12 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm focus:outline-none focus:border-indigo-500">
+            <button type="button" onclick="app.togglePasswordVisibility('login-password-input', this)" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <button onclick="app.handleLoginWithPassword()" id="btn-password-login" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Ngay
+        </button>
+        <button onclick="app.backToEmailStep()" class="w-full py-2 text-xs text-slate-400 hover:text-white">← Quay lại đổi Email</button>
+      </div>
+
+      <!-- STEP 2B: Registration (Email mới chưa đăng ký) -->
+      <div id="login-step-register" class="hidden space-y-3.5 pt-1">
+        <div class="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-xs font-medium">
+          ✨ Email mới: <strong id="register-target-email" class="text-white">...</strong><br>
+          Tạo tài khoản <strong>Miễn Phí</strong> để luyện thi Bài 1 ngay!
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">1. Họ và Tên Của Bạn:</label>
           <input type="text" id="login-name-input" placeholder="Ví dụ: NGUYỄN VĂN AN" autocapitalize="words" class="w-full px-4 py-3.5 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm tracking-wide focus:outline-none focus:border-indigo-500 uppercase">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-300">2. Tạo Mật Khẩu (Ít nhất 4 ký tự):</label>
+          <div class="relative">
+            <input type="password" id="register-password-input" placeholder="Tạo mật khẩu bảo vệ tài khoản..." autocomplete="new-password" class="w-full px-4 py-3.5 pr-12 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-bold text-sm focus:outline-none focus:border-indigo-500">
+            <button type="button" onclick="app.togglePasswordVisibility('register-password-input', this)" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
         <button onclick="app.handleRegister()" id="btn-register" class="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
           <i data-lucide="user-plus" class="w-4 h-4"></i> Tạo Tài Khoản & Bắt Đầu
         </button>
-        <button onclick="app.backToEmailStep()" class="w-full py-2 text-xs text-slate-400 hover:text-white">← Quay lại</button>
+        <button onclick="app.backToEmailStep()" class="w-full py-2 text-xs text-slate-400 hover:text-white">← Quay lại đổi Email</button>
       </div>
 
       <div class="pt-3 border-t border-slate-800 text-center">
@@ -550,6 +581,6 @@
   </footer>
 
   <!-- App Script with Cache Busting -->
-  <script src="app.js?v=2.4.5"></script>
+  <script src="app.js?v=2.5.0"></script>
 </body>
 </html>

@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.4.5',
+  APP_VERSION: 'v2.5.0',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -1608,20 +1608,24 @@ const app = {
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
   },
 
-  backToEmailStep: function() {
-    document.getElementById('login-step-email')?.classList.remove('hidden');
-    document.getElementById('login-step-name')?.classList.add('hidden');
-    document.getElementById('login-step-key')?.classList.add('hidden');
+  togglePasswordVisibility: function(inputId, btnEl) {
+    const inp = document.getElementById(inputId);
+    if (!inp) return;
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    if (btnEl) {
+      btnEl.innerHTML = isPass ? '<i data-lucide="eye-off" class="w-4 h-4 text-cyan-300"></i>' : '<i data-lucide="eye" class="w-4 h-4"></i>';
+      this.initIcons();
+    }
   },
 
-  showLegacyKeyLogin: function() {
-    document.getElementById('login-step-email')?.classList.add('hidden');
-    document.getElementById('login-step-name')?.classList.add('hidden');
-    document.getElementById('login-step-key')?.classList.remove('hidden');
-    const inp = document.getElementById('login-license-key');
-    if (inp) inp.value = '';
+  backToEmailStep: function() {
+    document.getElementById('login-step-email')?.classList.remove('hidden');
+    document.getElementById('login-step-password')?.classList.add('hidden');
+    document.getElementById('login-step-register')?.classList.add('hidden');
     const errBox = document.getElementById('login-error-msg');
     if (errBox) { errBox.innerText = ''; errBox.classList.add('hidden'); }
+    this.initIcons();
   },
 
   handleEmailStep: async function() {
@@ -1631,11 +1635,11 @@ const app = {
     const rawInput = (emailInp?.value || '').trim();
 
     if (!rawInput) {
-      if (errBox) { errBox.innerText = 'Vui lòng nhập Email hoặc Tên của bạn!'; errBox.classList.remove('hidden'); }
+      if (errBox) { errBox.innerText = 'Vui lòng nhập Email của bạn!'; errBox.classList.remove('hidden'); }
       return;
     }
     if (errBox) errBox.classList.add('hidden');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang xác thực...'; this.initIcons(); }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang kiểm tra...'; this.initIcons(); }
 
     const isEmail = rawInput.includes('@');
     const cleanLower = rawInput.toLowerCase();
@@ -1645,7 +1649,7 @@ const app = {
       await this.syncKeysFromCloud();
       const accounts = await this.fetchAccountsFromCloud();
       
-      // 1. Search in accounts list by: Email, Name, or Linked Key
+      // Search in accounts list by Email, Name, or Linked Key
       let found = accounts.find(a => {
         if (a.email && a.email.trim().toLowerCase() === cleanLower) return true;
         if (a.name && a.name.trim().toLowerCase() === cleanLower) return true;
@@ -1653,7 +1657,7 @@ const app = {
         return false;
       });
 
-      // 2. Search in keys list by: Key, Name, or Email
+      // Search in keys list
       if (!found && Array.isArray(this.data.users)) {
         const matchedKey = this.data.users.find(u => {
           const uKeyNorm = (u.key || u.id || '').replace(/[- _]/g, '').toUpperCase();
@@ -1671,6 +1675,7 @@ const app = {
             name: matchedKey.name || matchedKey.linkedName,
             tier: 'premium',
             linkedKey: matchedKey.key,
+            password: matchedKey.password || null,
             keyExpiresAt: matchedKey.expiresAt,
             createdAt: matchedKey.createdAt || new Date().toISOString(),
             lastActiveDate: new Date().toISOString(),
@@ -1683,76 +1688,153 @@ const app = {
       }
 
       if (found) {
-        // Restore account with full name and progress
-        this.loginWithAccount(found);
-        this.closeLoginModal();
-        this.playSound('pass');
-        const isPrem = this.getCurrentTier() === 'premium';
-        this.showCustomAlert({
-          title: 'CHÀO MỪNG TRỞ LẠI!',
-          message: `Học viên <strong>${found.name}</strong> đã đăng nhập thành công!<br><br>${isPrem ? '⭐ Tài khoản <strong>Premium</strong> đang hoạt động.' : '🆓 Tài khoản Free – Bài 1 sẵn sàng!'}`,
-          icon: '👋',
-          iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-          btnText: 'Vào Học Ngay'
-        });
-      } else {
-        if (!isEmail && !rawInput.includes('.')) {
-          // If typed a name or invalid key not found anywhere, ask to register as free
-          this.data.pendingEmail = cleanLower.replace(/\s+/g, '') + '@gmail.com';
-        } else {
-          this.data.pendingEmail = cleanLower;
-        }
-        // New user → show name registration step
+        // Account exists -> Ask for Password
+        this.data.pendingAccount = found;
+        const nameEl = document.getElementById('login-existing-name');
+        const emailEl = document.getElementById('login-existing-email');
+        const passInp = document.getElementById('login-password-input');
+        if (nameEl) nameEl.innerText = found.name || 'Học Viên';
+        if (emailEl) emailEl.innerText = found.email || '';
+        if (passInp) passInp.value = '';
+
         document.getElementById('login-step-email')?.classList.add('hidden');
-        document.getElementById('login-step-name')?.classList.remove('hidden');
-        const nameInp = document.getElementById('login-name-input');
-        if (nameInp) nameInp.value = (!isEmail && rawInput.length >= 2) ? rawInput.toUpperCase() : '';
+        document.getElementById('login-step-register')?.classList.add('hidden');
+        document.getElementById('login-step-password')?.classList.remove('hidden');
+        setTimeout(() => passInp?.focus(), 100);
+        this.initIcons();
+      } else {
+        // Account does NOT exist -> Ask to Register (Name + Password)
+        const targetEmail = isEmail ? cleanLower : (cleanLower.replace(/\s+/g, '') + '@gmail.com');
+        this.data.pendingEmail = targetEmail;
+        const regEmailEl = document.getElementById('register-target-email');
+        const regNameInp = document.getElementById('login-name-input');
+        const regPassInp = document.getElementById('register-password-input');
+
+        if (regEmailEl) regEmailEl.innerText = targetEmail;
+        if (regNameInp) regNameInp.value = (!isEmail && rawInput.length >= 2) ? rawInput.toUpperCase() : '';
+        if (regPassInp) regPassInp.value = '';
+
+        document.getElementById('login-step-email')?.classList.add('hidden');
+        document.getElementById('login-step-password')?.classList.add('hidden');
+        document.getElementById('login-step-register')?.classList.remove('hidden');
+        setTimeout(() => (regNameInp?.value ? regPassInp?.focus() : regNameInp?.focus()), 100);
         this.initIcons();
       }
     } catch (e) {
       if (errBox) { errBox.innerText = 'Không thể kết nối server. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập / Tiếp Tục'; this.initIcons(); }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-right" class="w-4 h-4"></i> Tiếp Tục'; this.initIcons(); }
+    }
+  },
+
+  handleLoginWithPassword: async function() {
+    const passInp = document.getElementById('login-password-input');
+    const errBox = document.getElementById('login-error-msg');
+    const btn = document.getElementById('btn-password-login');
+    const enteredPass = (passInp?.value || '').trim();
+    const account = this.data.pendingAccount;
+
+    if (!account) { this.backToEmailStep(); return; }
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang đăng nhập...'; this.initIcons(); }
+
+    try {
+      // If account has an existing password set, verify it
+      if (account.password && account.password.trim() !== '') {
+        if (account.password !== enteredPass) {
+          if (errBox) {
+            errBox.innerHTML = '❌ <strong>Mật khẩu không chính xác!</strong> Vui lòng kiểm tra lại.';
+            errBox.classList.remove('hidden');
+          }
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Ngay'; this.initIcons(); }
+          return;
+        }
+      } else {
+        // Legacy account without password -> Save the entered password for future logins
+        if (enteredPass.length >= 4) {
+          account.password = enteredPass;
+          await this.pushAccountToCloud(account);
+        }
+      }
+
+      this.loginWithAccount(account);
+      this.closeLoginModal();
+      this.playSound('pass');
+      const isPrem = this.getCurrentTier() === 'premium';
+      this.showCustomAlert({
+        title: 'CHÀO MỪNG TRỞ LẠI!',
+        message: `Học viên <strong>${account.name}</strong> đã đăng nhập thành công!<br><br>${isPrem ? '⭐ Tài khoản <strong>Premium</strong> đang hoạt động.' : '🆓 Tài khoản Free – Bài 1 sẵn sàng!'}`,
+        icon: '👋',
+        iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+        btnText: 'Vào Học Ngay'
+      });
+    } catch(e) {
+      if (errBox) { errBox.innerText = 'Lỗi kết nối. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Ngay'; this.initIcons(); }
     }
   },
 
   handleRegister: async function() {
     const nameInp = document.getElementById('login-name-input');
+    const passInp = document.getElementById('register-password-input');
     const errBox = document.getElementById('login-error-msg');
     const btn = document.getElementById('btn-register');
     const name = (nameInp?.value || '').trim().toUpperCase();
+    const password = (passInp?.value || '').trim();
+    const email = this.data.pendingEmail;
+
+    if (!email) { this.backToEmailStep(); return; }
 
     if (!name || name.length < 2) {
       if (errBox) { errBox.innerText = 'Vui lòng nhập Họ và Tên (ít nhất 2 ký tự)!'; errBox.classList.remove('hidden'); }
       return;
     }
-    const email = this.data.pendingEmail;
-    if (!email) { this.backToEmailStep(); return; }
 
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang tạo tài khoản...'; this.initIcons(); }
+    if (!password || password.length < 4) {
+      if (errBox) { errBox.innerText = 'Vui lòng tạo Mật khẩu (ít nhất 4 ký tự)!'; errBox.classList.remove('hidden'); }
+      return;
+    }
 
-    const accountId = 'ACC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    const account = {
-      accountId, email, name,
-      tier: 'free',
-      linkedKey: null,
-      keyExpiresAt: null,
-      freeExamSubmitted: false,
-      createdAt: new Date().toISOString(),
-      streak: 1,
-      lastActiveDate: new Date().toISOString().split('T')[0],
-      progress: { unlockedUpTo: 1, passedSets: {}, streak: 1, exp: 0, attempts: [] },
-      status: 'ACTIVE'
-    };
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang kiểm tra trùng lặp...'; this.initIcons(); }
 
     try {
+      // DUPLICATE CHECK: Verify if email is already registered on live cloud
+      const liveAccounts = await this.fetchAccountsFromCloud();
+      const duplicate = liveAccounts.find(a => 
+        (a.email && a.email.trim().toLowerCase() === email.trim().toLowerCase())
+      );
+
+      if (duplicate) {
+        if (errBox) {
+          errBox.innerHTML = `⚠️ <strong>Email "${email}" đã tồn tại!</strong><br>Vui lòng bấm <em>"Quay lại đổi Email"</em> để Đăng Nhập bằng mật khẩu.`;
+          errBox.classList.remove('hidden');
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4"></i> Tạo Tài Khoản & Bắt Đầu'; this.initIcons(); }
+        return;
+      }
+
+      const accountId = 'ACC-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
+      const account = {
+        accountId, email, name, password,
+        tier: 'free',
+        linkedKey: null,
+        keyExpiresAt: null,
+        freeExamSubmitted: false,
+        createdAt: new Date().toISOString(),
+        streak: 1,
+        lastActiveDate: new Date().toISOString().split('T')[0],
+        progress: { unlockedUpTo: 1, passedSets: {}, streak: 1, exp: 0, attempts: [] },
+        status: 'ACTIVE'
+      };
+
       await this.pushAccountToCloud(account, true);
       this.loginWithAccount(account);
       this.closeLoginModal();
       this.playSound('pass');
       this.showCustomAlert({
         title: '🎉 TẠO TÀI KHOẢN THÀNH CÔNG!',
-        message: `Chào mừng học viên <strong>${name}</strong>! Tài khoản <strong>Miễn Phí</strong> đã được tạo. Bạn có thể làm thử <strong>Bài 1</strong> ngay bây giờ. Để mở toàn bộ 50 bài, hãy nhập Key bản quyền.`,
+        message: `Chào mừng học viên <strong>${name}</strong>!<br>Email: <strong class="text-cyan-300 font-mono">${email}</strong><br>Mật khẩu của bạn đã được lưu an toàn.<br><br>Bạn có thể làm thử <strong>Bài 1</strong> ngay bây giờ!`,
         icon: '🐘',
         iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
         btnText: 'Bắt Đầu Bài 1!'
