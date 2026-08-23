@@ -1605,15 +1605,28 @@
               ${statusBadge}
             </td>
             <td class="py-3 px-3 text-right">
-              <button onclick="adminApp.deleteAccount('${acct.accountId}', '${acct.name || acct.email}')" class="p-1.5 rounded bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800" title="Xóa tài khoản">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
+              <div class="flex items-center justify-end gap-1.5">
+                <button onclick="adminApp.quickGrantKeyToAccount('${acct.accountId}', '${(acct.name || '').replace(/'/g, "\\'")}', '${(acct.email || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold shadow-sm flex items-center gap-1 transition-all" title="Cấp Key Nhanh Cho Học Viên">
+                  <i data-lucide="key" class="w-3 h-3"></i> Cấp Key
+                </button>
+                <button onclick="adminApp.deleteAccount('${acct.accountId}', '${(acct.name || acct.email || '').replace(/'/g, "\\'")}')" class="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors" title="Xóa tài khoản">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(tr);
         });
 
         this.initIcons();
+      },
+
+      quickGrantKeyToAccount: function(accountId, name, email) {
+        const nameInp = document.getElementById('inp-student-name');
+        if (nameInp) nameInp.value = name || email;
+        this.generateRandomKey();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.showToast(`⚡ Đã điền thông tin học viên <strong>${name || email}</strong> vào biểu mẫu cấp Key bên trên!`);
       },
 
       deleteAccount: function(accountId, acctName) {

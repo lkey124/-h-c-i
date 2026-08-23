@@ -135,22 +135,25 @@ class CleanHandler(BaseHTTPRequestHandler):
             try:
                 body = json.loads(self.read_body().decode('utf-8'))
                 keys = body if isinstance(body, list) else body.get("keys", [])
-                self.write_json_file(KEYS_FILE, keys)
-                
-                # Also sync into ADMIN_KEYS_FILE so link-key finds them instantly
-                existing_admin_keys = self.read_json_file(ADMIN_KEYS_FILE)
-                key_dict = {norm_key(k.get("key")): k for k in existing_admin_keys if isinstance(k, dict)}
-                for k in keys:
-                    if isinstance(k, dict):
-                        nk = norm_key(k.get("key"))
-                        if nk:
-                            if nk in key_dict:
-                                key_dict[nk] = {**key_dict[nk], **k}
-                            else:
-                                key_dict[nk] = k
-                self.write_json_file(ADMIN_KEYS_FILE, list(key_dict.values()))
-                
-                self.send_json({"success": True, "count": len(keys)})
+                valid_keys = [k for k in keys if isinstance(k, dict)]
+                self.write_json_file(KEYS_FILE, valid_keys)
+                self.write_json_file(ADMIN_KEYS_FILE, valid_keys)
+
+                # Sync account downgrades: If key was removed by admin, revoke premium on linked account
+                active_key_set = {norm_key(k.get("key") or k.get("id")) for k in valid_keys if (k.get("key") or k.get("id"))}
+                accounts_list = self.read_json_file(ACCOUNTS_FILE)
+                acct_changed = False
+                for a in accounts_list:
+                    if isinstance(a, dict) and a.get("linkedKey"):
+                        if norm_key(a.get("linkedKey")) not in active_key_set:
+                            a["tier"] = "free"
+                            a["linkedKey"] = None
+                            a["keyExpiresAt"] = None
+                            acct_changed = True
+                if acct_changed:
+                    self.write_json_file(ACCOUNTS_FILE, accounts_list)
+
+                self.send_json({"success": True, "count": len(valid_keys)})
             except Exception as e:
                 self.send_error(500, str(e))
             return
@@ -160,8 +163,25 @@ class CleanHandler(BaseHTTPRequestHandler):
             try:
                 body = json.loads(self.read_body().decode('utf-8'))
                 keys = body.get("keys", body) if isinstance(body, dict) else body
-                self.write_json_file(ADMIN_KEYS_FILE, keys)
-                self.send_json({"success": True, "count": len(keys)})
+                valid_keys = [k for k in keys if isinstance(k, dict)]
+                self.write_json_file(ADMIN_KEYS_FILE, valid_keys)
+                self.write_json_file(KEYS_FILE, valid_keys)
+
+                # Sync account downgrades
+                active_key_set = {norm_key(k.get("key") or k.get("id")) for k in valid_keys if (k.get("key") or k.get("id"))}
+                accounts_list = self.read_json_file(ACCOUNTS_FILE)
+                acct_changed = False
+                for a in accounts_list:
+                    if isinstance(a, dict) and a.get("linkedKey"):
+                        if norm_key(a.get("linkedKey")) not in active_key_set:
+                            a["tier"] = "free"
+                            a["linkedKey"] = None
+                            a["keyExpiresAt"] = None
+                            acct_changed = True
+                if acct_changed:
+                    self.write_json_file(ACCOUNTS_FILE, accounts_list)
+
+                self.send_json({"success": True, "count": len(valid_keys)})
             except Exception as e:
                 self.send_error(500, str(e))
             return
@@ -190,6 +210,18 @@ class CleanHandler(BaseHTTPRequestHandler):
                     accounts_list = self.read_json_file(ACCOUNTS_FILE)
                     accounts_list = [a for a in accounts_list if isinstance(a, dict) and a.get("accountId") != del_id]
                     self.write_json_file(ACCOUNTS_FILE, accounts_list)
+
+                    # Also un-link key in key databases
+                    for kfile in [KEYS_FILE, ADMIN_KEYS_FILE]:
+                        klist = self.read_json_file(kfile)
+                        for k in klist:
+                            if isinstance(k, dict) and k.get("linkedAccountId") == del_id:
+                                k["linkedAccountId"] = None
+                                k["linkedEmail"] = None
+                                k["linkedName"] = None
+                                k["name"] = "Chưa Kích Hoạt"
+                        self.write_json_file(kfile, klist)
+
                     self.send_json({"success": True, "remaining": len(accounts_list)})
                 elif isinstance(body, dict) and "account" in body and isinstance(body["account"], dict):
                     accounts_list = self.read_json_file(ACCOUNTS_FILE)

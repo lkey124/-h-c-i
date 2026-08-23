@@ -466,12 +466,20 @@ const app = {
     this.loadUsersFromStorage();
     this.loadActiveUserSession();
     this.updateDailyStreak();
+    await this.validateActiveSessionWithServer();
     await this.syncKeysFromCloud();
     await this.loadExamsDataset();
     this.renderRoadmap();
     this.updateUserStatsDisplay();
     this.startSubscriptionCountdown();
     this.initIcons();
+
+    // Re-validate when student tab becomes visible/active
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.validateActiveSessionWithServer();
+      }
+    });
   },
 
   renderAnnouncementBanner: function() {
@@ -1905,6 +1913,70 @@ const app = {
     } catch (e) {}
     // Also update localStorage
     localStorage.setItem('eduquest_b1_account', JSON.stringify(account));
+  },
+
+  validateActiveSessionWithServer: async function() {
+    const localUser = this.data.currentUser;
+    if (!localUser) return;
+
+    try {
+      const accounts = await this.fetchAccountsFromCloud();
+      if (!Array.isArray(accounts)) return;
+
+      // Find matching server account
+      const serverAcct = accounts.find(a => 
+        (a.accountId && a.accountId === localUser.accountId) ||
+        (a.email && localUser.email && a.email.toLowerCase() === localUser.email.toLowerCase())
+      );
+
+      // Case 1: Account was deleted or purged by Admin
+      if (!serverAcct || serverAcct.status === 'DELETED') {
+        this.forceLogoutByAdmin('Tài khoản của bạn đã bị Quản Trị Viên xóa hoặc thu hồi khỏi hệ thống!');
+        return;
+      }
+
+      // Case 2: Key was revoked/deleted by Admin -> Downgraded to free
+      const serverTier = serverAcct.tier || 'free';
+      const serverKey = serverAcct.linkedKey;
+      if (localUser.tier === 'premium' && (serverTier === 'free' || !serverKey)) {
+        this.data.currentUser.tier = 'free';
+        this.data.currentUser.linkedKey = null;
+        this.data.currentUser.keyExpiresAt = null;
+        localStorage.setItem('eduquest_b1_account', JSON.stringify(this.data.currentUser));
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        this.showToast('⚠️ Mã Key của bạn đã bị Admin thu hồi hoặc đã hết hạn.');
+        return;
+      }
+
+      // Case 3: Admin extended key or updated details -> Sync to local
+      if (serverAcct.keyExpiresAt !== localUser.keyExpiresAt || serverAcct.name !== localUser.name || serverAcct.tier !== localUser.tier) {
+        this.data.currentUser = { ...this.data.currentUser, ...serverAcct };
+        localStorage.setItem('eduquest_b1_account', JSON.stringify(this.data.currentUser));
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+      }
+    } catch(e) {
+      // Offline fallback
+    }
+  },
+
+  forceLogoutByAdmin: function(reasonMessage) {
+    this.stopAllAudios();
+    this.data.currentUser = null;
+    localStorage.removeItem('eduquest_b1_account');
+    localStorage.removeItem('eduquest_b1_logged_user');
+    this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
+    this.renderRoadmap();
+    this.updateUserStatsDisplay();
+    this.playSound('fail');
+    this.showCustomAlert({
+      title: 'TÀI KHOẢN ĐÃ BỊ THU HỒI',
+      message: reasonMessage || 'Tài khoản của bạn đã bị Quản Trị Viên xóa khỏi hệ thống.',
+      icon: '⚠️',
+      iconBg: 'bg-rose-950/80 border border-rose-700 text-rose-400',
+      btnText: 'Tôi Đã Hiểu'
+    });
   },
 
   logout: function() {

@@ -1,41 +1,5 @@
 [
   {
-    "accountId": "ACC-1787462130633-0TRF3",
-    "email": "binhluu64@gmail.com",
-    "name": "BINH",
-    "tier": "premium",
-    "linkedKey": "B1-EBC1611",
-    "keyExpiresAt": "2026-11-21T05:16:56.121Z",
-    "freeExamSubmitted": true,
-    "createdAt": "2026-08-23T05:15:30.633Z",
-    "streak": 1,
-    "lastActiveDate": "2026-08-23T05:31:23.058Z",
-    "progress": {
-      "unlockedUpTo": 1,
-      "passedSets": {},
-      "streak": 1,
-      "exp": 0,
-      "attempts": [
-        {
-          "exam_id": "B1-SET-50",
-          "title": "B1 Master Exam Ready - Đề Số 50",
-          "score": 14,
-          "passed": false,
-          "date": "23/8/2026"
-        },
-        {
-          "exam_id": "B1-SET-01",
-          "title": "B1 Foundation Set - Đề Số 01",
-          "score": 7,
-          "passed": false,
-          "date": "23/8/2026"
-        }
-      ],
-      "lastActiveDate": "2026-08-23"
-    },
-    "status": "ACTIVE"
-  },
-  {
     "accountId": "ACC-BINH-123",
     "name": "BINH",
     "email": "binhluu64@gmail.com",
