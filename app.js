@@ -864,148 +864,24 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 32;
-      else if (level === 4) size = 28;
-      else if (level === 3) size = 25;
-      else if (level === 2) size = 21;
-      else size = 18;
+      if (level === 5) size = 34;
+      else if (level === 4) size = 30;
+      else if (level === 3) size = 26;
+      else if (level === 2) size = 22;
+      else size = 19;
     }
-    const height = Math.round(size * 1.25);
-    const showSparks = level >= 2;
+    const height = size;
+    const gifSrc = `public/flames/flame_lv${level}.gif`;
 
     return `
-      <span class="flame-premium-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <svg viewBox="0 0 100 125" class="flame-anim-bounce anime-flame-svg" style="width: 100%; height: 100%;">
-          <defs>
-            <linearGradient id="duo-outer-1" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#b45309"/>
-              <stop offset="55%" stop-color="#f59e0b"/>
-              <stop offset="100%" stop-color="#fef08a"/>
-            </linearGradient>
-            <linearGradient id="duo-inner-1" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#f59e0b"/>
-              <stop offset="60%" stop-color="#fde047"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-
-            <linearGradient id="duo-outer-2" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#c2410c"/>
-              <stop offset="50%" stop-color="#f97316"/>
-              <stop offset="100%" stop-color="#fef08a"/>
-            </linearGradient>
-            <linearGradient id="duo-inner-2" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#ea580c"/>
-              <stop offset="60%" stop-color="#fbbf24"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-
-            <linearGradient id="duo-outer-3" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#9f1239"/>
-              <stop offset="45%" stop-color="#e11d48"/>
-              <stop offset="75%" stop-color="#ff2a5f"/>
-              <stop offset="100%" stop-color="#ffe4e6"/>
-            </linearGradient>
-            <linearGradient id="duo-inner-3" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#e11d48"/>
-              <stop offset="60%" stop-color="#fb7185"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-
-            <linearGradient id="duo-outer-4" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#4c1d95"/>
-              <stop offset="45%" stop-color="#7c3aed"/>
-              <stop offset="80%" stop-color="#c084fc"/>
-              <stop offset="100%" stop-color="#f5d0fe"/>
-            </linearGradient>
-            <linearGradient id="duo-inner-4" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#7c3aed"/>
-              <stop offset="60%" stop-color="#d8b4fe"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-
-            <linearGradient id="duo-outer-5" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#854d0e"/>
-              <stop offset="45%" stop-color="#eab308"/>
-              <stop offset="80%" stop-color="#fde047"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-            <linearGradient id="duo-inner-5" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%" stop-color="#ca8a04"/>
-              <stop offset="60%" stop-color="#fef08a"/>
-              <stop offset="100%" stop-color="#ffffff"/>
-            </linearGradient>
-          </defs>
-
-          <!-- Outer Flame Body with Anime.js Morphing Path -->
-          <path class="anime-flame-outer" fill="url(#duo-outer-${level})" d="M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z"/>
-
-          <!-- Secondary Inner Layer with Anti-Phase Morphing -->
-          <path class="anime-flame-inner" fill="url(#duo-inner-${level})" opacity="0.92" d="M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z"/>
-
-          <!-- Bright Core Pulse Flame with Anime.js Spring Dynamics -->
-          <path class="anime-flame-core" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
-        </svg>
-
-        ${showSparks ? `
-          <span class="flame-spark-dot spark-dot-1"></span>
-          <span class="flame-spark-dot spark-dot-2"></span>
-        ` : ''}
+      <span class="flame-gif-wrapper flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <img src="${gifSrc}" alt="Flame Lv${level}" class="flame-gif-img" style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;" />
       </span>
     `;
   },
 
   initAnimeFlameAnimation: function() {
-    if (typeof anime === 'undefined') return;
-
-    try {
-      const outerPaths = document.querySelectorAll('.anime-flame-outer');
-      if (outerPaths.length > 0) {
-        anime({
-          targets: outerPaths,
-          d: [
-            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' },
-            { value: 'M46,2 C56,22 84,40 82,70 C80,98 70,122 50,124 C28,122 16,100 18,74 C20,50 36,26 46,2 Z' },
-            { value: 'M54,2 C64,26 80,50 82,74 C84,100 72,122 50,124 C30,122 20,98 18,70 C16,40 44,22 54,2 Z' },
-            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' }
-          ],
-          easing: 'easeInOutQuad',
-          duration: 2400,
-          loop: true
-        });
-      }
-
-      const innerPaths = document.querySelectorAll('.anime-flame-inner');
-      if (innerPaths.length > 0) {
-        anime({
-          targets: innerPaths,
-          d: [
-            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' },
-            { value: 'M48,18 C54,38 70,54 72,76 C74,98 64,112 50,114 C36,112 26,96 28,72 C30,48 42,34 48,18 Z' },
-            { value: 'M52,18 C58,34 74,48 72,72 C70,96 64,112 50,114 C36,112 26,98 28,76 C30,54 46,38 52,18 Z' },
-            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' }
-          ],
-          easing: 'easeInOutSine',
-          duration: 1900,
-          loop: true
-        });
-      }
-
-      const corePaths = document.querySelectorAll('.anime-flame-core');
-      if (corePaths.length > 0) {
-        anime({
-          targets: corePaths,
-          scale: [0.85, 1.2],
-          translateY: [2, -2],
-          opacity: [0.8, 1],
-          easing: 'easeInOutQuad',
-          duration: 750,
-          direction: 'alternate',
-          loop: true
-        });
-      }
-    } catch (e) {
-      console.warn('Anime.js flame init error:', e);
-    }
+    // Keep elastic spring burst for buttons
   },
 
   showStreakCelebration: function() {
