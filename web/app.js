@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.3.4',
+  APP_VERSION: 'v2.3.5',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,8 +476,8 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.4',
-          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa năng 3 trong 1 (Email / Tên / Key), xóa tài khoản vĩnh viễn và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.5',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với giao diện đăng nhập tinh gọn theo Email/Tên, xóa tài khoản vĩnh viễn và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
           btnText: 'Đăng Nhập Lại Ngay',
@@ -1517,7 +1517,7 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <button onclick="app.openLoginModal()" class="px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 flex items-center gap-1.5 transition-all shrink-0">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Đăng Ký / Nhập Key
+            <i data-lucide="user" class="w-3.5 h-3.5"></i> Đăng Nhập / Đăng Ký
           </button>
         `;
       }
@@ -1651,7 +1651,7 @@ const app = {
     const rawInput = (emailInp?.value || '').trim();
 
     if (!rawInput) {
-      if (errBox) { errBox.innerText = 'Vui lòng nhập Email, Tên hoặc Mã Key!'; errBox.classList.remove('hidden'); }
+      if (errBox) { errBox.innerText = 'Vui lòng nhập Email hoặc Tên của bạn!'; errBox.classList.remove('hidden'); }
       return;
     }
     if (errBox) errBox.classList.add('hidden');
