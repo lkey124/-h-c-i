@@ -769,9 +769,9 @@ const app = {
       this.playSound('fail');
       if (errBox) {
         errBox.innerHTML = `
-          <div>❌ <strong>Mã Key "${rawInput.trim()}" không hợp lệ!</strong></div>
+          <div>❌ <strong>Mã Key "${rawInput.trim()}" không hợp lệ hoặc chưa được cấp!</strong></div>
           <div class="text-[11px] text-slate-300 mt-1">
-            • Bạn có thể nhập mã Key có tiền tố <strong>B1-...</strong> hoặc bấm <strong>"Cổng Quản Trị Cấp Key (Admin)"</strong> để tạo Key mới.
+            • Vui lòng kiểm tra lại mã Key hoặc liên hệ nhận Key bản quyền tại <strong>binhluu.ai.studio</strong>.
           </div>
         `;
         errBox.classList.remove('hidden');
