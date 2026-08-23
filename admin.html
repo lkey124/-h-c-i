@@ -102,8 +102,8 @@
 
         <form onsubmit="adminApp.handleCreateKeyUser(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-300">1. Tên Học Viên (Tên Hiển Thị):</label>
-            <input type="text" id="inp-student-name" placeholder="Ví dụ: Nguyễn Văn A, Tuấn..." required class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+            <label class="text-xs font-bold text-slate-300">1. Tên Học Viên <span class="text-slate-400 font-normal">(Tùy chọn)</span>:</label>
+            <input type="text" id="inp-student-name" placeholder="Để trống nếu học viên tự nhập tên khi login..." class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
           </div>
 
           <div class="space-y-1.5">
@@ -310,6 +310,47 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: GIA HẠN THỜI GIAN CUSTOM CHO ADMIN (CUSTOM DARK POPUP) -->
+  <!-- ========================================================================= -->
+  <div id="modal-admin-extend" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-indigo-600/80 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl relative animate-scale-up">
+      <div class="text-center space-y-1.5">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-950 border border-indigo-700 text-indigo-300 flex items-center justify-center mx-auto shadow-md text-2xl">
+          ⏳
+        </div>
+        <h3 class="font-extrabold text-lg sm:text-xl text-white">Gia Hạn Bản Quyền Học Viên</h3>
+        <p id="extend-modal-user-info" class="text-xs text-cyan-300 font-bold">Học viên: HỒNG ANH</p>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-300">Chọn Nhanh Số Ngày Cộng Thêm:</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button type="button" onclick="adminApp.setExtendInput(15)" class="py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-300 text-xs font-bold border border-slate-700 transition-all">+15 Ngày</button>
+          <button type="button" onclick="adminApp.setExtendInput(30)" class="py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-300 text-xs font-bold border border-slate-700 transition-all">+30 Ngày</button>
+          <button type="button" onclick="adminApp.setExtendInput(90)" class="py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-300 text-xs font-bold border border-slate-700 transition-all">+90 Ngày</button>
+          <button type="button" onclick="adminApp.setExtendInput(180)" class="py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-300 text-xs font-bold border border-slate-700 transition-all">+180 Ngày</button>
+        </div>
+      </div>
+
+      <!-- Custom Input Form -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-bold text-slate-300">Hoặc Nhập Số Ngày Tùy Ý:</label>
+        <input type="number" id="inp-extend-days" placeholder="Ví dụ: 45, 100, 150..." min="1" class="w-full px-4 py-3 rounded-2xl bg-slate-950 border-2 border-slate-700 text-cyan-300 font-mono font-bold text-sm focus:outline-none focus:border-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button type="button" onclick="adminApp.closeExtendModal()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm border border-slate-700 transition-all">
+          Hủy Bỏ
+        </button>
+        <button type="button" onclick="adminApp.confirmExtendModal()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all">
+          Xác Nhận Gia Hạn
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -619,11 +660,15 @@
 
       handleCreateKeyUser: async function(e) {
         e.preventDefault();
-        const name = document.getElementById('inp-student-name').value.trim();
+        const rawName = document.getElementById('inp-student-name').value.trim();
+        const name = rawName || 'Chưa Kích Hoạt';
         const key = document.getElementById('inp-student-key').value.trim().toUpperCase();
         const duration = document.getElementById('inp-student-duration').value;
 
-        if (!name || !key) return;
+        if (!key) {
+          alert('⚠️ Vui lòng nhập hoặc tự sinh mã Key!');
+          return;
+        }
 
         const exists = this.users.find(u => this.normalizeKey(u.key) === this.normalizeKey(key));
         if (exists) {
@@ -672,7 +717,8 @@
         if (customInp) customInp.value = '';
         this.generateRandomKey();
 
-        alert(`✅ Cấp Key thành công cho học viên ${name}!\n\n• Tên hiển thị: ${name}\n• Mã Key: ${key}\n• Thời hạn: ${pkgName} (Còn ${daysToAdd} ngày - Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
+        const displayName = rawName ? `cho học viên ${rawName}` : `mới (Chờ học viên tự đặt tên khi kích hoạt)`;
+        alert(`✅ Cấp Key thành công ${displayName}!\n\n• Tên hiển thị: ${name}\n• Mã Key: ${key}\n• Thời hạn: ${pkgName} (Còn ${daysToAdd} ngày - Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
       },
 
       copyKey: function(key) {
@@ -742,17 +788,53 @@
         alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!\n• Gói hiện tại: ${user.package} (Còn ${remaining} ngày)`);
       },
 
-      extendCustomDuration: async function(userId) {
+      openExtendModal: function(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
-        const input = prompt(`Nhập số ngày bạn muốn cộng thêm cho học viên ${user.name} (ví dụ: 15, 45, 100, 150):`, '30');
-        if (input === null) return;
-        const days = parseInt(input.trim(), 10);
+        this.currentExtendingUserId = userId;
+        const modal = document.getElementById('modal-admin-extend');
+        const infoEl = document.getElementById('extend-modal-user-info');
+        const inp = document.getElementById('inp-extend-days');
+        if (infoEl) {
+          const isUnregistered = !user.name || user.name === 'Chưa Kích Hoạt' || user.name === 'Chưa Đặt Tên';
+          infoEl.innerHTML = `Học viên: <strong class="text-white">${isUnregistered ? 'Chờ Học Viên Kích Hoạt' : user.name}</strong> • Key: <span class="font-mono text-cyan-300 font-bold">${user.key}</span>`;
+        }
+        if (inp) inp.value = '30';
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      },
+
+      setExtendInput: function(days) {
+        const inp = document.getElementById('inp-extend-days');
+        if (inp) inp.value = days;
+      },
+
+      closeExtendModal: function() {
+        const modal = document.getElementById('modal-admin-extend');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+        this.currentExtendingUserId = null;
+      },
+
+      confirmExtendModal: async function() {
+        const userId = this.currentExtendingUserId;
+        if (!userId) return;
+        const inp = document.getElementById('inp-extend-days');
+        const days = parseInt(inp?.value, 10);
         if (isNaN(days) || days <= 0) {
-          alert('⚠️ Số ngày nhập vào không hợp lệ!');
+          alert('⚠️ Vui lòng chọn hoặc nhập số ngày hợp lệ (lớn hơn 0)!');
           return;
         }
+        this.closeExtendModal();
         await this.extendDuration(userId, days);
+      },
+
+      extendCustomDuration: function(userId) {
+        this.openExtendModal(userId);
       },
 
       toggleStatus: async function(userId) {
@@ -907,16 +989,30 @@
           const streakInfo = this.getStreakLevelInfo(u.streak || 1);
           const flameHTML = this.renderTikTokFlameHTML(streakInfo.level);
 
-          const tr = document.createElement('tr');
-          tr.className = 'hover:bg-slate-800/40 transition-colors';
-          tr.innerHTML = `
-            <td class="py-3 px-3 font-bold text-white">
+          const isUnregistered = !u.name || u.name === 'Chưa Kích Hoạt' || u.name === 'Chưa Đặt Tên' || u.name === 'Học Viên Mới';
+          const nameColHTML = isUnregistered
+            ? `
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-lg bg-amber-900/60 text-amber-300 flex items-center justify-center font-bold text-xs">
+                  ?
+                </div>
+                <span class="px-2 py-0.5 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-300 text-[11px] font-bold">Chờ Kích Hoạt</span>
+              </div>
+            `
+            : `
               <div class="flex items-center gap-2">
                 <div class="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
                   ${u.name.charAt(0).toUpperCase()}
                 </div>
                 <span>${u.name}</span>
               </div>
+            `;
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-800/40 transition-colors';
+          tr.innerHTML = `
+            <td class="py-3 px-3 font-bold text-white">
+              ${nameColHTML}
             </td>
             <td class="py-3 px-3">
               <div class="flex items-center gap-2">

@@ -289,7 +289,7 @@ const app = {
     this.initIcons();
   },
 
-  toggleCustomAudio: function(audioId, btnId, timeId, waveId, fillId) {
+  toggleCustomAudio: function(audioId, btnId, timeId, waveId, fillId, qStart, qDuration, qEnd) {
     const audio = document.getElementById(audioId);
     const btn = document.getElementById(btnId);
     const timeDisplay = document.getElementById(timeId);
@@ -298,13 +298,25 @@ const app = {
 
     if (!audio) return;
 
+    const startSec = typeof qStart === 'number' ? qStart : 0;
+    const durSec = typeof qDuration === 'number' && qDuration > 0 ? qDuration : 45;
+    const endSec = typeof qEnd === 'number' ? qEnd : (startSec + durSec);
+
     if (this.data.activeAudioElement && this.data.activeAudioElement !== audio) {
       this.stopAllAudios();
     }
 
     if (audio.paused) {
+      if (audio.currentTime < startSec || audio.currentTime >= endSec - 0.5) {
+        audio.currentTime = startSec;
+      }
+
       audio.play().then(() => {
         this.data.activeAudioElement = audio;
+        audio.dataset.qStart = startSec;
+        audio.dataset.qDur = durSec;
+        audio.dataset.qEnd = endSec;
+
         if (btn) btn.classList.add('is-playing');
         if (wave) wave.classList.add('sound-wave-playing');
         const icon = btn?.querySelector('.audio-icon');
@@ -320,33 +332,33 @@ const app = {
         audio.dataset.hasListeners = 'true';
 
         audio.addEventListener('timeupdate', () => {
-          if (timeDisplay && !isNaN(audio.duration)) {
-            timeDisplay.innerText = `${this.formatTime(audio.currentTime)} / ${this.formatTime(audio.duration)}`;
+          const s = parseFloat(audio.dataset.qStart) || 0;
+          const d = parseFloat(audio.dataset.qDur) || 45;
+          const e = parseFloat(audio.dataset.qEnd) || (s + d);
+
+          if (audio.currentTime >= e) {
+            audio.pause();
+            audio.currentTime = s;
+            if (btn) btn.classList.remove('is-playing');
+            if (wave) wave.classList.remove('sound-wave-playing');
+            if (fill) fill.style.width = '0%';
+            const icon = btn?.querySelector('.audio-icon');
+            const text = btn?.querySelector('.audio-btn-text');
+            if (icon) icon.setAttribute('data-lucide', 'rotate-ccw');
+            if (text) text.innerText = 'Phát Lại';
+            if (timeDisplay) timeDisplay.innerText = `00:00 / ${this.formatTime(d)}`;
+            this.data.activeAudioElement = null;
+            this.initIcons();
+            return;
           }
-          if (fill && !isNaN(audio.duration) && audio.duration > 0) {
-            const pct = (audio.currentTime / audio.duration) * 100;
+
+          const elapsedRel = Math.max(0, Math.min(d, audio.currentTime - s));
+          if (timeDisplay) {
+            timeDisplay.innerText = `${this.formatTime(elapsedRel)} / ${this.formatTime(d)}`;
+          }
+          if (fill && d > 0) {
+            const pct = (elapsedRel / d) * 100;
             fill.style.width = `${pct}%`;
-          }
-        });
-
-        audio.addEventListener('ended', () => {
-          if (btn) btn.classList.remove('is-playing');
-          if (wave) wave.classList.remove('sound-wave-playing');
-          if (fill) fill.style.width = '0%';
-          const icon = btn?.querySelector('.audio-icon');
-          const text = btn?.querySelector('.audio-btn-text');
-          if (icon) icon.setAttribute('data-lucide', 'rotate-ccw');
-          if (text) text.innerText = 'Phát Lại';
-          if (timeDisplay && !isNaN(audio.duration)) {
-            timeDisplay.innerText = `00:00 / ${this.formatTime(audio.duration)}`;
-          }
-          this.data.activeAudioElement = null;
-          this.initIcons();
-        });
-
-        audio.addEventListener('loadedmetadata', () => {
-          if (timeDisplay && !isNaN(audio.duration)) {
-            timeDisplay.innerText = `00:00 / ${this.formatTime(audio.duration)}`;
           }
         });
       }
@@ -362,23 +374,30 @@ const app = {
     }
   },
 
-  seekAudio: function(audioId, event) {
+  seekAudio: function(audioId, event, qStart, qDuration) {
     const audio = document.getElementById(audioId);
     const track = event.currentTarget;
-    if (!audio || isNaN(audio.duration) || audio.duration <= 0) return;
+    if (!audio) return;
+
+    const s = typeof qStart === 'number' ? qStart : (parseFloat(audio.dataset.qStart) || 0);
+    const d = typeof qDuration === 'number' && qDuration > 0 ? qDuration : (parseFloat(audio.dataset.qDur) || 45);
 
     const rect = track.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const width = rect.width;
-    const targetTime = (clickX / width) * audio.duration;
-
-    audio.currentTime = targetTime;
+    const pct = Math.max(0, Math.min(1, clickX / width));
+    audio.currentTime = s + (pct * d);
   },
 
-  skipAudio: function(audioId, seconds) {
+  skipAudio: function(audioId, seconds, qStart, qDuration, qEnd) {
     const audio = document.getElementById(audioId);
-    if (!audio || isNaN(audio.duration)) return;
-    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+    if (!audio) return;
+
+    const s = typeof qStart === 'number' ? qStart : (parseFloat(audio.dataset.qStart) || 0);
+    const d = typeof qDuration === 'number' && qDuration > 0 ? qDuration : (parseFloat(audio.dataset.qDur) || 45);
+    const e = typeof qEnd === 'number' ? qEnd : (s + d);
+
+    audio.currentTime = Math.max(s, Math.min(e, audio.currentTime + seconds));
   },
 
   playSound: function(type) {
@@ -779,6 +798,23 @@ const app = {
       }
 
       if (errBox) errBox.classList.add('hidden');
+
+      // Check if Key has no student name yet (First-time Self-Onboarding)
+      const cleanName = (user.name || '').trim();
+      if (!cleanName || cleanName === 'Chưa Kích Hoạt' || cleanName === 'Chưa Đặt Tên' || cleanName === 'Học Viên Mới') {
+        this.data.pendingLoginUser = user;
+        this.closeLoginModal();
+        const nameModal = document.getElementById('modal-name-registration');
+        const nameInp = document.getElementById('inp-register-student-name');
+        if (nameInp) nameInp.value = '';
+        if (nameModal) {
+          nameModal.classList.remove('hidden');
+          nameModal.classList.add('flex');
+        }
+        this.initIcons();
+        return;
+      }
+
       const dynamicPkg = this.getDynamicPackageName(remainingDays);
       user.package = dynamicPkg;
       this.data.currentUser = user;
@@ -809,6 +845,80 @@ const app = {
         errBox.classList.remove('hidden');
       }
     }
+  },
+
+  handleNameRegistration: async function(event) {
+    if (event) event.preventDefault();
+    const nameInp = document.getElementById('inp-register-student-name');
+    const submitBtn = document.getElementById('btn-submit-register-name');
+    const user = this.data.pendingLoginUser;
+    if (!user || !nameInp) return;
+
+    const enteredName = nameInp.value.trim().toUpperCase();
+    if (!enteredName) {
+      alert('Vui lòng nhập Họ và Tên của bạn!');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Lưu Hồ Sơ...';
+      this.initIcons();
+    }
+
+    user.name = enteredName;
+    user.status = 'ACTIVE';
+
+    // Update in all users list
+    const foundIdx = this.data.users.findIndex(u => this.isKeyMatching(u.key || u.id, user.key || user.id));
+    if (foundIdx !== -1) {
+      this.data.users[foundIdx].name = enteredName;
+      this.data.users[foundIdx].status = 'ACTIVE';
+    } else {
+      this.data.users.unshift(user);
+    }
+    localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
+
+    // Post to /api/keys to sync to Admin in cloud
+    try {
+      await fetch('/api/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.data.users)
+      });
+    } catch(e) {}
+
+    const remainingDays = this.getRemainingDays(user.expiresAt);
+    const dynamicPkg = this.getDynamicPackageName(remainingDays);
+    user.package = dynamicPkg;
+    this.data.currentUser = user;
+    localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
+    this.loadUserProgressFromStorage();
+    this.updateDailyStreak();
+
+    // Close registration modal
+    const nameModal = document.getElementById('modal-name-registration');
+    if (nameModal) {
+      nameModal.classList.add('hidden');
+      nameModal.classList.remove('flex');
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Xác Nhận & Vào Học Ngay';
+    }
+
+    this.renderRoadmap();
+    this.updateUserStatsDisplay();
+    this.playSound('pass');
+
+    this.showCustomAlert({
+      title: 'KÍCH HOẠT THÀNH CÔNG!',
+      message: `Chào mừng học viên <strong>${user.name}</strong> (${dynamicPkg} - Còn ${remainingDays} Ngày) đã vào hệ thống luyện thi B1!`,
+      icon: '🎉',
+      iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+      btnText: 'Bắt Đầu Vượt Ải Ngay'
+    });
   },
 
   loadActiveUserSession: function() {
@@ -1392,29 +1502,34 @@ const app = {
         const waveUniqueId = `wave-audio-q-${idx}`;
         const fillUniqueId = `fill-audio-q-${idx}`;
 
+        const qIndexInPart = q.part_question_index !== undefined ? q.part_question_index : (idx % 8);
+        const qStart = q.start_time !== undefined ? q.start_time : (qIndexInPart * 45);
+        const qDuration = q.duration !== undefined ? q.duration : 45;
+        const qEnd = q.end_time !== undefined ? q.end_time : (qStart + qDuration);
+
         card.innerHTML = `
           <div class="flex flex-col gap-2.5 pb-3 border-b border-slate-800">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 shrink-0">
                 <span class="px-2.5 py-1 rounded-xl bg-indigo-950 text-cyan-300 font-black text-xs border border-indigo-700">Câu ${qNumber} (Nghe)</span>
-                <span class="text-xs text-slate-300 font-bold">${q.partTitle}</span>
+                <span class="text-xs text-slate-300 font-bold truncate max-w-[140px] sm:max-w-[220px]">${q.partTitle}</span>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
                 <audio id="${audioUniqueId}" preload="metadata" class="hidden">
                   <source src="/${q.audioFile}" type="audio/mpeg">
                 </audio>
-                <button onclick="app.skipAudio('${audioUniqueId}', -10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Lùi 10 giây">
-                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -10s
+                <button onclick="app.skipAudio('${audioUniqueId}', -5, ${qStart}, ${qDuration}, ${qEnd})" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5 shrink-0" title="Lùi 5 giây">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> -5s
                 </button>
-                <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}', '${fillUniqueId}')" class="custom-audio-pill px-3.5 py-2 rounded-2xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer">
+                <button id="${btnUniqueId}" onclick="app.toggleCustomAudio('${audioUniqueId}', '${btnUniqueId}', '${timeUniqueId}', '${waveUniqueId}', '${fillUniqueId}', ${qStart}, ${qDuration}, ${qEnd})" class="custom-audio-pill px-3.5 py-2 rounded-2xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 cursor-pointer shrink-0">
                   <i data-lucide="play" class="w-3.5 h-3.5 text-cyan-300 audio-icon"></i>
                   <span class="audio-btn-text">Phát</span>
                 </button>
-                <button onclick="app.skipAudio('${audioUniqueId}', 10)" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5" title="Tua 10 giây">
-                  +10s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                <button onclick="app.skipAudio('${audioUniqueId}', 5, ${qStart}, ${qDuration}, ${qEnd})" class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex items-center gap-0.5 shrink-0" title="Tua 5 giây">
+                  +5s <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
                 </button>
-                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-slate-950 border border-slate-800 shrink-0">
                   <div id="${waveUniqueId}" class="sound-wave flex items-center gap-0.5">
                     <div class="sound-wave-bar"></div>
                     <div class="sound-wave-bar"></div>
@@ -1422,12 +1537,12 @@ const app = {
                     <div class="sound-wave-bar"></div>
                     <div class="sound-wave-bar"></div>
                   </div>
-                  <span id="${timeUniqueId}" class="text-[10px] sm:text-[11px] font-mono text-cyan-300 font-bold">00:00</span>
+                  <span id="${timeUniqueId}" class="text-[10px] sm:text-[11px] font-mono text-cyan-300 font-bold">00:00 / ${this.formatTime(qDuration)}</span>
                 </div>
               </div>
             </div>
 
-            <div class="audio-progress-track" onclick="app.seekAudio('${audioUniqueId}', event)" title="Bấm vào thanh để tua nhanh">
+            <div class="audio-progress-track" onclick="app.seekAudio('${audioUniqueId}', event, ${qStart}, ${qDuration})" title="Bấm vào thanh để tua đoạn nghe câu này">
               <div id="${fillUniqueId}" class="audio-progress-fill"></div>
             </div>
           </div>
