@@ -528,7 +528,6 @@ const app = {
     if (linkBtn) {
       if (config.link) {
         linkBtn.href = config.link;
-        linkBtn.style.display = 'inline-flex';
         linkBtn.style.backgroundColor = config.badgeColor || '#0891b2';
         linkBtn.style.color = config.textColor || '#f8fafc';
         if (linkTextEl) linkTextEl.innerText = config.btnText || 'Xem Ngay';
@@ -1172,7 +1171,10 @@ const app = {
       const streakInfo = this.getStreakLevelInfo(streak);
       const flameHTML = this.renderTikTokFlameHTML(streakInfo.level);
 
-      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">🔥 Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
+      if (heroBadge) {
+        heroBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-950/80 text-indigo-200 border border-indigo-700/80 text-[11px] sm:text-xs font-bold shrink-0';
+        heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i> <strong class="text-white truncate max-w-[130px] sm:max-w-[200px]">${user.name}</strong> <span class="text-slate-500">•</span> <span class="${streakInfo.heroClass} whitespace-nowrap">🔥 ${streak} Ngày</span>`;
+      }
 
       if (isActive) {
         if (subBadge) {
