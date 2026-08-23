@@ -34,25 +34,5 @@
       "attempts": []
     },
     "status": "ACTIVE"
-  },
-  {
-    "accountId": "ACC-1787467295347-41HKY",
-    "email": "hocvientest_abc123@gmail.com",
-    "name": "HỌC VIÊN MỚI 123",
-    "tier": "free",
-    "linkedKey": null,
-    "keyExpiresAt": null,
-    "freeExamSubmitted": false,
-    "createdAt": "2026-08-23T06:41:35.347Z",
-    "streak": 1,
-    "lastActiveDate": "2026-08-23T06:41:35.383Z",
-    "progress": {
-      "unlockedUpTo": 1,
-      "passedSets": {},
-      "streak": 1,
-      "exp": 0,
-      "attempts": []
-    },
-    "status": "ACTIVE"
   }
 ]

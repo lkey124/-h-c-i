@@ -1,12 +1,9 @@
 services:
   - type: web
-    name: english-b1-mastery
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: "echo 'Build complete'"
-    startCommand: "python server.py"
-    healthCheckPath: /
+    name: binhluu-b1-mastery
+    runtime: python
+    buildCommand: ""
+    startCommand: python server.py
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.12
+        value: 3.11.0
