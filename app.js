@@ -466,7 +466,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.5.1',
+  APP_VERSION: 'v2.5.2',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -2794,37 +2794,76 @@ const app = {
       const isWritingP2 = q.skillType === 'writing_p2';
 
       if (isWritingP2) {
+        const sampleEnglish = q.sample_answer || `Dear Alex,\n\nThanks for your email! I'm really excited about our trip next weekend. I think we should go by train because it's fast and comfortable. Don't forget to bring your camera and some warm clothes because it might get cold in the evening.\n\nSee you soon,\nSam`;
+        const sampleVietnamese = q.sample_answer_vi || `Chào Alex,\n\nCảm ơn bạn đã gửi email! Mình rất háo hức về chuyến đi cuối tuần tới. Mình nghĩ chúng ta nên đi bằng tàu hỏa vì nó nhanh và thoải mái. Đừng quên mang theo máy ảnh và một số áo ấm vì buổi tối trời có thể trở lạnh nhé.\n\nHẹn sớm gặp lại bạn,\nSam`;
+
         const el = document.createElement('div');
-        el.className = 'p-4 sm:p-6 rounded-3xl border-2 bg-indigo-950/30 border-indigo-700/80 space-y-3.5 shadow-lg';
+        el.className = 'p-4 sm:p-6 rounded-3xl border-2 bg-indigo-950/30 border-indigo-700/80 space-y-4 shadow-lg';
         el.innerHTML = `
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full bg-indigo-900 text-indigo-200 border border-indigo-600">
-              ✍️ BÀI VIẾT TỰ LUẬN / EMAIL
+              ✍️ BÀI VIẾT TỰ LUẬN / THƯ EMAIL
             </span>
             <span class="text-xs text-slate-300 font-bold">Câu ${idx + 1} • ${q.partTitle || 'Part 2 - Writing Task'}</span>
           </div>
 
           <div class="p-3.5 rounded-2xl bg-slate-900 border border-slate-700 text-xs sm:text-sm text-slate-100 leading-relaxed">
-            <span class="text-cyan-300 font-bold">Đề bài:</span> ${q.prompt}
+            <span class="text-cyan-300 font-bold">📌 Đề bài:</span> ${q.prompt}
           </div>
 
           ${userAns ? `
             <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-1">
-              <div class="text-slate-400 font-semibold">Bài bạn đã nộp:</div>
-              <div class="whitespace-pre-wrap font-mono text-slate-100">${userAns}</div>
+              <div class="text-slate-400 font-semibold">📝 Bài làm bạn đã nộp:</div>
+              <div class="whitespace-pre-wrap font-mono text-slate-100 p-2 rounded-xl bg-slate-900/60 border border-slate-800">${userAns}</div>
             </div>
           ` : ''}
 
-          ${q.sample_answer ? `
-            <div class="p-4 rounded-2xl bg-gradient-to-b from-emerald-950/70 to-slate-900 border border-emerald-500/80 space-y-2">
-              <div class="text-amber-300 font-bold flex items-center gap-1.5 text-xs sm:text-sm">
-                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> Bài Viết Mẫu Chuẩn Điểm Cao (Band B1 Sample Answer):
+          <!-- 2-VERSION BILINGUAL MODEL ANSWER (1 TIẾNG ANH - 1 BẢN DỊCH TIẾNG VIỆT) -->
+          <div class="rounded-2xl border-2 border-emerald-500/80 bg-slate-900 overflow-hidden shadow-xl space-y-0">
+            <div class="p-3 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-b border-emerald-600/60 flex items-center justify-between flex-wrap gap-2">
+              <span class="text-amber-300 font-bold flex items-center gap-1.5 text-xs sm:text-sm">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> BÀI VĂN MẪU THAM KHẢO CHUẨN B1 (Band 8+ Model Answer)
+              </span>
+              <span class="text-[10px] text-emerald-300 font-bold px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700">
+                ✨ Chia 2 Bản Song Ngữ
+              </span>
+            </div>
+
+            <!-- 2 Columns: 1 English + 1 Vietnamese Translation -->
+            <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800 text-xs sm:text-sm">
+              <!-- Bản 1: Tiếng Anh -->
+              <div class="p-4 space-y-2 bg-slate-950/70">
+                <div class="flex items-center gap-1.5 text-cyan-300 font-extrabold text-xs">
+                  <span>🇬🇧</span> BẢN 1: TIẾNG ANH CHUẨN (ENGLISH):
+                </div>
+                <div class="text-white leading-relaxed whitespace-pre-wrap font-medium p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  ${sampleEnglish}
+                </div>
               </div>
-              <div class="text-white text-xs sm:text-sm leading-relaxed font-normal p-3 rounded-xl bg-slate-950/80 border border-emerald-800/60 whitespace-pre-wrap font-medium">
-                ${q.sample_answer}
+
+              <!-- Bản 2: Dịch Tiếng Việt -->
+              <div class="p-4 space-y-2 bg-slate-950/50">
+                <div class="flex items-center gap-1.5 text-emerald-400 font-extrabold text-xs">
+                  <span>🇻🇳</span> BẢN 2: DỊCH NGHĨA TIẾNG VIỆT (TRANSLATION):
+                </div>
+                <div class="text-slate-200 leading-relaxed whitespace-pre-wrap font-normal p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  ${sampleVietnamese}
+                </div>
               </div>
             </div>
-          ` : ''}
+
+            <!-- Step-by-step Writing Guide & Outline -->
+            <div class="p-3.5 bg-slate-950 border-t border-slate-800 text-xs text-slate-300 space-y-1.5">
+              <div class="text-amber-300 font-bold flex items-center gap-1">
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i> Hướng Dẫn Cách Giải & Dàn Bài Viết Cho Sinh Viên:
+              </div>
+              <div class="space-y-1 pl-1 text-[11px] sm:text-xs">
+                <div>• <strong>1. Mở bài (Chào hỏi & Mục đích):</strong> Dùng câu chào tự nhiên (<code class="text-cyan-300">Dear / Hi + Tên</code>) và cảm ơn hoặc nêu lý do viết thư.</div>
+                <div>• <strong>2. Thân bài (Trả lời yêu cầu đề bài):</strong> Viết 2-3 câu trả lời đủ các gợi ý trong đề, dùng liên từ (<code class="text-cyan-300">because, so, however, in addition</code>) để nối câu mượt mà.</div>
+                <div>• <strong>3. Kết bài (Lời chào tạm biệt):</strong> Lời chúc, hẹn gặp lại và ký tên chuẩn B1 (<code class="text-amber-300">See you soon / Best regards + Tên</code>).</div>
+              </div>
+            </div>
+          </div>
         `;
         container.appendChild(el);
         return;
@@ -2836,7 +2875,7 @@ const app = {
         : userAns === q.correct_answer;
 
       const el = document.createElement('div');
-      el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3 shadow-lg`;
+      el.className = `p-4 sm:p-6 rounded-3xl border-2 ${isCorrect ? 'bg-emerald-950/40 border-emerald-700/80' : 'bg-rose-950/40 border-rose-700/80'} space-y-3.5 shadow-lg`;
 
       let modelSentenceHTML = '';
       if (isWritingP1) {
@@ -2858,8 +2897,36 @@ const app = {
         `;
       }
 
+      // Step-by-step Vietnamese Solving Guide for Part 1 & MCQ
+      let solvingGuideHTML = '';
+      if (isWritingP1) {
+        solvingGuideHTML = `
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-2 leading-relaxed font-normal">
+            <div class="text-cyan-300 font-bold flex items-center gap-1.5">
+              <i data-lucide="help-circle" class="w-4 h-4 text-cyan-400"></i> HƯỚNG DẪN CÁCH GIẢI BÀI TẬP (TIẾNG VIỆT):
+            </div>
+            <div class="space-y-1.5 pl-1 text-[11px] sm:text-xs">
+              <div>• <strong>Bước 1 (Nhận diện câu gốc & Từ khóa):</strong> Câu gốc <span class="text-white font-semibold">"${q.original || ''}"</span> $\rightarrow$ Bắt buộc dùng từ <span class="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700 font-mono font-bold">${q.target_word || ''}</span>.</div>
+              <div>• <strong>Bước 2 (Quy tắc chuyển đổi ngữ pháp):</strong> ${q.grammar_pattern ? `<span class="text-amber-300 font-semibold font-mono">${q.grammar_pattern}</span>.` : ''} ${q.explanation || 'Chuyển đổi thì hoặc cấu trúc tương đương nghĩa.'}</div>
+              <div>• <strong>Bước 3 (Kết luận đáp án điền vào chỗ trống):</strong> Điền chính xác cụm từ <strong class="text-emerald-400 font-mono">${q.correct_answer}</strong> để hoàn thành câu.</div>
+            </div>
+          </div>
+        `;
+      } else {
+        solvingGuideHTML = `
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-1.5 leading-relaxed font-normal">
+            <div class="text-cyan-300 font-bold flex items-center gap-1.5">
+              <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> HƯỚNG DẪN CÁCH GIẢI & GIẢI THÍCH CHI TIẾT (TIẾNG VIỆT):
+            </div>
+            <div class="text-slate-100 pl-1 text-[11px] sm:text-xs">${q.explanation || 'Đối chiếu từ khóa trong câu hỏi với nội dung bài đọc/nghe để suy luận đáp án chính xác.'}</div>
+            ${q.grammar_pattern ? `<div class="text-amber-300 font-semibold pl-1 text-[11px] sm:text-xs">📌 Cấu trúc ngữ pháp cốt lõi: <span class="font-mono text-cyan-200">${q.grammar_pattern}</span></div>` : ''}
+            ${q.tapescript ? `<div class="mt-2 text-slate-300 italic p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] sm:text-xs">🎧 <strong>Lời thoại đoạn nghe (Tapescript):</strong><br>"${q.tapescript}"</div>` : ''}
+          </div>
+        `;
+      }
+
       el.innerHTML = `
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-2">
           <span class="text-[11px] sm:text-sm font-bold px-2.5 py-1 rounded-full ${isCorrect ? 'bg-emerald-900 text-emerald-200 border border-emerald-600' : 'bg-rose-900 text-rose-200 border border-rose-600'}">
             ${isCorrect ? '✓ TRẢ LỜI ĐÚNG' : '✗ TRẢ LỜI SAI'}
           </span>
@@ -2886,12 +2953,7 @@ const app = {
 
         ${modelSentenceHTML}
 
-        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-100 space-y-1.5 leading-relaxed font-normal">
-          ${q.grammar_pattern ? `<div class="text-amber-300 font-semibold">📌 Cấu trúc ngữ pháp: <span class="font-mono text-cyan-200">${q.grammar_pattern}</span></div>` : ''}
-          <div class="text-cyan-300 font-bold flex items-center gap-1.5">💡 Giải thích chi tiết:</div>
-          <div>${q.explanation || 'Đối chiếu ngữ pháp và ngữ cảnh chuẩn đề thi B1.'}</div>
-          ${q.tapescript ? `<div class="mt-2 text-slate-300 italic p-2 rounded-xl bg-slate-900/80 border border-slate-800">🎧 Tapescript: "${q.tapescript}"</div>` : ''}
-        </div>
+        ${solvingGuideHTML}
       `;
       container.appendChild(el);
     });
