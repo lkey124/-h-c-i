@@ -578,6 +578,9 @@ const app = {
     }
   },
 
+  // -------------------------------------------------------------
+  // USER STORAGE & REAL-TIME CLOUD SYNC
+  // -------------------------------------------------------------
   loadUsersFromStorage: function() {
     try {
       const saved = localStorage.getItem('eduquest_b1_all_users');
@@ -594,26 +597,193 @@ const app = {
         const response = await fetch(url);
         if (response.ok) {
           const cloudData = await response.json();
-          if (Array.isArray(cloudData) && cloudData.length > 0) {
-            const merged = [...this.data.users];
-            cloudData.forEach(cu => {
-              const idx = merged.findIndex(u => this.isKeyMatching(u.key || u.id, cu.key || cu.id));
-              if (idx >= 0) merged[idx] = cu;
-              else merged.push(cu);
-            });
-            this.data.users = merged;
-            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(merged));
+          if (Array.isArray(cloudData)) {
+            // Live Cloud state is authoritative
+            this.data.users = cloudData;
+            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cloudData));
+
+            // Verify logged in user
             if (this.data.currentUser) {
-              const updated = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
-              if (updated) {
-                this.data.currentUser = updated;
-                localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(updated));
+              const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
+              if (!liveUser) {
+                // Key was deleted by Admin! Auto logout immediately
+                console.warn('Key was deleted by Admin. Logging out.');
+                this.data.currentUser = null;
+                localStorage.removeItem('eduquest_b1_logged_user');
+                this.renderRoadmap();
+                this.updateUserStatsDisplay();
+                return;
+              }
+
+              // Check if Admin extended the duration!
+              const oldExp = new Date(this.data.currentUser.expiresAt).getTime();
+              const newExp = new Date(liveUser.expiresAt).getTime();
+              if (newExp > oldExp) {
+                const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
+                const remaining = this.getRemainingDays(liveUser.expiresAt);
+                const dynamicPkg = this.getDynamicPackageName(remaining);
+                this.data.currentUser = liveUser;
+                localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
+                this.renderRoadmap();
+                this.updateUserStatsDisplay();
+
+                this.showCustomAlert({
+                  title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
+                  message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
+                  icon: '🎁',
+                  iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+                  btnText: 'Tuyệt Vời, Tiếp Tục Học'
+                });
+              } else {
+                this.data.currentUser = liveUser;
+                localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
               }
             }
             return;
           }
         }
       } catch (e) {}
+    }
+  },
+
+  loadActiveUserSession: function() {
+    try {
+      const savedUser = localStorage.getItem('eduquest_b1_logged_user');
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, parsed.key || parsed.id));
+        this.data.currentUser = liveUser || null;
+        if (!liveUser) {
+          localStorage.removeItem('eduquest_b1_logged_user');
+        } else {
+          this.loadUserProgressFromStorage();
+        }
+      } else {
+        this.data.currentUser = null;
+      }
+    } catch (e) {
+      this.data.currentUser = null;
+    }
+  },
+
+  loadUserProgressFromStorage: function() {
+    if (!this.data.currentUser) {
+      this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
+      return;
+    }
+    try {
+      const userKey = this.normalizeKey(this.data.currentUser.key || this.data.currentUser.id);
+      const storageKey = `eduquest_b1_progress_${userKey}`;
+      const saved = localStorage.getItem(storageKey);
+      this.data.userProgress = saved ? JSON.parse(saved) : { unlockedUpTo: 1, passedSets: {}, streak: 1, exp: 0, attempts: [] };
+    } catch (e) {
+      console.warn('Could not read user progress', e);
+    }
+  },
+
+  saveUserProgressToStorage: function() {
+    if (!this.data.currentUser) return;
+    try {
+      const userKey = this.normalizeKey(this.data.currentUser.key || this.data.currentUser.id);
+      const storageKey = `eduquest_b1_progress_${userKey}`;
+      localStorage.setItem(storageKey, JSON.stringify(this.data.userProgress));
+    } catch (e) {
+      console.error('Could not save progress', e);
+    }
+  },
+
+  // -------------------------------------------------------------
+  // STRICT KEY ACTIVATION (ONLY ACCEPTS KEYS CREATED BY ADMIN)
+  // -------------------------------------------------------------
+  handleLogin: async function(event) {
+    if (event) event.preventDefault();
+    const keyInp = document.getElementById('login-license-key');
+    const errBox = document.getElementById('login-error-msg');
+    const submitBtn = document.getElementById('btn-submit-login');
+    if (!keyInp) return;
+
+    const rawInput = (keyInp.value || '').trim();
+    const enteredKeyNorm = this.normalizeKey(rawInput);
+    if (!enteredKeyNorm) {
+      if (errBox) {
+        errBox.innerText = 'Vui lòng nhập mã Key kích hoạt!';
+        errBox.classList.remove('hidden');
+      }
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Xác Thực Key...';
+      this.initIcons();
+    }
+
+    // 1. Sync live keys from Cloud / Server
+    await this.syncKeysFromCloud();
+    this.loadUsersFromStorage();
+
+    // 2. Strict search: Match ONLY against keys created by Admin
+    const user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Kích Hoạt & Bắt Đầu Học';
+      this.initIcons();
+    }
+
+    if (user) {
+      if (user.status !== 'ACTIVE') {
+        this.playSound('fail');
+        if (errBox) {
+          errBox.innerHTML = `<div>❌ <strong>Mã Key "${rawInput}" đã bị Khóa bởi Quản trị viên!</strong></div>`;
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const remainingDays = this.getRemainingDays(user.expiresAt);
+      if (remainingDays <= 0) {
+        this.playSound('fail');
+        if (errBox) {
+          errBox.innerHTML = `
+            <div>⚠️ <strong>Mã Key "${rawInput}" đã Hết Hạn sử dụng!</strong></div>
+            <div class="text-[11px] text-slate-300 mt-1">• Vui lòng liên hệ Admin tại binhluu.ai.studio để gia hạn.</div>
+          `;
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (errBox) errBox.classList.add('hidden');
+      const dynamicPkg = this.getDynamicPackageName(remainingDays);
+      user.package = dynamicPkg;
+      this.data.currentUser = user;
+      localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
+      this.loadUserProgressFromStorage();
+      this.updateDailyStreak();
+      this.closeLoginModal();
+      this.renderRoadmap();
+      this.updateUserStatsDisplay();
+      this.playSound('pass');
+
+      this.showCustomAlert({
+        title: 'KÍCH HOẠT THÀNH CÔNG!',
+        message: `Chào mừng học viên <strong>${user.name}</strong> (${dynamicPkg} - Còn ${remainingDays} Ngày) đã vào hệ thống luyện thi B1!`,
+        icon: '🎉',
+        iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+        btnText: 'Bắt Đầu Vượt Ải Ngay'
+      });
+    } else {
+      this.playSound('fail');
+      if (errBox) {
+        errBox.innerHTML = `
+          <div>❌ <strong>Mã Key "${rawInput}" không tồn tại hoặc chưa được cấp!</strong></div>
+          <div class="text-[11px] text-slate-300 mt-1">
+            • Vui lòng kiểm tra lại mã Key chính xác hoặc liên hệ Admin tại <strong>binhluu.ai.studio</strong>.
+          </div>
+        `;
+        errBox.classList.remove('hidden');
+      }
     }
   },
 
@@ -787,121 +957,7 @@ const app = {
     }
   },
 
-  // -------------------------------------------------------------
-  // BULLETPROOF MULTI-LAYER KEY ACTIVATION (100% SUCCESS RATE ON PHONES)
-  // -------------------------------------------------------------
-  handleLogin: async function(event) {
-    if (event) event.preventDefault();
-    const keyInp = document.getElementById('login-license-key');
-    const errBox = document.getElementById('login-error-msg');
-    const submitBtn = document.getElementById('btn-submit-login');
-    if (!keyInp) return;
-
-    const rawInput = (keyInp.value || '').trim();
-    const enteredKeyNorm = this.normalizeKey(rawInput);
-    if (!enteredKeyNorm) {
-      if (errBox) {
-        errBox.innerText = 'Vui lòng nhập mã Key kích hoạt!';
-        errBox.classList.remove('hidden');
-      }
-      return;
-    }
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang Xác Thực Key...';
-      this.initIcons();
-    }
-
-    // LAYER 1: Check Local Storage
-    this.loadUsersFromStorage();
-    let user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
-
-    // LAYER 2: Try Cloud API & Static JSON sync
-    if (!user) {
-      await this.syncKeysFromCloud();
-      user = this.data.users.find(u => this.isKeyMatching(u.key || u.id, rawInput));
-    }
-
-    // LAYER 3: Master Embedded Key Pool (Guarantees offline & mobile activation)
-    if (!user) {
-      const embeddedMasterKeys = [
-        { key: 'B1-6NO1451', name: 'Học Viên B1', package: 'Gói 3 Tháng' },
-        { key: 'B1-6N01451', name: 'Học Viên B1', package: 'Gói 3 Tháng' },
-        { key: 'B1-VIP-2026', name: 'Bình Lưu', package: 'Gói Trọn Đời' },
-        { key: 'B1-VIP', name: 'Học Viên VIP', package: 'Gói 3 Tháng' },
-        { key: 'B1-MASTER', name: 'Admin Bình Lưu', package: 'Gói Trọn Đời' },
-        { key: 'BINHLUU', name: 'Bình Lưu', package: 'Gói Trọn Đời' }
-      ];
-
-      const foundEmbedded = embeddedMasterKeys.find(k => this.isKeyMatching(k.key, rawInput));
-      if (foundEmbedded) {
-        user = {
-          id: 'USR-' + Date.now().toString().slice(-6),
-          name: foundEmbedded.name,
-          key: rawInput.toUpperCase(),
-          package: foundEmbedded.package,
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'ACTIVE'
-        };
-        this.data.users.push(user);
-        localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
-      }
-    }
-
-    // LAYER 4: Smart Algorithmic Key Recognition (Any B1-* Key format with >= 5 chars)
-    if (!user && (enteredKeyNorm.startsWith('B1') || enteredKeyNorm.length >= 5)) {
-      const studentSuffix = enteredKeyNorm.replace(/^B1/, '').slice(-4) || 'VIP';
-      user = {
-        id: 'USR-' + Date.now().toString().slice(-6),
-        name: `Học Viên ${studentSuffix}`,
-        key: rawInput.toUpperCase(),
-        package: 'Gói 3 Tháng',
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'ACTIVE'
-      };
-      this.data.users.push(user);
-      localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
-    }
-
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Kích Hoạt & Bắt Đầu Học';
-      this.initIcons();
-    }
-
-    if (user) {
-      if (errBox) errBox.classList.add('hidden');
-      this.data.currentUser = user;
-      localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
-      this.loadUserProgressFromStorage();
-      this.closeLoginModal();
-      this.renderRoadmap();
-      this.updateUserStatsDisplay();
-      this.playSound('pass');
-      
-      this.showCustomAlert({
-        title: 'KÍCH HOẠT THÀNH CÔNG!',
-        message: `Chào mừng học viên <strong>${user.name}</strong> (${user.package}) đã vào hệ thống luyện thi B1 Vượt Ải!`,
-        icon: '🎉',
-        iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-        btnText: 'Bắt Đầu Vượt Ải Ngay'
-      });
-    } else {
-      this.playSound('fail');
-      if (errBox) {
-        errBox.innerHTML = `
-          <div>❌ <strong>Mã Key "${rawInput.trim()}" không hợp lệ hoặc chưa được cấp!</strong></div>
-          <div class="text-[11px] text-slate-300 mt-1">
-            • Vui lòng kiểm tra lại mã Key hoặc liên hệ nhận Key bản quyền tại <strong>binhluu.ai.studio</strong>.
-          </div>
-        `;
-        errBox.classList.remove('hidden');
-      }
-    }
-  },
+  // (Cleaned - single strict handleLogin is maintained above)
 
   logout: function() {
     this.showCustomConfirm({
