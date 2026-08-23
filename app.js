@@ -47,6 +47,7 @@ const app = {
 
     if (!modal) return;
 
+    if (iconWrapper) iconWrapper.style.display = 'flex';
     iconSpan.innerText = options.icon || '⚠️';
     iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
       options.iconBg || 'bg-amber-950/80 border border-amber-600/60 text-amber-400'
@@ -85,10 +86,17 @@ const app = {
 
     if (!modal) return;
 
-    iconSpan.innerText = options.icon || '🎉';
-    iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
-      options.iconBg || 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400'
-    }`;
+    if (options.hideIcon || options.icon === false) {
+      if (iconWrapper) iconWrapper.style.display = 'none';
+    } else {
+      if (iconWrapper) {
+        iconWrapper.style.display = 'flex';
+        iconSpan.innerText = options.icon || '🎉';
+        iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
+          options.iconBg || 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400'
+        }`;
+      }
+    }
     titleEl.innerText = options.title || 'Thông Báo';
     msgEl.innerHTML = options.message || '';
 
@@ -971,10 +979,11 @@ const app = {
     this.playSound('pass');
 
     this.showCustomAlert({
+      hideIcon: true,
       title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
       message: `
-        <div class="text-center py-4 space-y-4">
-          <div class="flex justify-center items-center py-4">
+        <div class="text-center py-2 space-y-4">
+          <div class="flex justify-center items-center py-3">
             <div class="scale-150 transform transition-transform">
               ${this.renderTikTokFlameHTML(info.level, 56)}
             </div>
