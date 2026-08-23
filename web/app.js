@@ -864,100 +864,91 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 36;
-      else if (level === 4) size = 32;
-      else if (level === 3) size = 28;
-      else if (level === 2) size = 23;
-      else size = 19;
+      if (level === 5) size = 32;
+      else if (level === 4) size = 28;
+      else if (level === 3) size = 25;
+      else if (level === 2) size = 21;
+      else size = 18;
     }
     const height = Math.round(size * 1.25);
-    const showEmbers = level >= 2;
+    const showSparks = level >= 2;
 
     return `
-      <span class="flame-3d-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <span class="flame-heat-bloom"></span>
-        <svg viewBox="0 0 100 130" class="flame-3d-svg" style="width: 100%; height: 100%;">
+      <span class="flame-premium-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <svg viewBox="0 0 100 125" class="flame-anim-bounce" style="width: 100%; height: 100%;">
           <defs>
-            <linearGradient id="flame-grad-outer-1" x1="0.5" y1="1" x2="0.5" y2="0">
+            <linearGradient id="duo-outer-1" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#b45309"/>
-              <stop offset="50%" stop-color="#f59e0b"/>
+              <stop offset="55%" stop-color="#f59e0b"/>
               <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="flame-grad-sub-1" x1="0.2" y1="1" x2="0.8" y2="0">
-              <stop offset="0%" stop-color="#d97706"/>
-              <stop offset="60%" stop-color="#fbbf24"/>
-              <stop offset="100%" stop-color="#fffbeb"/>
-            </linearGradient>
-
-            <linearGradient id="flame-grad-outer-2" x1="0.5" y1="1" x2="0.5" y2="0">
-              <stop offset="0%" stop-color="#c2410c"/>
-              <stop offset="45%" stop-color="#f97316"/>
-              <stop offset="90%" stop-color="#fef08a"/>
-            </linearGradient>
-            <linearGradient id="flame-grad-sub-2" x1="0.2" y1="1" x2="0.8" y2="0">
-              <stop offset="0%" stop-color="#ea580c"/>
-              <stop offset="55%" stop-color="#fb923c"/>
-              <stop offset="100%" stop-color="#ffedd5"/>
-            </linearGradient>
-
-            <linearGradient id="flame-grad-outer-3" x1="0.5" y1="1" x2="0.5" y2="0">
-              <stop offset="0%" stop-color="#881337"/>
-              <stop offset="35%" stop-color="#e11d48"/>
-              <stop offset="70%" stop-color="#f43f5e"/>
-              <stop offset="100%" stop-color="#ffe4e6"/>
-            </linearGradient>
-            <linearGradient id="flame-grad-sub-3" x1="0.2" y1="1" x2="0.8" y2="0">
-              <stop offset="0%" stop-color="#9f1239"/>
-              <stop offset="50%" stop-color="#fb7185"/>
+            <linearGradient id="duo-inner-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="60%" stop-color="#fde047"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
 
-            <linearGradient id="flame-grad-outer-4" x1="0.5" y1="1" x2="0.5" y2="0">
+            <linearGradient id="duo-outer-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#c2410c"/>
+              <stop offset="50%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="duo-inner-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="60%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="duo-outer-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="45%" stop-color="#e11d48"/>
+              <stop offset="75%" stop-color="#ff2a5f"/>
+              <stop offset="100%" stop-color="#ffe4e6"/>
+            </linearGradient>
+            <linearGradient id="duo-inner-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#e11d48"/>
+              <stop offset="60%" stop-color="#fb7185"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="duo-outer-4" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#4c1d95"/>
-              <stop offset="40%" stop-color="#7c3aed"/>
+              <stop offset="45%" stop-color="#7c3aed"/>
               <stop offset="80%" stop-color="#c084fc"/>
               <stop offset="100%" stop-color="#f5d0fe"/>
             </linearGradient>
-            <linearGradient id="flame-grad-sub-4" x1="0.2" y1="1" x2="0.8" y2="0">
-              <stop offset="0%" stop-color="#5b21b6"/>
-              <stop offset="55%" stop-color="#a855f7"/>
+            <linearGradient id="duo-inner-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="60%" stop-color="#d8b4fe"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
 
-            <linearGradient id="flame-grad-outer-5" x1="0.5" y1="1" x2="0.5" y2="0">
+            <linearGradient id="duo-outer-5" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#854d0e"/>
-              <stop offset="40%" stop-color="#eab308"/>
+              <stop offset="45%" stop-color="#eab308"/>
               <stop offset="80%" stop-color="#fde047"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
-            <linearGradient id="flame-grad-sub-5" x1="0.2" y1="1" x2="0.8" y2="0">
-              <stop offset="0%" stop-color="#a16207"/>
-              <stop offset="55%" stop-color="#facc15"/>
+            <linearGradient id="duo-inner-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ca8a04"/>
+              <stop offset="60%" stop-color="#fef08a"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
-
-            <radialGradient id="flame-core-glow-${level}" cx="50%" cy="75%" r="55%">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="60%" stop-color="#fffbeb" stop-opacity="0.95"/>
-              <stop offset="100%" stop-color="#fef08a" stop-opacity="0"/>
-            </radialGradient>
           </defs>
 
-          <!-- Outer Organic Flame Body -->
-          <path class="flame-tongue-outer" fill="url(#flame-grad-outer-${level})" d="M50,12 C58,35 80,48 84,74 C90,100 74,124 50,126 C26,124 10,100 16,74 C20,48 42,35 50,12 Z"/>
+          <!-- Outer Flame Body (Teardrop Curve) -->
+          <path fill="url(#duo-outer-${level})" d="M50,5 C55,25 78,42 82,70 C88,96 74,120 50,122 C26,120 12,96 18,70 C22,42 45,25 50,5 Z"/>
 
-          <!-- 3D Left & Right Layered Tongues -->
-          <path class="flame-tongue-left" fill="url(#flame-grad-sub-${level})" d="M40,28 C28,48 30,76 42,98 C30,92 24,76 28,58 C32,45 38,34 40,28 Z"/>
-          <path class="flame-tongue-right" fill="url(#flame-grad-sub-${level})" d="M60,22 C74,45 72,74 58,96 C70,88 76,72 70,54 C66,40 62,28 60,22 Z"/>
+          <!-- Secondary Outer Curve Cut (for 3D stylized look) -->
+          <path fill="url(#duo-inner-${level})" opacity="0.92" d="M52,22 C56,38 72,52 74,74 C78,94 68,112 50,115 C34,112 26,96 30,76 C34,54 48,36 52,22 Z"/>
 
-          <!-- Superheated Core Flame -->
-          <path class="flame-tongue-core" fill="url(#flame-core-glow-${level})" d="M50,42 C58,58 64,76 60,98 C56,112 44,112 40,98 C36,76 42,58 50,42 Z"/>
+          <!-- Bright Core Pulse Flame -->
+          <path class="flame-core-pulse" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
         </svg>
 
-        ${showEmbers ? `
-          <span class="ember-spark ember-1"></span>
-          <span class="ember-spark ember-2"></span>
-          <span class="ember-spark ember-3"></span>
+        ${showSparks ? `
+          <span class="flame-spark-dot spark-dot-1"></span>
+          <span class="flame-spark-dot spark-dot-2"></span>
         ` : ''}
       </span>
     `;
