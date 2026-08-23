@@ -864,147 +864,134 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 28;
-      else if (level === 4) size = 25;
-      else if (level === 3) size = 23;
-      else if (level === 2) size = 20;
+      if (level === 5) size = 30;
+      else if (level === 4) size = 26;
+      else if (level === 3) size = 24;
+      else if (level === 2) size = 21;
       else size = 18;
     }
-    const height = Math.round(size * 1.35);
+    const height = Math.round(size * 1.25);
+    const showSparks = level >= 2;
 
     return `
-      <span class="flame-canvas-wrapper" style="width: ${size}px; height: ${height}px;">
-        <canvas class="flame-canvas-120fps" data-level="${level}" data-size="${size}" width="${size * 2}" height="${height * 2}" style="width: ${size}px; height: ${height}px;"></canvas>
+      <span class="flame-vector-wrapper flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <svg viewBox="0 0 100 125" class="flame-anim-sway anime-flame-svg" style="width: 100%; height: 100%; overflow: visible;">
+          <defs>
+            <linearGradient id="vector-outer-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#b45309"/>
+              <stop offset="55%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="vector-inner-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="60%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="vector-outer-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#c2410c"/>
+              <stop offset="50%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="vector-inner-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="60%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="vector-outer-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="45%" stop-color="#e11d48"/>
+              <stop offset="75%" stop-color="#ff2a5f"/>
+              <stop offset="100%" stop-color="#ffe4e6"/>
+            </linearGradient>
+            <linearGradient id="vector-inner-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#e11d48"/>
+              <stop offset="60%" stop-color="#fb7185"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="vector-outer-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#4c1d95"/>
+              <stop offset="45%" stop-color="#7c3aed"/>
+              <stop offset="80%" stop-color="#c084fc"/>
+              <stop offset="100%" stop-color="#f5d0fe"/>
+            </linearGradient>
+            <linearGradient id="vector-inner-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="60%" stop-color="#d8b4fe"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="vector-outer-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#854d0e"/>
+              <stop offset="45%" stop-color="#eab308"/>
+              <stop offset="80%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <linearGradient id="vector-inner-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ca8a04"/>
+              <stop offset="60%" stop-color="#fef08a"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Outer Flame Body (Teardrop Organic Bezier Curve) -->
+          <path class="anime-flame-outer" fill="url(#vector-outer-${level})" d="M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z"/>
+
+          <!-- Secondary Outer Curve Cut (for 3D stylized look) -->
+          <path class="anime-flame-inner" fill="url(#vector-inner-${level})" opacity="0.92" d="M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z"/>
+
+          <!-- Bright Core Pulse Flame -->
+          <path class="anime-flame-core flame-core-pulse" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
+        </svg>
+
+        ${showSparks ? `
+          <span class="flame-spark-dot spark-dot-1"></span>
+          <span class="flame-spark-dot spark-dot-2"></span>
+        ` : ''}
       </span>
     `;
   },
 
-  init120FpsFlameCanvasEngine: function() {
-    if (window._flame120LoopRunning) return;
-    window._flame120LoopRunning = true;
+  initAnimeFlameAnimation: function() {
+    if (typeof anime === 'undefined') return;
 
-    // Color pallets per level (Incandescent spectrum)
-    const levelColors = {
-      1: { r: 245, g: 158, b: 11, cr: 254, cg: 240, cb: 138 }, // Amber (Tuần 1: 1-7 ngày)
-      2: { r: 249, g: 115, b: 22, cr: 253, cg: 224, cb: 71 },  // Orange (Tuần 2: 8-14 ngày)
-      3: { r: 255, g: 42,  b: 95, cr: 255, cg: 220, cb: 230 }, // Ruby Red (Tuần 3: 15-21 ngày)
-      4: { r: 168, g: 85,  b: 247, cr: 245, cg: 208, cb: 254 }, // Plasma Purple (Tuần 4: 22-28 ngày)
-      5: { r: 234, g: 179, b: 8,  cr: 255, cg: 255, cb: 255 }  // Sacred Gold (Tuần 5+: >=29 ngày)
-    };
+    try {
+      const outerPaths = document.querySelectorAll('.anime-flame-outer');
+      if (outerPaths.length > 0) {
+        anime({
+          targets: outerPaths,
+          d: [
+            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' },
+            { value: 'M46,2 C56,22 84,40 82,70 C80,98 70,122 50,124 C28,122 16,100 18,74 C20,50 36,26 46,2 Z' },
+            { value: 'M54,2 C64,26 80,50 82,74 C84,100 72,122 50,124 C30,122 20,98 18,70 C16,40 44,22 54,2 Z' },
+            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' }
+          ],
+          easing: 'easeInOutQuad',
+          duration: 2200,
+          loop: true
+        });
+      }
 
-    const canvasParticleMap = new WeakMap();
-
-    function render120Fps() {
-      const canvases = document.querySelectorAll('.flame-canvas-120fps');
-      canvases.forEach(canvas => {
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const w = canvas.width;
-        const h = canvas.height;
-        const level = parseInt(canvas.getAttribute('data-level'), 10) || 1;
-        const palette = levelColors[level] || levelColors[1];
-
-        let state = canvasParticleMap.get(canvas);
-        if (!state) {
-          state = {
-            particles: [],
-            sparks: [],
-            time: Math.random() * 100
-          };
-          canvasParticleMap.set(canvas, state);
-        }
-
-        state.time += 0.04;
-
-        // Clear transparent
-        ctx.clearRect(0, 0, w, h);
-        ctx.globalCompositeOperation = 'screen';
-
-        const originX = w / 2;
-        const originY = h * 0.88;
-
-        // Spawn flame plasma particles
-        if (state.particles.length < 28) {
-          state.particles.push({
-            x: originX + (Math.random() - 0.5) * (w * 0.25),
-            y: originY,
-            vx: (Math.random() - 0.5) * 0.7,
-            vy: -(Math.random() * 1.5 + 1.2),
-            radius: Math.random() * (w * 0.22) + (w * 0.14),
-            life: 1.0,
-            decay: Math.random() * 0.035 + 0.025,
-            wiggleSpeed: Math.random() * 4 + 2,
-            isCore: Math.random() < 0.35
-          });
-        }
-
-        // Spawn spark particles
-        if (state.sparks.length < (level >= 2 ? 6 : 2)) {
-          state.sparks.push({
-            x: originX + (Math.random() - 0.5) * (w * 0.2),
-            y: originY - (h * 0.2),
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: -(Math.random() * 2.2 + 1.8),
-            size: Math.random() * 2.2 + 1.2,
-            life: 1.0,
-            decay: Math.random() * 0.04 + 0.025
-          });
-        }
-
-        // Update and draw flame particles
-        for (let i = state.particles.length - 1; i >= 0; i--) {
-          const p = state.particles[i];
-          p.x += p.vx + Math.sin(state.time * p.wiggleSpeed + p.y * 0.05) * 0.6;
-          p.y += p.vy;
-          p.radius *= 0.965;
-          p.life -= p.decay;
-
-          if (p.life <= 0 || p.radius <= 0.5) {
-            state.particles.splice(i, 1);
-            continue;
-          }
-
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
-          if (p.isCore) {
-            grad.addColorStop(0, `rgba(${palette.cr}, ${palette.cg}, ${palette.cb}, ${p.life * 0.95})`);
-            grad.addColorStop(0.5, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.5})`);
-            grad.addColorStop(1, `rgba(${palette.r}, ${palette.g}, ${palette.b}, 0)`);
-          } else {
-            grad.addColorStop(0, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.8})`);
-            grad.addColorStop(0.6, `rgba(${palette.r}, ${palette.g}, ${palette.b}, ${p.life * 0.3})`);
-            grad.addColorStop(1, `rgba(${palette.r}, ${palette.g}, ${palette.b}, 0)`);
-          }
-
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // Update and draw sparks
-        for (let i = state.sparks.length - 1; i >= 0; i--) {
-          const s = state.sparks[i];
-          s.x += s.vx;
-          s.y += s.vy;
-          s.life -= s.decay;
-
-          if (s.life <= 0) {
-            state.sparks.splice(i, 1);
-            continue;
-          }
-
-          ctx.fillStyle = `rgba(${palette.cr}, ${palette.cg}, ${palette.cb}, ${s.life * 0.9})`;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-
-      requestAnimationFrame(render120Fps);
+      const innerPaths = document.querySelectorAll('.anime-flame-inner');
+      if (innerPaths.length > 0) {
+        anime({
+          targets: innerPaths,
+          d: [
+            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' },
+            { value: 'M48,18 C54,38 70,54 72,76 C74,98 64,112 50,114 C36,112 26,96 28,72 C30,48 42,34 48,18 Z' },
+            { value: 'M52,18 C58,34 74,48 72,72 C70,96 64,112 50,114 C36,112 26,98 28,76 C30,54 46,38 52,18 Z' },
+            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' }
+          ],
+          easing: 'easeInOutSine',
+          duration: 1800,
+          loop: true
+        });
+      }
+    } catch (e) {
+      console.warn('Anime.js flame init error:', e);
     }
-
-    requestAnimationFrame(render120Fps);
   },
 
   showStreakCelebration: function() {
@@ -1164,7 +1151,7 @@ const app = {
       if (progText) progText.innerText = `${passedCount} / ${total} Đề (${percent}%)`;
       if (progBar) progBar.style.width = `${percent}%`;
 
-      this.init120FpsFlameCanvasEngine();
+      this.initAnimeFlameAnimation();
     } else {
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       if (subBadge) subBadge.classList.add('hidden');

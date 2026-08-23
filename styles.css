@@ -215,7 +215,7 @@ body {
 }
 
 /* ============================================================= */
-/* 120 FPS GPU PARTICLE FLUID FLAME CANVAS ENGINE */
+/* DUOLINGO / TIKTOK PREMIUM 3D VECTOR MORPHING FLAME ENGINE */
 /* ============================================================= */
 
 .streak-frameless-btn {
@@ -239,18 +239,81 @@ body {
   transform: scale(0.92);
 }
 
-.flame-canvas-wrapper {
+.flame-vector-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 0;
   vertical-align: middle;
+  transform-origin: bottom center;
 }
 
-.flame-canvas-120fps {
-  display: block;
+/* SOFT ORGANIC FLUID PHYSICS */
+@keyframes flameFluidSway {
+  0% { transform: scale(1, 1) rotate(0deg); }
+  25% { transform: scale(0.94, 1.08) rotate(-3deg) translateY(-1.5px); }
+  50% { transform: scale(1.06, 0.95) rotate(2.5deg) translateY(0.5px); }
+  75% { transform: scale(0.97, 1.04) rotate(-1.5deg) translateY(-0.8px); }
+  100% { transform: scale(1, 1) rotate(0deg); }
+}
+
+@keyframes flameCorePulse {
+  0% { transform: scale(0.9) translateY(0); opacity: 0.88; }
+  50% { transform: scale(1.15) translateY(-1px); opacity: 1; filter: drop-shadow(0 0 5px #ffffff); }
+  100% { transform: scale(0.9) translateY(0); opacity: 0.88; }
+}
+
+.flame-anim-sway {
+  transform-origin: bottom center;
+  animation: flameFluidSway 1.1s infinite ease-in-out;
+}
+
+.flame-core-pulse {
+  transform-origin: bottom center;
+  animation: flameCorePulse 0.75s infinite ease-in-out;
+}
+
+/* TIER-SPECIFIC SOFT DROP SHADOWS */
+.flame-tier-lv1 .flame-anim-sway { animation-duration: 1.2s; filter: drop-shadow(0 2px 5px rgba(245, 158, 11, 0.5)); }
+.flame-tier-lv2 .flame-anim-sway { animation-duration: 0.95s; filter: drop-shadow(0 2px 7px rgba(249, 115, 22, 0.65)); }
+.flame-tier-lv3 .flame-anim-sway { animation-duration: 0.75s; filter: drop-shadow(0 3px 10px rgba(255, 42, 95, 0.8)) drop-shadow(0 0 3px #ff758f); }
+.flame-tier-lv4 .flame-anim-sway { animation-duration: 0.85s; filter: drop-shadow(0 3px 10px rgba(168, 85, 247, 0.8)) drop-shadow(0 0 3px #f472b6); }
+.flame-tier-lv5 .flame-anim-sway { animation-duration: 0.65s; filter: drop-shadow(0 3px 12px rgba(250, 204, 21, 0.9)) drop-shadow(0 0 5px #ffffff); }
+
+/* FLOATING MICRO-SPARKS */
+.flame-spark-dot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
   pointer-events: none;
+}
+
+@keyframes sparkRise1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-6px, -22px) scale(0); opacity: 0; }
+}
+
+@keyframes sparkRise2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(6px, -25px) scale(0); opacity: 0; }
+}
+
+.spark-dot-1 {
+  top: 15%;
+  left: 20%;
+  background: #ffffff;
+  box-shadow: 0 0 5px #ff2a5f;
+  animation: sparkRise1 0.9s infinite ease-out;
+}
+
+.spark-dot-2 {
+  top: 20%;
+  right: 20%;
+  background: #ffffff;
+  box-shadow: 0 0 5px #f97316;
+  animation: sparkRise2 1.1s infinite ease-out 0.3s;
 }
 
 /* CRISP, RAZOR-SHARP TYPOGRAPHY (NO WHITE BLUR HAZE!) */
