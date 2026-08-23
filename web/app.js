@@ -861,6 +861,58 @@ const app = {
     }
   },
 
+  getStreakLevelInfo: function(streak) {
+    const days = Math.max(1, parseInt(streak, 10) || 1);
+    if (days >= 30) {
+      return {
+        level: 5,
+        title: 'Huyền Thoại',
+        icon: '👑',
+        flameClass: 'text-yellow-950 fill-yellow-950 animate-bounce',
+        badgeClass: 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 border border-yellow-200 text-black font-black shadow-lg shadow-amber-500/60 animate-pulse',
+        heroClass: 'text-yellow-300 font-extrabold'
+      };
+    }
+    if (days >= 14) {
+      return {
+        level: 4,
+        title: 'Bậc Thầy',
+        icon: '🔮',
+        flameClass: 'text-purple-300 fill-purple-400 animate-pulse',
+        badgeClass: 'bg-gradient-to-r from-purple-950 via-indigo-900 to-purple-950 border border-purple-500 text-purple-200 font-extrabold shadow-md shadow-purple-900/60',
+        heroClass: 'text-purple-400 font-extrabold'
+      };
+    }
+    if (days >= 7) {
+      return {
+        level: 3,
+        title: 'Siêu Cháy',
+        icon: '💥',
+        flameClass: 'text-rose-300 fill-rose-500 animate-bounce',
+        badgeClass: 'bg-gradient-to-r from-rose-950 via-red-900 to-rose-950 border border-rose-500 text-rose-100 font-black shadow-md shadow-rose-900/70',
+        heroClass: 'text-rose-400 font-extrabold'
+      };
+    }
+    if (days >= 3) {
+      return {
+        level: 2,
+        title: 'Nhiệt Huyết',
+        icon: '⚡',
+        flameClass: 'text-orange-400 fill-orange-500 animate-pulse',
+        badgeClass: 'bg-orange-950/90 border border-orange-600 text-orange-300 font-bold shadow-sm',
+        heroClass: 'text-orange-400 font-bold'
+      };
+    }
+    return {
+      level: 1,
+      title: 'Khởi Động',
+      icon: '🔰',
+      flameClass: 'text-amber-400 fill-amber-400',
+      badgeClass: 'bg-amber-950/80 border border-amber-700/80 text-amber-300 font-bold shadow-sm',
+      heroClass: 'text-amber-300 font-bold'
+    };
+  },
+
   updateUserStatsDisplay: function() {
     const user = this.data.currentUser;
     const heroBadge = document.getElementById('hero-user-badge');
@@ -874,8 +926,9 @@ const app = {
       const dynamicPackageName = this.getDynamicPackageName(remainingDays);
       const isActive = this.isAccountActive(user);
       const streak = this.data.userProgress.streak || 1;
+      const streakInfo = this.getStreakLevelInfo(streak);
 
-      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="text-amber-300">🔥 Chuỗi: ${streak} Ngày</span>`;
+      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">${streakInfo.icon} Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
 
       if (isActive) {
         if (subBadge) {
@@ -902,9 +955,9 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <!-- Daily Streak Badge -->
-            <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-950/90 border border-amber-600/80 text-amber-300 text-xs font-black shadow-sm shrink-0" title="Chuỗi ngày đăng nhập học tập liên tục">
-              <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse"></i>
+            <!-- 5-Level Daily Streak Flame Badge -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${streakInfo.badgeClass} text-xs shrink-0 cursor-default" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} ngày)">
+              <i data-lucide="flame" class="w-3.5 h-3.5 ${streakInfo.flameClass}"></i>
               <span>${streak} Ngày</span>
             </div>
 

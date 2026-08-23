@@ -116,12 +116,16 @@
 
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-slate-300">3. Gói Thời Hạn:</label>
-            <select id="inp-student-duration" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+            <select id="inp-student-duration" onchange="adminApp.handleDurationSelectChange(this.value)" class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
               <option value="1m">1 Tháng (30 Ngày)</option>
               <option value="3m" selected>3 Tháng (90 Ngày)</option>
               <option value="6m">6 Tháng (180 Ngày)</option>
               <option value="1y">1 Năm (365 Ngày)</option>
+              <option value="custom">⚙️ Tùy Chỉnh Số Ngày...</option>
             </select>
+            <div id="wrap-custom-days" class="hidden pt-1.5">
+              <input type="number" id="inp-custom-days" min="1" max="9999" placeholder="Nhập số ngày (VD: 45, 100, 150...)" class="w-full px-3 py-2 rounded-xl bg-indigo-950/80 border border-indigo-500 text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
+            </div>
           </div>
 
           <div>
@@ -595,6 +599,14 @@
         }
       },
 
+      handleDurationSelectChange: function(val) {
+        const wrap = document.getElementById('wrap-custom-days');
+        if (wrap) {
+          if (val === 'custom') wrap.classList.remove('hidden');
+          else wrap.classList.add('hidden');
+        }
+      },
+
       generateRandomKey: function() {
         const rand = Math.floor(1000 + Math.random() * 9000);
         const randChars = Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -621,11 +633,21 @@
         this.removeDeletedKey(key);
 
         let daysToAdd = 90;
-        let pkgName = 'Gói 3 Tháng';
-        if (duration === '1m') { daysToAdd = 30; pkgName = 'Gói 1 Tháng'; }
-        if (duration === '6m') { daysToAdd = 180; pkgName = 'Gói 6 Tháng'; }
-        if (duration === '1y') { daysToAdd = 365; pkgName = 'Gói 1 Năm'; }
+        if (duration === '1m') daysToAdd = 30;
+        else if (duration === '3m') daysToAdd = 90;
+        else if (duration === '6m') daysToAdd = 180;
+        else if (duration === '1y') daysToAdd = 365;
+        else if (duration === 'custom') {
+          const customInp = document.getElementById('inp-custom-days');
+          const parsed = parseInt(customInp?.value, 10);
+          if (isNaN(parsed) || parsed <= 0) {
+            alert('⚠️ Vui lòng nhập số ngày hợp lệ (lớn hơn 0)!');
+            return;
+          }
+          daysToAdd = parsed;
+        }
 
+        const pkgName = this.getDynamicPackageName(daysToAdd);
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + daysToAdd);
 
@@ -644,9 +666,11 @@
         await this.saveUsers();
 
         document.getElementById('inp-student-name').value = '';
+        const customInp = document.getElementById('inp-custom-days');
+        if (customInp) customInp.value = '';
         this.generateRandomKey();
 
-        alert(`✅ Cấp Key thành công cho học viên ${name}!\n\n• Tên hiển thị: ${name}\n• Mã Key Kích Hoạt: ${key}\n• Thời hạn: ${pkgName} (Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
+        alert(`✅ Cấp Key thành công cho học viên ${name}!\n\n• Tên hiển thị: ${name}\n• Mã Key: ${key}\n• Thời hạn: ${pkgName} (Còn ${daysToAdd} ngày - Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
       },
 
       copyKey: function(key) {
@@ -661,8 +685,50 @@
         if (remainingDays <= 0) return 'Gói Đã Hết Hạn';
         const months = Math.round(remainingDays / 30);
         if (months >= 12) return 'Gói 1 Năm';
-        if (months <= 1) return 'Gói 1 Tháng';
+        if (months <= 1) return `Gói ${remainingDays} Ngày`;
         return `Gói ${months} Tháng`;
+      },
+
+      getStreakLevelInfo: function(streak) {
+        const days = Math.max(1, parseInt(streak, 10) || 1);
+        if (days >= 30) {
+          return {
+            level: 5,
+            title: 'Huyền Thoại',
+            icon: '👑',
+            badgeClass: 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 border-yellow-300 text-black shadow-lg shadow-amber-500/50 font-black animate-pulse'
+          };
+        }
+        if (days >= 14) {
+          return {
+            level: 4,
+            title: 'Bậc Thầy',
+            icon: '🔮',
+            badgeClass: 'bg-purple-950 border-purple-500 text-purple-300 shadow-md shadow-purple-900/50 font-extrabold'
+          };
+        }
+        if (days >= 7) {
+          return {
+            level: 3,
+            title: 'Siêu Cháy',
+            icon: '💥',
+            badgeClass: 'bg-gradient-to-r from-rose-950 via-red-900 to-rose-950 border-rose-500 text-rose-100 shadow-md shadow-rose-900/70 font-black'
+          };
+        }
+        if (days >= 3) {
+          return {
+            level: 2,
+            title: 'Nhiệt Huyết',
+            icon: '⚡',
+            badgeClass: 'bg-orange-950/90 border-orange-600 text-orange-300 shadow-sm font-bold'
+          };
+        }
+        return {
+          level: 1,
+          title: 'Khởi Động',
+          icon: '🔰',
+          badgeClass: 'bg-amber-950/80 border-amber-700 text-amber-300 shadow-sm font-bold'
+        };
       },
 
       extendDuration: async function(userId, days) {
@@ -677,6 +743,19 @@
         user.status = 'ACTIVE';
         await this.saveUsers();
         alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!\n• Gói hiện tại: ${user.package} (Còn ${remaining} ngày)`);
+      },
+
+      extendCustomDuration: async function(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+        const input = prompt(`Nhập số ngày bạn muốn cộng thêm cho học viên ${user.name} (ví dụ: 15, 45, 100, 150):`, '30');
+        if (input === null) return;
+        const days = parseInt(input.trim(), 10);
+        if (isNaN(days) || days <= 0) {
+          alert('⚠️ Số ngày nhập vào không hợp lệ!');
+          return;
+        }
+        await this.extendDuration(userId, days);
       },
 
       toggleStatus: async function(userId) {
@@ -740,6 +819,7 @@
           const isExpired = remainingDays <= 0;
           const isActive = u.status === 'ACTIVE' && !isExpired;
           const dynamicPkg = this.getDynamicPackageName(remainingDays);
+          const streakInfo = this.getStreakLevelInfo(u.streak || 1);
 
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 transition-colors';
@@ -761,8 +841,8 @@
               </div>
             </td>
             <td class="py-3 px-3">
-              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-950/90 text-amber-300 border border-amber-700/80 font-black text-xs">
-                <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i> ${u.streak || 1} Ngày
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${streakInfo.badgeClass}" title="Level ${streakInfo.level}: ${streakInfo.title}">
+                <span>${streakInfo.icon}</span> <span>${u.streak || 1} Ngày (Lv.${streakInfo.level})</span>
               </span>
             </td>
             <td class="py-3 px-3 text-slate-300 font-bold">${dynamicPkg}</td>
@@ -781,12 +861,15 @@
               }
             </td>
             <td class="py-3 px-3 text-right">
-              <div class="flex items-center justify-end gap-1.5">
+              <div class="flex items-center justify-end gap-1.5 flex-wrap">
                 <button onclick="adminApp.extendDuration('${u.id}', 30)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 30 ngày">
-                  +1 Tháng
+                  +1T
                 </button>
                 <button onclick="adminApp.extendDuration('${u.id}', 90)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-[11px] font-bold border border-slate-700" title="Cộng thêm 90 ngày">
-                  +3 Tháng
+                  +3T
+                </button>
+                <button onclick="adminApp.extendCustomDuration('${u.id}')" class="px-2 py-1 rounded bg-indigo-950 hover:bg-indigo-900 text-cyan-300 text-[11px] font-bold border border-indigo-700" title="Tùy chỉnh số ngày cộng thêm">
+                  +Tùy Chỉnh
                 </button>
                 <button onclick="adminApp.toggleStatus('${u.id}')" class="p-1.5 rounded bg-slate-800 hover:bg-amber-950 text-slate-400 hover:text-amber-300 border border-slate-700" title="Khóa / Mở Khóa">
                   <i data-lucide="${u.status === 'ACTIVE' ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
