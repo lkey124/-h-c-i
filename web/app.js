@@ -581,10 +581,34 @@ const app = {
   // -------------------------------------------------------------
   // USER STORAGE & REAL-TIME CLOUD SYNC
   // -------------------------------------------------------------
+  purgeLegacyTestKeys: function() {
+    const legacyTestKeys = [
+      'B1-3BM6854', 'B1-6N01451', 'B1-6NO1451', 'B1-VIP-2026', 'B1-VIP',
+      'B1-MASTER', 'BINHLUU', 'B1-TEST', 'B1-FAKE', 'B1-DEMO'
+    ];
+    const isLegacyKey = (k, name) => {
+      if (!k) return true;
+      const cleanK = (k || '').toUpperCase().replace(/[\s\-_–—]/g, '');
+      const cleanN = (name || '').toLowerCase();
+      const matchTestKey = legacyTestKeys.some(tk => cleanK === tk.toUpperCase().replace(/[\s\-_–—]/g, ''));
+      const matchTestName = cleanN.includes('học viên b1') || cleanN.includes('học viên vip') || cleanN.includes('học viên 6854') || cleanN === 'binhluu';
+      return matchTestKey || matchTestName;
+    };
+
+    this.data.users = this.data.users.filter(u => !isLegacyKey(u.key, u.name) && !isLegacyKey(u.id, u.name));
+    localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
+
+    if (this.data.currentUser && (isLegacyKey(this.data.currentUser.key, this.data.currentUser.name) || isLegacyKey(this.data.currentUser.id, this.data.currentUser.name))) {
+      this.data.currentUser = null;
+      localStorage.removeItem('eduquest_b1_logged_user');
+    }
+  },
+
   loadUsersFromStorage: function() {
     try {
       const saved = localStorage.getItem('eduquest_b1_all_users');
       this.data.users = saved ? JSON.parse(saved) : [];
+      this.purgeLegacyTestKeys();
     } catch (e) {
       this.data.users = [];
     }
@@ -600,7 +624,8 @@ const app = {
           if (Array.isArray(cloudData)) {
             // Live Cloud state is authoritative
             this.data.users = cloudData;
-            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cloudData));
+            this.purgeLegacyTestKeys();
+            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
 
             // Verify logged in user
             if (this.data.currentUser) {

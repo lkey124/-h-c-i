@@ -268,6 +268,9 @@
             <p class="text-xs text-slate-300">Quản lý mã key, số ngày còn lại và gia hạn thời gian học</p>
           </div>
           <div class="flex items-center gap-2">
+            <button onclick="adminApp.purgeLegacyTestKeys(true)" class="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/80 text-xs font-bold flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Xóa Key Test Cũ
+            </button>
             <button onclick="adminApp.syncFromCloud()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold flex items-center gap-1">
               <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tải Lại Cloud
             </button>
@@ -513,6 +516,33 @@
         } catch(e) {
           this.users = [];
         }
+        this.purgeLegacyTestKeys(false);
+      },
+
+      purgeLegacyTestKeys: function(showAlert = false) {
+        const legacyTestKeys = [
+          'B1-3BM6854', 'B1-6N01451', 'B1-6NO1451', 'B1-VIP-2026', 'B1-VIP',
+          'B1-MASTER', 'BINHLUU', 'B1-TEST', 'B1-FAKE', 'B1-DEMO'
+        ];
+        const isLegacyKey = (k, name) => {
+          if (!k) return true;
+          const cleanK = (k || '').toUpperCase().replace(/[\s\-_–—]/g, '');
+          const cleanN = (name || '').toLowerCase();
+          const matchTestKey = legacyTestKeys.some(tk => cleanK === tk.toUpperCase().replace(/[\s\-_–—]/g, ''));
+          const matchTestName = cleanN.includes('học viên b1') || cleanN.includes('học viên vip') || cleanN.includes('học viên 6854') || cleanN === 'binhluu';
+          return matchTestKey || matchTestName;
+        };
+
+        const beforeCount = this.users.length;
+        this.users = this.users.filter(u => !isLegacyKey(u.key, u.name) && !isLegacyKey(u.id, u.name));
+        const removedCount = beforeCount - this.users.length;
+
+        if (removedCount > 0 || showAlert) {
+          this.saveUsers();
+          if (showAlert) {
+            alert(`🧹 Đã quét và xóa sạch ${removedCount} mã Key test cũ khỏi hệ thống!`);
+          }
+        }
       },
 
       saveUsers: async function() {
@@ -534,8 +564,9 @@
           const response = await fetch('/api/keys');
           if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
               this.users = data;
+              this.purgeLegacyTestKeys(false);
               localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
               this.renderUserTable();
             }
