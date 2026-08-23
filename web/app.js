@@ -875,7 +875,7 @@ const app = {
 
     return `
       <span class="flame-premium-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <svg viewBox="0 0 100 125" class="flame-anim-bounce" style="width: 100%; height: 100%;">
+        <svg viewBox="0 0 100 125" class="flame-anim-bounce anime-flame-svg" style="width: 100%; height: 100%;">
           <defs>
             <linearGradient id="duo-outer-1" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#b45309"/>
@@ -936,14 +936,14 @@ const app = {
             </linearGradient>
           </defs>
 
-          <!-- Outer Flame Body (Teardrop Curve) -->
-          <path fill="url(#duo-outer-${level})" d="M50,5 C55,25 78,42 82,70 C88,96 74,120 50,122 C26,120 12,96 18,70 C22,42 45,25 50,5 Z"/>
+          <!-- Outer Flame Body with Anime.js Morphing Path -->
+          <path class="anime-flame-outer" fill="url(#duo-outer-${level})" d="M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z"/>
 
-          <!-- Secondary Outer Curve Cut (for 3D stylized look) -->
-          <path fill="url(#duo-inner-${level})" opacity="0.92" d="M52,22 C56,38 72,52 74,74 C78,94 68,112 50,115 C34,112 26,96 30,76 C34,54 48,36 52,22 Z"/>
+          <!-- Secondary Inner Layer with Anti-Phase Morphing -->
+          <path class="anime-flame-inner" fill="url(#duo-inner-${level})" opacity="0.92" d="M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z"/>
 
-          <!-- Bright Core Pulse Flame -->
-          <path class="flame-core-pulse" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
+          <!-- Bright Core Pulse Flame with Anime.js Spring Dynamics -->
+          <path class="anime-flame-core" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
         </svg>
 
         ${showSparks ? `
@@ -954,12 +954,79 @@ const app = {
     `;
   },
 
+  initAnimeFlameAnimation: function() {
+    if (typeof anime === 'undefined') return;
+
+    try {
+      const outerPaths = document.querySelectorAll('.anime-flame-outer');
+      if (outerPaths.length > 0) {
+        anime({
+          targets: outerPaths,
+          d: [
+            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' },
+            { value: 'M46,2 C56,22 84,40 82,70 C80,98 70,122 50,124 C28,122 16,100 18,74 C20,50 36,26 46,2 Z' },
+            { value: 'M54,2 C64,26 80,50 82,74 C84,100 72,122 50,124 C30,122 20,98 18,70 C16,40 44,22 54,2 Z' },
+            { value: 'M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z' }
+          ],
+          easing: 'easeInOutQuad',
+          duration: 2400,
+          loop: true
+        });
+      }
+
+      const innerPaths = document.querySelectorAll('.anime-flame-inner');
+      if (innerPaths.length > 0) {
+        anime({
+          targets: innerPaths,
+          d: [
+            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' },
+            { value: 'M48,18 C54,38 70,54 72,76 C74,98 64,112 50,114 C36,112 26,96 28,72 C30,48 42,34 48,18 Z' },
+            { value: 'M52,18 C58,34 74,48 72,72 C70,96 64,112 50,114 C36,112 26,98 28,76 C30,54 46,38 52,18 Z' },
+            { value: 'M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z' }
+          ],
+          easing: 'easeInOutSine',
+          duration: 1900,
+          loop: true
+        });
+      }
+
+      const corePaths = document.querySelectorAll('.anime-flame-core');
+      if (corePaths.length > 0) {
+        anime({
+          targets: corePaths,
+          scale: [0.85, 1.2],
+          translateY: [2, -2],
+          opacity: [0.8, 1],
+          easing: 'easeInOutQuad',
+          duration: 750,
+          direction: 'alternate',
+          loop: true
+        });
+      }
+    } catch (e) {
+      console.warn('Anime.js flame init error:', e);
+    }
+  },
+
   showStreakCelebration: function() {
     const user = this.data.currentUser;
     if (!user) return;
     const streak = this.data.userProgress.streak || 1;
     const info = this.getStreakLevelInfo(streak);
     this.playSound('pass');
+
+    if (typeof anime !== 'undefined') {
+      const btn = document.querySelector('.streak-frameless-btn');
+      if (btn) {
+        anime({
+          targets: btn,
+          scale: [0.8, 1.3, 1],
+          rotate: [-10, 10, 0],
+          easing: 'spring(1, 80, 10, 0)',
+          duration: 800
+        });
+      }
+    }
 
     this.showCustomAlert({
       title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
@@ -982,6 +1049,10 @@ const app = {
       `,
       btnText: 'Tiếp Tục Bùng Cháy 🔥'
     });
+
+    setTimeout(() => {
+      this.initAnimeFlameAnimation();
+    }, 50);
   },
 
   getStreakLevelInfo: function(streak) {
@@ -1098,6 +1169,7 @@ const app = {
       if (progText) progText.innerText = `${passedCount} / ${total} Đề (${percent}%)`;
       if (progBar) progBar.style.width = `${percent}%`;
 
+      this.initAnimeFlameAnimation();
     } else {
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="key" class="w-3 h-3 text-slate-400"></i> Nhập Key để bắt đầu`;
       if (subBadge) subBadge.classList.add('hidden');
