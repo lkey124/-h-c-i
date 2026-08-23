@@ -353,6 +353,48 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL: HIỂN THỊ KEY MỚI CẤP THÀNH CÔNG (SUCCESS MODAL WITH 1-CLICK COPY) -->
+  <!-- ========================================================================= -->
+  <div id="modal-admin-success" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl relative animate-scale-up text-center">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-950 border border-emerald-700 text-emerald-300 flex items-center justify-center mx-auto shadow-md text-2xl">
+        🎉
+      </div>
+      
+      <div class="space-y-1">
+        <h3 id="success-modal-title" class="font-extrabold text-lg sm:text-xl text-white">Cấp Mã Key Thành Công!</h3>
+        <p class="text-xs text-slate-300">Gửi mã Key dưới đây cho học viên để kích hoạt tài khoản:</p>
+      </div>
+
+      <!-- Key Box -->
+      <div class="p-4 rounded-2xl bg-slate-950 border-2 border-dashed border-emerald-500/60 space-y-2">
+        <div id="success-modal-key" class="text-2xl sm:text-3xl font-black font-mono text-cyan-300 tracking-wider select-all">
+          B1-VIP-XXXX
+        </div>
+        <button type="button" onclick="adminApp.copySuccessModalKey()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-1.5 transition-all">
+          <i data-lucide="copy" class="w-4 h-4"></i> Sao Chép Mã Key Này
+        </button>
+      </div>
+
+      <!-- Info Details -->
+      <div class="grid grid-cols-2 gap-2 text-left text-xs bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+        <div>
+          <span class="text-slate-400">Học viên:</span>
+          <div id="success-modal-name" class="font-bold text-white truncate">Chưa Kích Hoạt</div>
+        </div>
+        <div>
+          <span class="text-slate-400">Gói thời hạn:</span>
+          <div id="success-modal-pkg" class="font-bold text-cyan-300">Gói 3 Tháng</div>
+        </div>
+      </div>
+
+      <button type="button" onclick="adminApp.closeSuccessModal()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm border border-slate-700 transition-all">
+        Đóng Cửa Sổ
+      </button>
+    </div>
+  </div>
+
   <script>
     const adminApp = {
       users: [],
@@ -652,31 +694,70 @@
 
       generateRandomKey: function() {
         const rand = Math.floor(1000 + Math.random() * 9000);
-        const randChars = Math.random().toString(36).substring(2, 5).toUpperCase();
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        let randChars = '';
+        for (let i = 0; i < 3; i++) {
+          randChars += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
         const key = `B1-${randChars}${rand}`;
         const input = document.getElementById('inp-student-key');
         if (input) input.value = key;
+        return key;
+      },
+
+      showSuccessModal: function(data) {
+        const modal = document.getElementById('modal-admin-success');
+        const titleEl = document.getElementById('success-modal-title');
+        const keyEl = document.getElementById('success-modal-key');
+        const nameEl = document.getElementById('success-modal-name');
+        const pkgEl = document.getElementById('success-modal-pkg');
+
+        if (titleEl) titleEl.innerText = data.title || 'Cấp Mã Key Thành Công!';
+        if (keyEl) keyEl.innerText = data.key;
+        if (nameEl) nameEl.innerText = data.name;
+        if (pkgEl) pkgEl.innerText = `${data.package} (Còn ${data.days} ngày)`;
+
+        this.currentCreatedKey = data.key;
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+        if (window.lucide) lucide.createIcons();
+      },
+
+      closeSuccessModal: function() {
+        const modal = document.getElementById('modal-admin-success');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+      },
+
+      copySuccessModalKey: function() {
+        const key = this.currentCreatedKey;
+        if (!key) return;
+        this.copyKey(key);
       },
 
       handleCreateKeyUser: async function(e) {
-        e.preventDefault();
-        const rawName = document.getElementById('inp-student-name').value.trim();
+        if (e) e.preventDefault();
+        const rawName = (document.getElementById('inp-student-name')?.value || '').trim();
         const name = rawName || 'Chưa Kích Hoạt';
-        const key = document.getElementById('inp-student-key').value.trim().toUpperCase();
-        const duration = document.getElementById('inp-student-duration').value;
+        let key = (document.getElementById('inp-student-key')?.value || '').trim().toUpperCase();
+        const duration = document.getElementById('inp-student-duration')?.value || '3m';
 
+        // Auto-generate if empty
         if (!key) {
-          alert('⚠️ Vui lòng nhập hoặc tự sinh mã Key!');
-          return;
+          key = this.generateRandomKey();
         }
 
-        const exists = this.users.find(u => this.normalizeKey(u.key) === this.normalizeKey(key));
-        if (exists) {
-          alert('⚠️ Mã Key này đã tồn tại! Vui lòng chọn hoặc tự sinh mã Key khác.');
-          return;
+        // If key exists, generate a fresh unique key
+        let exists = this.users.find(u => this.normalizeKey(u.key) === this.normalizeKey(key));
+        while (exists) {
+          key = this.generateRandomKey();
+          exists = this.users.find(u => this.normalizeKey(u.key) === this.normalizeKey(key));
         }
 
-        // Un-blacklist this key if it was deleted before
         this.removeDeletedKey(key);
 
         let daysToAdd = 90;
@@ -688,10 +769,10 @@
           const customInp = document.getElementById('inp-custom-days');
           const parsed = parseInt(customInp?.value, 10);
           if (isNaN(parsed) || parsed <= 0) {
-            alert('⚠️ Vui lòng nhập số ngày hợp lệ (lớn hơn 0)!');
-            return;
+            daysToAdd = 30;
+          } else {
+            daysToAdd = parsed;
           }
-          daysToAdd = parsed;
         }
 
         const pkgName = this.getDynamicPackageName(daysToAdd);
@@ -709,16 +790,34 @@
           status: 'ACTIVE'
         };
 
+        // Instant local update
         this.users.unshift(newUser);
-        await this.saveUsers();
+        localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
+        this.renderUserTable();
 
-        document.getElementById('inp-student-name').value = '';
+        // Clear input & auto generate next key
+        const nameInput = document.getElementById('inp-student-name');
+        if (nameInput) nameInput.value = '';
         const customInp = document.getElementById('inp-custom-days');
         if (customInp) customInp.value = '';
         this.generateRandomKey();
 
-        const displayName = rawName ? `cho học viên ${rawName}` : `mới (Chờ học viên tự đặt tên khi kích hoạt)`;
-        alert(`✅ Cấp Key thành công ${displayName}!\n\n• Tên hiển thị: ${name}\n• Mã Key: ${key}\n• Thời hạn: ${pkgName} (Còn ${daysToAdd} ngày - Hạn đến ${expiryDate.toLocaleDateString('vi-VN')})\n\nMã Key đã được lưu và đồng bộ lên Cloud!`);
+        // Async cloud sync
+        fetch('/api/keys', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.users)
+        }).catch(err => console.warn('Cloud sync error:', err));
+
+        // Show sleek custom modal
+        this.showSuccessModal({
+          title: '🎉 CẤP MÃ KEY THÀNH CÔNG!',
+          key: key,
+          name: name,
+          package: pkgName,
+          days: daysToAdd,
+          expiry: expiryDate
+        });
       },
 
       copyKey: function(key) {
