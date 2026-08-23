@@ -698,74 +698,127 @@ const app = {
   },
 
   syncKeysFromCloud: async function() {
-    const urls = ['/api/keys', '/data/users_cloud_db.json', 'data/users_cloud_db.json'];
+    let localUsers = [];
+    try {
+      const saved = localStorage.getItem('eduquest_b1_all_users');
+      if (saved) localUsers = JSON.parse(saved);
+    } catch (e) {
+      localUsers = [];
+    }
+
+    let cloudData = null;
+    const urls = ['/api/keys', '/data/users_cloud_db.json'];
     for (const url of urls) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url + '?t=' + Date.now());
         if (response.ok) {
-          const cloudData = await response.json();
-          if (Array.isArray(cloudData) && cloudData.length > 0) {
-            // Live Cloud state is authoritative
-            this.data.users = cloudData;
-            localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cloudData));
-
-            // Verify logged in user
-            if (this.data.currentUser) {
-              const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
-              if (!liveUser) {
-                console.warn('Key was removed by Admin. Logging out.');
-                this.data.currentUser = null;
-                localStorage.removeItem('eduquest_b1_logged_user');
-                this.renderRoadmap();
-                this.updateUserStatsDisplay();
-                return;
-              }
-
-              // Check if account has been locked by Admin!
-              if (liveUser.status !== 'ACTIVE') {
-                console.warn('Account has been locked by Admin. Logging out.');
-                this.data.currentUser = null;
-                localStorage.removeItem('eduquest_b1_logged_user');
-                this.renderRoadmap();
-                this.updateUserStatsDisplay();
-                this.showCustomAlert({
-                  title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
-                  message: 'Mã Key của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
-                  icon: '🔒',
-                  iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
-                  btnText: 'Đã Hiểu'
-                });
-                return;
-              }
-
-              // Check if Admin extended the duration!
-              const oldExp = new Date(this.data.currentUser.expiresAt).getTime();
-              const newExp = new Date(liveUser.expiresAt).getTime();
-              if (newExp > oldExp) {
-                const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
-                const remaining = this.getRemainingDays(liveUser.expiresAt);
-                const dynamicPkg = this.getDynamicPackageName(remaining);
-                this.data.currentUser = liveUser;
-                localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
-                this.renderRoadmap();
-                this.updateUserStatsDisplay();
-
-                this.showCustomAlert({
-                  title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
-                  message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
-                  icon: '🎁',
-                  iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
-                  btnText: 'Tuyệt Vời, Tiếp Tục Học'
-                });
-              } else {
-                this.data.currentUser = liveUser;
-                localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
-              }
-            }
-            return;
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            cloudData = data;
+            break;
           }
         }
       } catch (e) {}
+    }
+
+    // Smart Bi-directional Merge: Combine cloud and local keys safely
+    const keyMap = new Map();
+
+    // 1. Add cloud users first
+    if (Array.isArray(cloudData)) {
+      cloudData.forEach(u => {
+        const k = this.normalizeKey(u.key || u.id);
+        if (k) keyMap.set(k, u);
+      });
+    }
+
+    // 2. Add local users (LOCAL KEYS ARE NEVER WIPED BY OLD CLOUD DATA!)
+    if (Array.isArray(localUsers)) {
+      localUsers.forEach(u => {
+        const k = this.normalizeKey(u.key || u.id);
+        if (k) {
+          if (keyMap.has(k)) {
+            // Keep the most up-to-date name & progress
+            const existing = keyMap.get(k);
+            if (u.name && u.name !== 'Chưa Kích Hoạt' && (!existing.name || existing.name === 'Chưa Kích Hoạt')) {
+              existing.name = u.name;
+            }
+          } else {
+            keyMap.set(k, u);
+          }
+        }
+      });
+    }
+
+    const merged = Array.from(keyMap.values());
+    if (merged.length > 0) {
+      this.data.users = merged;
+      localStorage.setItem('eduquest_b1_all_users', JSON.stringify(merged));
+
+      // If local had keys missing from cloud, push merged back to cloud
+      if (cloudData && merged.length > cloudData.length) {
+        try {
+          fetch('/api/keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+          });
+        } catch(e) {}
+      }
+    }
+
+    // Verify logged in user
+    if (this.data.currentUser) {
+      const liveUser = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
+      if (!liveUser) {
+        console.warn('Key was removed by Admin. Logging out.');
+        this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_logged_user');
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        return;
+      }
+
+      // Check if account has been locked by Admin!
+      if (liveUser.status !== 'ACTIVE') {
+        console.warn('Account has been locked by Admin. Logging out.');
+        this.data.currentUser = null;
+        localStorage.removeItem('eduquest_b1_logged_user');
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+        this.showCustomAlert({
+          title: 'TÀI KHOẢN ĐÃ BỊ KHÓA',
+          message: 'Mã Key của bạn đã bị tạm khóa bởi Quản trị viên. Vui lòng liên hệ Admin tại binhluu.ai.studio.',
+          icon: '🔒',
+          iconBg: 'bg-rose-950/80 border border-rose-600/60 text-rose-400',
+          btnText: 'Đã Hiểu'
+        });
+        return;
+      }
+
+      // Check if Admin extended the duration!
+      const oldExp = new Date(this.data.currentUser.expiresAt).getTime();
+      const newExp = new Date(liveUser.expiresAt).getTime();
+      if (newExp > oldExp) {
+        const addedDays = Math.round((newExp - oldExp) / (1000 * 60 * 60 * 24));
+        const remaining = this.getRemainingDays(liveUser.expiresAt);
+        const dynamicPkg = this.getDynamicPackageName(remaining);
+        this.data.currentUser = liveUser;
+        localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
+        this.renderRoadmap();
+        this.updateUserStatsDisplay();
+
+        this.showCustomAlert({
+          title: '🎉 TÀI KHOẢN ĐƯỢC GIA HẠN!',
+          message: `Quản trị viên vừa cộng thêm <strong>+${addedDays} ngày học</strong> cho bạn!<br><br>• Thời hạn mới: <strong>${dynamicPkg} (Còn ${remaining} ngày)</strong>.<br>Chúc bạn ôn luyện và thi đạt kết quả tốt nhất!`,
+          icon: '🎁',
+          iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400',
+          btnText: 'Tuyệt Vời, Tiếp Tục Học'
+        });
+      } else {
+        this.data.currentUser = liveUser;
+        localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(liveUser));
+      }
     }
   },
 

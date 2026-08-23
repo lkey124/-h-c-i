@@ -790,32 +790,64 @@
 
       syncFromCloud: async function() {
         const deletedKeys = this.getDeletedKeys();
-        const urls = ['/api/keys', '/data/users_cloud_db.json', 'data/users_cloud_db.json'];
+        let cloudData = null;
+        const urls = ['/api/keys', '/data/users_cloud_db.json'];
         for (const url of urls) {
           try {
-            const response = await fetch(url);
+            const response = await fetch(url + '?t=' + Date.now());
             if (response.ok) {
               const data = await response.json();
-              if (Array.isArray(data)) {
-                // Filter out any key that was deleted by admin!
-                const cleanCloud = data.filter(u => !deletedKeys.includes(this.normalizeKey(u.key)) && !deletedKeys.includes(this.normalizeKey(u.id)));
-                
-                // If local storage has keys, keep local as authoritative; otherwise adopt cloud
-                if (!localStorage.getItem('eduquest_b1_all_users')) {
-                  this.users = cleanCloud;
-                  localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cleanCloud));
-                } else {
-                  // Merge local with cloud while strictly respecting deleted keys
-                  const local = this.users.filter(u => !deletedKeys.includes(this.normalizeKey(u.key)));
-                  this.users = local;
-                  localStorage.setItem('eduquest_b1_all_users', JSON.stringify(local));
-                }
-                this.renderUserTable();
-                return;
+              if (Array.isArray(data) && data.length > 0) {
+                cloudData = data;
+                break;
               }
             }
           } catch (e) {}
         }
+
+        // Smart Merge
+        const keyMap = new Map();
+
+        // 1. Add cloud users (filtering out deleted keys)
+        if (Array.isArray(cloudData)) {
+          cloudData.forEach(u => {
+            const k = this.normalizeKey(u.key || u.id);
+            if (k && !deletedKeys.includes(k) && !deletedKeys.includes(this.normalizeKey(u.id))) {
+              keyMap.set(k, u);
+            }
+          });
+        }
+
+        // 2. Add local users (LOCAL KEYS CREATED BY ADMIN ARE NEVER ERASED!)
+        if (Array.isArray(this.users)) {
+          this.users.forEach(u => {
+            const k = this.normalizeKey(u.key || u.id);
+            if (k && !deletedKeys.includes(k) && !deletedKeys.includes(this.normalizeKey(u.id))) {
+              if (keyMap.has(k)) {
+                const existing = keyMap.get(k);
+                if (u.name && u.name !== 'Chưa Kích Hoạt' && (!existing.name || existing.name === 'Chưa Kích Hoạt')) {
+                  existing.name = u.name;
+                }
+              } else {
+                keyMap.set(k, u);
+              }
+            }
+          });
+        }
+
+        const merged = Array.from(keyMap.values());
+        this.users = merged;
+        localStorage.setItem('eduquest_b1_all_users', JSON.stringify(merged));
+        this.renderUserTable();
+
+        // Push merged state back to cloud server
+        try {
+          fetch('/api/keys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(merged)
+          });
+        } catch(e) {}
       },
 
       handleDurationSelectChange: function(val) {
