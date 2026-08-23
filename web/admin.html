@@ -509,6 +509,38 @@
         alert('🎉 Đã lưu và đồng bộ Banner Thông Báo & Màu Sắc thành công!\nTrang chủ học viên sẽ cập nhật ngay.');
       },
 
+      normalizeKey: function(str) {
+        if (!str) return '';
+        return str.toString().trim().toUpperCase().replace(/[\s\-_–—]/g, '').replace(/O/g, '0');
+      },
+
+      getDeletedKeys: function() {
+        try {
+          const saved = localStorage.getItem('eduquest_b1_deleted_keys');
+          return saved ? JSON.parse(saved) : [];
+        } catch(e) {
+          return [];
+        }
+      },
+
+      addDeletedKey: function(key) {
+        const norm = this.normalizeKey(key);
+        if (!norm) return;
+        const list = this.getDeletedKeys();
+        if (!list.includes(norm)) {
+          list.push(norm);
+          localStorage.setItem('eduquest_b1_deleted_keys', JSON.stringify(list));
+        }
+      },
+
+      removeDeletedKey: function(key) {
+        const norm = this.normalizeKey(key);
+        if (!norm) return;
+        let list = this.getDeletedKeys();
+        list = list.filter(k => k !== norm);
+        localStorage.setItem('eduquest_b1_deleted_keys', JSON.stringify(list));
+      },
+
       loadUsersLocal: async function() {
         try {
           const saved = localStorage.getItem('eduquest_b1_all_users');
@@ -534,15 +566,27 @@
       },
 
       syncFromCloud: async function() {
+        const deletedKeys = this.getDeletedKeys();
         const urls = ['/api/keys', '/data/users_cloud_db.json', 'data/users_cloud_db.json'];
         for (const url of urls) {
           try {
             const response = await fetch(url);
             if (response.ok) {
               const data = await response.json();
-              if (Array.isArray(data) && data.length > 0) {
-                this.users = data;
-                localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.users));
+              if (Array.isArray(data)) {
+                // Filter out any key that was deleted by admin!
+                const cleanCloud = data.filter(u => !deletedKeys.includes(this.normalizeKey(u.key)) && !deletedKeys.includes(this.normalizeKey(u.id)));
+                
+                // If local storage has keys, keep local as authoritative; otherwise adopt cloud
+                if (!localStorage.getItem('eduquest_b1_all_users')) {
+                  this.users = cleanCloud;
+                  localStorage.setItem('eduquest_b1_all_users', JSON.stringify(cleanCloud));
+                } else {
+                  // Merge local with cloud while strictly respecting deleted keys
+                  const local = this.users.filter(u => !deletedKeys.includes(this.normalizeKey(u.key)));
+                  this.users = local;
+                  localStorage.setItem('eduquest_b1_all_users', JSON.stringify(local));
+                }
                 this.renderUserTable();
                 return;
               }
@@ -567,11 +611,14 @@
 
         if (!name || !key) return;
 
-        const exists = this.users.find(u => (u.key || '').toUpperCase() === key);
+        const exists = this.users.find(u => this.normalizeKey(u.key) === this.normalizeKey(key));
         if (exists) {
           alert('⚠️ Mã Key này đã tồn tại! Vui lòng chọn hoặc tự sinh mã Key khác.');
           return;
         }
+
+        // Un-blacklist this key if it was deleted before
+        this.removeDeletedKey(key);
 
         let daysToAdd = 90;
         let pkgName = 'Gói 3 Tháng';
@@ -589,6 +636,7 @@
           package: pkgName,
           createdAt: new Date().toISOString(),
           expiresAt: expiryDate.toISOString(),
+          streak: 1,
           status: 'ACTIVE'
         };
 
@@ -642,8 +690,23 @@
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
         if (confirm(`Bạn có chắc chắn muốn xóa học viên ${user.name} (Key: ${user.key})?`)) {
+          this.addDeletedKey(user.key);
+          this.addDeletedKey(user.id);
           this.users = this.users.filter(u => u.id !== userId);
           await this.saveUsers();
+          alert(`🗑️ Đã xóa vĩnh viễn học viên ${user.name} (Key: ${user.key})!`);
+        }
+      },
+
+      clearAllData: async function() {
+        if (confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách key học viên?')) {
+          this.users.forEach(u => {
+            this.addDeletedKey(u.key);
+            this.addDeletedKey(u.id);
+          });
+          this.users = [];
+          await this.saveUsers();
+          alert('✅ Đã dọn sạch 100% toàn bộ dữ liệu key!');
         }
       },
 
