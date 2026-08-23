@@ -434,12 +434,81 @@ const app = {
   // INITIALIZATION
   // -------------------------------------------------------------
   init: async function() {
+    this.renderAnnouncementBanner();
     this.loadUsersFromStorage();
     this.loadActiveUserSession();
     await this.syncKeysFromCloud();
     await this.loadExamsDataset();
     this.renderRoadmap();
     this.updateUserStatsDisplay();
+    this.initIcons();
+  },
+
+  renderAnnouncementBanner: function() {
+    const bannerEl = document.getElementById('dynamic-announcement-banner');
+    const badgeEl = document.getElementById('banner-badge');
+    const badgeTextEl = document.getElementById('banner-badge-text');
+    const marqueeEl = document.getElementById('banner-marquee');
+    const linkBtn = document.getElementById('banner-link-btn');
+    const linkTextEl = document.getElementById('banner-link-text');
+
+    if (!bannerEl) return;
+
+    let config = {
+      enabled: true,
+      text: '🔥 Ưu đãi giảm 30% khi mua Key Bản Quyền tại binhluu.ai.studio • Chúc các bạn học viên vượt ải B1 thành công!',
+      badge: 'THÔNG BÁO',
+      link: 'https://binhluu.ai.studio/',
+      btnText: 'Xem Ngay',
+      bgColor: '#0f172a',
+      borderColor: '#06b6d4',
+      textColor: '#f8fafc',
+      badgeColor: '#0891b2'
+    };
+
+    try {
+      const saved = localStorage.getItem('eduquest_b1_banner_config');
+      if (saved) {
+        config = { ...config, ...JSON.parse(saved) };
+      }
+    } catch (e) {}
+
+    if (!config.enabled) {
+      bannerEl.style.display = 'none';
+      return;
+    }
+
+    bannerEl.style.display = 'block';
+    bannerEl.style.backgroundColor = config.bgColor || '#0f172a';
+    bannerEl.style.borderColor = config.borderColor || '#06b6d4';
+    bannerEl.style.color = config.textColor || '#f8fafc';
+
+    if (badgeEl) {
+      badgeEl.style.backgroundColor = config.badgeColor || '#0891b2';
+      badgeEl.style.borderColor = config.borderColor || '#06b6d4';
+      badgeEl.style.color = config.textColor || '#f8fafc';
+    }
+    if (badgeTextEl) badgeTextEl.innerText = config.badge || 'THÔNG BÁO';
+
+    if (marqueeEl) {
+      const repeatCount = 4;
+      const textItem = `<span class="banner-text-item mx-6">${config.text}</span>`;
+      marqueeEl.innerHTML = textItem.repeat(repeatCount);
+      marqueeEl.style.color = config.textColor || '#f8fafc';
+    }
+
+    if (linkBtn) {
+      if (config.link) {
+        linkBtn.href = config.link;
+        linkBtn.style.display = 'inline-flex';
+        linkBtn.style.backgroundColor = config.badgeColor || '#0891b2';
+        linkBtn.style.color = config.textColor || '#f8fafc';
+        if (linkTextEl) linkTextEl.innerText = config.btnText || 'Xem Ngay';
+      } else {
+        linkBtn.style.display = 'none';
+      }
+    }
+
     this.initIcons();
   },
 
