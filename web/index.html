@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Bình Lưu - Luyện Đề B1 Vượt Ải</title>
+  <!-- PWA Web App Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Luyện Đề B1">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/icons/favicon-64.png">
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -104,9 +113,14 @@
       <!-- High Contrast Hero Banner -->
       <div class="rounded-3xl bg-slate-900 border border-indigo-700/60 p-4 sm:p-7 shadow-xl space-y-3 sm:space-y-4">
         <div class="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-cyan-950/80 text-cyan-300 border border-cyan-800 text-[11px] sm:text-xs font-bold shrink-0">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-cyan-400"></i> Vượt Ải ≥ 50% Điểm
-          </span>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-cyan-950/80 text-cyan-300 border border-cyan-800 text-[11px] sm:text-xs font-bold shrink-0">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-cyan-400"></i> Vượt Ải ≥ 50% Điểm
+            </span>
+            <button onclick="app.triggerPWAInstall()" id="btn-pwa-install-hero" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white text-[11px] sm:text-xs font-black shadow-md shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer" title="Cài đặt App vào màn hình chính điện thoại">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-cyan-200"></i> Cài App
+            </button>
+          </div>
           <span id="hero-user-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-950/80 text-indigo-200 border border-indigo-700/80 text-[11px] sm:text-xs font-bold shrink-0">
             <i data-lucide="key" class="w-3.5 h-3.5 text-slate-400"></i> Nhập Key để bắt đầu
           </span>
@@ -371,6 +385,48 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: HƯỚNG DẪN CÀI ĐẶT APP CHO IPHONE / IPAD (IOS SAFARI) -->
+  <!-- ========================================================================= -->
+  <div id="modal-ios-install-guide" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-cyan-500/80 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative animate-scale-up text-center">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center mx-auto shadow-md text-2xl text-white font-bold">
+        📱
+      </div>
+      <div class="space-y-1">
+        <h3 class="font-extrabold text-lg text-white">Cài Đặt App Vào Màn Hình</h3>
+        <p class="text-xs text-slate-300">Thực hiện 2 bước đơn giản trên Safari:</p>
+      </div>
+      
+      <div class="space-y-2.5 text-left text-xs bg-slate-950 p-4 rounded-2xl border border-slate-800">
+        <div class="flex items-start gap-2.5">
+          <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">1</div>
+          <p class="text-slate-200">Bấm vào biểu tượng <strong>Chia sẻ <span class="text-cyan-300">📤 (Share)</span></strong> ở thanh dưới cùng của trình duyệt Safari.</p>
+        </div>
+        <div class="flex items-start gap-2.5">
+          <div class="w-6 h-6 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold shrink-0">2</div>
+          <p class="text-slate-200">Cuộn xuống và chọn <strong>"Thêm vào MH chính" <span class="text-cyan-300">➕ (Add to Home Screen)</span></strong>.</p>
+        </div>
+      </div>
+
+      <button onclick="app.closeIOSInstallGuide()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/20 transition-all">
+        Đã Hiểu, Tôi Sẽ Thêm Ngay
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOATING PWA INSTALL BAR ON MOBILE -->
+  <div id="pwa-floating-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[92%] hidden items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl bg-slate-900/95 border border-cyan-500/80 shadow-2xl backdrop-blur-md animate-bounce-subtle sm:hidden">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center text-white font-bold text-xs shrink-0">🎓</div>
+      <span class="text-[11px] font-bold text-white whitespace-nowrap">Mở App mượt hơn</span>
+    </div>
+    <button onclick="app.triggerPWAInstall()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-black text-[11px] shadow-md flex items-center gap-1 shrink-0">
+      <i data-lucide="download" class="w-3 h-3 text-cyan-200"></i> Cài App
+    </button>
+    <button onclick="app.dismissPWABar()" class="text-slate-400 hover:text-white p-1 text-xs shrink-0" title="Đóng">✕</button>
   </div>
 
   <!-- FOOTER -->

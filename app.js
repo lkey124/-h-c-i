@@ -461,6 +461,7 @@ const app = {
   // INITIALIZATION
   // -------------------------------------------------------------
   init: async function() {
+    this.initPWA();
     this.renderAnnouncementBanner();
     this.loadUsersFromStorage();
     this.loadActiveUserSession();
@@ -602,6 +603,86 @@ const app = {
     if (window.lucide) {
       lucide.createIcons();
     }
+  },
+
+  deferredPWAEvent: null,
+
+  initPWA: function() {
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW register:', err));
+      });
+    }
+
+    // 2. Android / Chrome Install Prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPWAEvent = e;
+      const floatBar = document.getElementById('pwa-floating-bar');
+      if (floatBar && !localStorage.getItem('eduquest_b1_pwa_dismissed')) {
+        floatBar.classList.remove('hidden');
+        floatBar.classList.add('flex');
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      this.deferredPWAEvent = null;
+      const floatBar = document.getElementById('pwa-floating-bar');
+      const heroBtn = document.getElementById('btn-pwa-install-hero');
+      if (floatBar) floatBar.classList.add('hidden');
+      if (heroBtn) heroBtn.classList.add('hidden');
+      this.showCustomAlert({
+        title: '🎉 CÀI ĐẶT APP THÀNH CÔNG!',
+        message: 'Ứng dụng <strong>Luyện Đề B1</strong> đã được thêm vào màn hình chính của bạn.<br>Từ giờ bạn có thể chạm icon trên màn hình để mở học ngay!',
+        icon: '📱'
+      });
+    });
+
+    // Check standalone mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      const floatBar = document.getElementById('pwa-floating-bar');
+      const heroBtn = document.getElementById('btn-pwa-install-hero');
+      if (floatBar) floatBar.classList.add('hidden');
+      if (heroBtn) heroBtn.classList.add('hidden');
+    }
+  },
+
+  triggerPWAInstall: function() {
+    this.playSound('click');
+    if (this.deferredPWAEvent) {
+      this.deferredPWAEvent.prompt();
+      this.deferredPWAEvent.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          this.deferredPWAEvent = null;
+        }
+      });
+    } else {
+      // iOS Safari or other browsers -> Show visual step-by-step guide
+      const modal = document.getElementById('modal-ios-install-guide');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+  },
+
+  closeIOSInstallGuide: function() {
+    const modal = document.getElementById('modal-ios-install-guide');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  dismissPWABar: function() {
+    const floatBar = document.getElementById('pwa-floating-bar');
+    if (floatBar) {
+      floatBar.classList.add('hidden');
+      floatBar.classList.remove('flex');
+    }
+    localStorage.setItem('eduquest_b1_pwa_dismissed', 'true');
   },
 
   // -------------------------------------------------------------

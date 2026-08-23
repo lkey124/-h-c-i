@@ -1,0 +1,34 @@
+{
+  "name": "Bình Lưu - Luyện Đề B1 Vượt Ải",
+  "short_name": "Luyện Đề B1",
+  "description": "Nền tảng luyện 50 bộ đề thi tiếng Anh B1 chuẩn quốc tế với hệ thống xáo trộn đề và tính năng chuỗi học tập.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": [
+    "education",
+    "productivity"
+  ]
+}
