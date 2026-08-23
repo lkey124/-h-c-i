@@ -214,6 +214,137 @@ body {
   animation-play-state: paused;
 }
 
+/* ============================================================= */
+/* TIKTOK STREAK FIRE ENGINE (MULTI-LAYER FLAMES & SPARKS) */
+/* ============================================================= */
+@keyframes tiktokFlameDance {
+  0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 6px var(--flame-glow)); }
+  25% { transform: scale(1.12, 1.2) rotate(4deg) skewX(-3deg); }
+  50% { transform: scale(0.94, 0.96) rotate(-4deg); filter: drop-shadow(0 0 18px var(--flame-glow)); }
+  75% { transform: scale(1.08, 1.15) rotate(3deg) skewX(3deg); }
+  100% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 6px var(--flame-glow)); }
+}
+
+@keyframes tiktokCorePulse {
+  0% { transform: scale(0.85) translateY(0); opacity: 0.8; }
+  50% { transform: scale(1.25) translateY(-3px); opacity: 1; filter: drop-shadow(0 0 10px #ffffff); }
+  100% { transform: scale(0.85) translateY(0); opacity: 0.8; }
+}
+
+@keyframes sparkFly1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-10px, -30px) scale(0); opacity: 0; }
+}
+@keyframes sparkFly2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(10px, -34px) scale(0); opacity: 0; }
+}
+@keyframes sparkFly3 {
+  0% { transform: translate(0, 0) scale(0.8); opacity: 1; }
+  100% { transform: translate(0px, -24px) scale(0); opacity: 0; }
+}
+
+.tiktok-flame-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.tiktok-flame-outer {
+  animation: tiktokFlameDance 1s infinite ease-in-out;
+  transform-origin: bottom center;
+}
+
+.tiktok-flame-core {
+  position: absolute;
+  bottom: 8%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  animation: tiktokCorePulse 0.7s infinite ease-in-out;
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+.tiktok-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.spark-1 {
+  top: 10%;
+  left: 15%;
+  background: #ffedd5;
+  box-shadow: 0 0 8px #f97316;
+  animation: sparkFly1 0.9s infinite ease-out;
+}
+
+.spark-2 {
+  top: 15%;
+  right: 15%;
+  background: #fef08a;
+  box-shadow: 0 0 8px #ef4444;
+  animation: sparkFly2 1.2s infinite ease-out 0.3s;
+}
+
+.spark-3 {
+  top: 5%;
+  left: 45%;
+  background: #ffffff;
+  box-shadow: 0 0 8px #fbbf24;
+  animation: sparkFly3 0.8s infinite ease-out 0.15s;
+}
+
+/* 5 TIKTOK STREAK AURA TIERS */
+.streak-aura-lv1 {
+  --flame-glow: rgba(245, 158, 11, 0.7);
+  background: linear-gradient(135deg, #451a03 0%, #1e1b4b 100%);
+  border: 1.5px solid #d97706;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.4);
+}
+
+.streak-aura-lv2 {
+  --flame-glow: rgba(249, 115, 22, 0.85);
+  background: linear-gradient(135deg, #7c2d12 0%, #431407 100%);
+  border: 1.5px solid #ea580c;
+  box-shadow: 0 0 15px rgba(234, 88, 12, 0.6);
+}
+
+.streak-aura-lv3 {
+  --flame-glow: rgba(244, 63, 94, 1);
+  background: linear-gradient(135deg, #881337 0%, #4c0519 40%, #991b1b 100%);
+  border: 2px solid #f43f5e;
+  box-shadow: 0 0 22px rgba(244, 63, 94, 0.9), inset 0 0 10px rgba(225, 29, 72, 0.6);
+  animation: pulseFireGlow 1.2s infinite alternate ease-in-out;
+}
+
+.streak-aura-lv4 {
+  --flame-glow: rgba(168, 85, 247, 1);
+  background: linear-gradient(135deg, #3b0764 0%, #581c87 50%, #1e1b4b 100%);
+  border: 2px solid #c084fc;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.95), inset 0 0 12px rgba(147, 51, 234, 0.6);
+  animation: pulseFireGlow 1.2s infinite alternate ease-in-out;
+}
+
+.streak-aura-lv5 {
+  --flame-glow: rgba(250, 204, 21, 1);
+  background: linear-gradient(135deg, #ca8a04 0%, #eab308 50%, #fef08a 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 30px rgba(234, 179, 8, 1), inset 0 0 15px rgba(254, 240, 138, 0.9);
+  color: #1e1b4b !important;
+  animation: pulseFireGlow 0.9s infinite alternate ease-in-out;
+}
+
+@keyframes pulseFireGlow {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.03); filter: brightness(1.2); }
+}
+
 /* Mobile Inputs: Prevent auto zoom on iOS */
 input, textarea, select {
   font-size: 16px !important;

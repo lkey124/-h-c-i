@@ -861,6 +861,104 @@ const app = {
     }
   },
 
+  renderTikTokFlameHTML: function(level, size = 18) {
+    let outerColor = '#f59e0b';
+    let coreColor = '#ffffff';
+    let showSparks = true;
+
+    if (level === 5) {
+      outerColor = 'url(#grad-flame-lv5)';
+      coreColor = '#ffffff';
+    } else if (level === 4) {
+      outerColor = 'url(#grad-flame-lv4)';
+      coreColor = '#f3e8ff';
+    } else if (level === 3) {
+      outerColor = 'url(#grad-flame-lv3)';
+      coreColor = '#ffedd5';
+    } else if (level === 2) {
+      outerColor = 'url(#grad-flame-lv2)';
+      coreColor = '#fef08a';
+    } else {
+      outerColor = 'url(#grad-flame-lv1)';
+      coreColor = '#ffffff';
+      showSparks = false;
+    }
+
+    return `
+      <span class="tiktok-flame-wrapper" style="width: ${size}px; height: ${size}px;">
+        <svg viewBox="0 0 24 24" class="tiktok-flame-outer" style="width: ${size}px; height: ${size}px;">
+          <defs>
+            <linearGradient id="grad-flame-lv1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#b45309"/>
+              <stop offset="60%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="grad-flame-lv2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#c2410c"/>
+              <stop offset="60%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="grad-flame-lv3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="40%" stop-color="#e11d48"/>
+              <stop offset="80%" stop-color="#f43f5e"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="grad-flame-lv4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#581c87"/>
+              <stop offset="50%" stop-color="#9333ea"/>
+              <stop offset="100%" stop-color="#f472b6"/>
+            </linearGradient>
+            <linearGradient id="grad-flame-lv5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#854d0e"/>
+              <stop offset="50%" stop-color="#eab308"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+          <path fill="${outerColor}" d="M12 2c.5 2.5 2 4.5 4 6 2.5 2 4 4.5 4 8 0 4.4-3.6 8-8 8s-8-3.6-8-8c0-3.5 1.5-6 4-8 2-1.5 3.5-3.5 4-6z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" class="tiktok-flame-core">
+          <path fill="${coreColor}" d="M12 9c.3 1.5 1.2 2.5 2.5 3.5 1.5 1 2.5 2.5 2.5 4.5 0 2.8-2.2 5-5 5s-5-2.2-5-5c0-2 1-3.5 2.5-4.5 1.3-1 2.2-2 2.5-3.5z"/>
+        </svg>
+        ${showSparks ? `
+          <span class="tiktok-spark spark-1"></span>
+          <span class="tiktok-spark spark-2"></span>
+          <span class="tiktok-spark spark-3"></span>
+        ` : ''}
+      </span>
+    `;
+  },
+
+  showStreakCelebration: function() {
+    const user = this.data.currentUser;
+    if (!user) return;
+    const streak = this.data.userProgress.streak || 1;
+    const info = this.getStreakLevelInfo(streak);
+    this.playSound('pass');
+
+    this.showCustomAlert({
+      title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
+      message: `
+        <div class="text-center py-2 space-y-3">
+          <div class="inline-block p-4 rounded-3xl ${info.badgeClass} shadow-xl scale-125 my-2">
+            ${this.renderTikTokFlameHTML(info.level, 48)}
+          </div>
+          <div class="font-extrabold text-base text-white">Danh Hiệu: <span class="text-amber-400">Level ${info.level} - ${info.title}</span></div>
+          <p class="text-xs text-slate-300">
+            ${
+              info.level >= 3
+                ? '🔥🔥 Ngọn lửa đang bùng cháy cực đại! Hãy duy trì chuỗi học mỗi ngày để đạt mốc 30 ngày mở khóa danh hiệu Huyền Thoại B1!'
+                : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa tiến hóa lên cấp độ cao hơn!'
+            }
+          </p>
+        </div>
+      `,
+      icon: info.icon,
+      iconBg: info.badgeClass,
+      btnText: 'Tiếp Tục Bùng Cháy 🔥'
+    });
+  },
+
   getStreakLevelInfo: function(streak) {
     const days = Math.max(1, parseInt(streak, 10) || 1);
     if (days >= 30) {
@@ -868,8 +966,7 @@ const app = {
         level: 5,
         title: 'Huyền Thoại',
         icon: '👑',
-        flameClass: 'text-yellow-950 fill-yellow-950 animate-bounce',
-        badgeClass: 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 border border-yellow-200 text-black font-black shadow-lg shadow-amber-500/60 animate-pulse',
+        badgeClass: 'streak-aura-lv5 font-black',
         heroClass: 'text-yellow-300 font-extrabold'
       };
     }
@@ -878,8 +975,7 @@ const app = {
         level: 4,
         title: 'Bậc Thầy',
         icon: '🔮',
-        flameClass: 'text-purple-300 fill-purple-400 animate-pulse',
-        badgeClass: 'bg-gradient-to-r from-purple-950 via-indigo-900 to-purple-950 border border-purple-500 text-purple-200 font-extrabold shadow-md shadow-purple-900/60',
+        badgeClass: 'streak-aura-lv4 font-extrabold',
         heroClass: 'text-purple-400 font-extrabold'
       };
     }
@@ -888,8 +984,7 @@ const app = {
         level: 3,
         title: 'Siêu Cháy',
         icon: '💥',
-        flameClass: 'text-rose-300 fill-rose-500 animate-bounce',
-        badgeClass: 'bg-gradient-to-r from-rose-950 via-red-900 to-rose-950 border border-rose-500 text-rose-100 font-black shadow-md shadow-rose-900/70',
+        badgeClass: 'streak-aura-lv3 font-black',
         heroClass: 'text-rose-400 font-extrabold'
       };
     }
@@ -898,8 +993,7 @@ const app = {
         level: 2,
         title: 'Nhiệt Huyết',
         icon: '⚡',
-        flameClass: 'text-orange-400 fill-orange-500 animate-pulse',
-        badgeClass: 'bg-orange-950/90 border border-orange-600 text-orange-300 font-bold shadow-sm',
+        badgeClass: 'streak-aura-lv2 font-bold',
         heroClass: 'text-orange-400 font-bold'
       };
     }
@@ -907,8 +1001,7 @@ const app = {
       level: 1,
       title: 'Khởi Động',
       icon: '🔰',
-      flameClass: 'text-amber-400 fill-amber-400',
-      badgeClass: 'bg-amber-950/80 border border-amber-700/80 text-amber-300 font-bold shadow-sm',
+      badgeClass: 'streak-aura-lv1 font-bold',
       heroClass: 'text-amber-300 font-bold'
     };
   },
@@ -927,6 +1020,7 @@ const app = {
       const isActive = this.isAccountActive(user);
       const streak = this.data.userProgress.streak || 1;
       const streakInfo = this.getStreakLevelInfo(streak);
+      const flameHTML = this.renderTikTokFlameHTML(streakInfo.level, 18);
 
       if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">${streakInfo.icon} Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
 
@@ -955,11 +1049,11 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <!-- 5-Level Daily Streak Flame Badge -->
-            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${streakInfo.badgeClass} text-xs shrink-0 cursor-default" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} ngày)">
-              <i data-lucide="flame" class="w-3.5 h-3.5 ${streakInfo.flameClass}"></i>
-              <span>${streak} Ngày</span>
-            </div>
+            <!-- TIKTOK 5-LEVEL STREAK FLAME BUTTON -->
+            <button onclick="app.showStreakCelebration()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${streakInfo.badgeClass} text-xs shrink-0 cursor-pointer active:scale-95 transition-all shadow-md" title="Bấm để xem danh hiệu Level ${streakInfo.level}: ${streakInfo.title}">
+              ${flameHTML}
+              <span class="font-extrabold">${streak} Ngày</span>
+            </button>
 
             <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800 border border-slate-700">
               <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
