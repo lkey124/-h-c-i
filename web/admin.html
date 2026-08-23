@@ -1532,15 +1532,72 @@
       accounts: [],
 
       syncAccountsFromCloud: async function() {
-        try {
-          const res = await fetch('/api/accounts?t=' + Date.now());
-          if (res.ok) {
-            const data = await res.json();
-            this.accounts = Array.isArray(data) ? data : (data.accounts || []);
-          }
-        } catch(e) {
-          console.warn('Sync accounts error:', e);
+        let loadedAccounts = null;
+        const urls = ['/api/accounts', '/data/accounts_db.json'];
+        for (const url of urls) {
+          try {
+            const res = await fetch(url + '?t=' + Date.now());
+            if (res.ok) {
+              const data = await res.json();
+              const arr = Array.isArray(data) ? data : (data.accounts || []);
+              if (arr && arr.length > 0) {
+                loadedAccounts = arr;
+                break;
+              }
+            }
+          } catch(e) {}
         }
+
+        // Also check localStorage
+        try {
+          const localAccts = localStorage.getItem('eduquest_b1_all_accounts');
+          if (localAccts) {
+            const parsed = JSON.parse(localAccts);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              if (!loadedAccounts) loadedAccounts = parsed;
+              else {
+                const map = new Map(loadedAccounts.map(a => [a.accountId || a.email, a]));
+                parsed.forEach(a => {
+                  const k = a.accountId || a.email;
+                  if (k && !map.has(k)) map.set(k, a);
+                });
+                loadedAccounts = Array.from(map.values());
+              }
+            }
+          }
+        } catch(e) {}
+
+        // Fallback: If accounts is empty, auto-synthesize from active/registered Keys in this.users
+        const existingKeySet = new Set((loadedAccounts || []).map(a => this.normalizeKey(a.linkedKey)));
+        if (Array.isArray(this.users)) {
+          const synthesized = [];
+          this.users.forEach(u => {
+            const uKeyNorm = this.normalizeKey(u.key || u.id);
+            if (uKeyNorm && !existingKeySet.has(uKeyNorm)) {
+              const displayName = u.name || u.linkedName || 'Học Viên Mới';
+              const isUnregistered = displayName === 'Chưa Kích Hoạt' || displayName === 'Chưa Đặt Tên';
+              synthesized.push({
+                accountId: u.linkedAccountId || ('ACC-' + (u.key || u.id)),
+                email: u.linkedEmail || (isUnregistered ? 'chua_dang_ky@gmail.com' : (displayName.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
+                name: isUnregistered ? 'Chờ Kích Hoạt' : displayName,
+                tier: 'premium',
+                linkedKey: u.key || u.id,
+                keyExpiresAt: u.expiresAt,
+                createdAt: u.createdAt || new Date().toISOString(),
+                lastActiveDate: u.lastActiveDate || u.createdAt || new Date().toISOString(),
+                streak: u.streak || 1,
+                progress: { passedSets: {}, unlockedUpTo: 1 },
+                status: u.status || 'ACTIVE'
+              });
+            }
+          });
+          if (synthesized.length > 0) {
+            loadedAccounts = [...(loadedAccounts || []), ...synthesized];
+          }
+        }
+
+        this.accounts = loadedAccounts || [];
+        localStorage.setItem('eduquest_b1_all_accounts', JSON.stringify(this.accounts));
         this.renderAccountsTable();
       },
 

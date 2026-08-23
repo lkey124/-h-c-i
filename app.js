@@ -1888,8 +1888,23 @@ const app = {
         this.initIcons();
         return;
       }
-      this.data.currentUser = user;
+      const acct = {
+        accountId: user.linkedAccountId || ('ACC-' + (user.key || user.id)),
+        email: user.linkedEmail || (cleanName ? (cleanName.toLowerCase().replace(/\s+/g, '') + '@gmail.com') : 'hocvien@gmail.com'),
+        name: cleanName,
+        tier: 'premium',
+        linkedKey: user.key,
+        keyExpiresAt: user.expiresAt,
+        createdAt: user.createdAt || new Date().toISOString(),
+        lastActiveDate: new Date().toISOString(),
+        streak: user.streak || 1,
+        progress: this.data.userProgress || { passedSets: {}, unlockedUpTo: 1 },
+        status: 'ACTIVE'
+      };
+      this.data.currentUser = acct;
+      localStorage.setItem('eduquest_b1_account', JSON.stringify(acct));
       localStorage.setItem('eduquest_b1_logged_user', JSON.stringify(user));
+      await this.pushAccountToCloud(acct);
       this.loadUserProgressFromStorage();
       this.updateDailyStreak();
       this.closeLoginModal();
@@ -1898,7 +1913,7 @@ const app = {
       this.playSound('pass');
       this.showCustomAlert({
         title: 'KÍCH HOẠT THÀNH CÔNG!',
-        message: `Chào mừng học viên <strong>${user.name}</strong>! Key còn <strong>${remainingDays} ngày</strong>.`,
+        message: `Chào mừng học viên <strong>${cleanName}</strong>! Key còn <strong>${remainingDays} ngày</strong>.`,
         icon: '🎉', iconBg: 'bg-emerald-950/80 border border-emerald-600/60 text-emerald-400', btnText: 'Bắt Đầu Vượt Ải'
       });
     } else {
