@@ -286,6 +286,7 @@
               <tr class="border-b border-slate-800 text-slate-400 font-bold">
                 <th class="py-3 px-3">Tên Học Viên (App)</th>
                 <th class="py-3 px-3">Mã Key Kích Hoạt</th>
+                <th class="py-3 px-3">🔥 Chuỗi Học</th>
                 <th class="py-3 px-3">Gói Bản Quyền</th>
                 <th class="py-3 px-3">Hạn Dùng / Số Ngày</th>
                 <th class="py-3 px-3">Trạng Thái</th>
@@ -600,6 +601,14 @@
         });
       },
 
+      getDynamicPackageName: function(remainingDays) {
+        if (remainingDays <= 0) return 'Gói Đã Hết Hạn';
+        const months = Math.round(remainingDays / 30);
+        if (months >= 12) return 'Gói 1 Năm';
+        if (months <= 1) return 'Gói 1 Tháng';
+        return `Gói ${months} Tháng`;
+      },
+
       extendDuration: async function(userId, days) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
@@ -607,9 +616,11 @@
         const baseDate = currentExp > new Date() ? currentExp : new Date();
         baseDate.setDate(baseDate.getDate() + days);
         user.expiresAt = baseDate.toISOString();
+        const remaining = this.getDaysRemaining(user.expiresAt);
+        user.package = this.getDynamicPackageName(remaining);
         user.status = 'ACTIVE';
         await this.saveUsers();
-        alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!`);
+        alert(`✅ Đã gia hạn thêm ${days} ngày cho học viên ${user.name}!\n• Gói hiện tại: ${user.package} (Còn ${remaining} ngày)`);
       },
 
       toggleStatus: async function(userId) {
@@ -645,7 +656,7 @@
         if (this.users.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="6" class="text-center py-8 text-slate-400 font-normal">
+              <td colspan="7" class="text-center py-8 text-slate-400 font-normal">
                 Chưa có học viên nào. Hãy dùng biểu mẫu bên trên để cấp Key bản quyền đầu tiên!
               </td>
             </tr>
@@ -657,6 +668,7 @@
           const remainingDays = this.getDaysRemaining(u.expiresAt);
           const isExpired = remainingDays <= 0;
           const isActive = u.status === 'ACTIVE' && !isExpired;
+          const dynamicPkg = this.getDynamicPackageName(remainingDays);
 
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 transition-colors';
@@ -677,7 +689,12 @@
                 </button>
               </div>
             </td>
-            <td class="py-3 px-3 text-slate-300 font-bold">${u.package}</td>
+            <td class="py-3 px-3">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-950/90 text-amber-300 border border-amber-700/80 font-black text-xs">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i> ${u.streak || 1} Ngày
+              </span>
+            </td>
+            <td class="py-3 px-3 text-slate-300 font-bold">${dynamicPkg}</td>
             <td class="py-3 px-3">
               ${
                 isExpired 

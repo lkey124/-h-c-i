@@ -437,6 +437,7 @@ const app = {
     this.renderAnnouncementBanner();
     this.loadUsersFromStorage();
     this.loadActiveUserSession();
+    this.updateDailyStreak();
     await this.syncKeysFromCloud();
     await this.loadExamsDataset();
     this.renderRoadmap();
@@ -512,12 +513,9 @@ const app = {
     this.initIcons();
   },
 
-  initIcons: function() {
-    if (window.lucide) {
-      lucide.createIcons();
-    }
-  },
-
+  // -------------------------------------------------------------
+  // SUBSCRIPTION & LICENSE CALCULATION
+  // -------------------------------------------------------------
   getRemainingDays: function(expiresAt) {
     if (!expiresAt) return 0;
     const now = new Date();
@@ -526,10 +524,58 @@ const app = {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   },
 
+  getDynamicPackageName: function(remainingDays) {
+    if (remainingDays <= 0) return 'Gói Đã Hết Hạn';
+    const months = Math.round(remainingDays / 30);
+    if (months >= 12) return 'Gói 1 Năm';
+    if (months <= 1) return 'Gói 1 Tháng';
+    return `Gói ${months} Tháng`;
+  },
+
   isAccountActive: function(user) {
     if (!user) return false;
     const remaining = this.getRemainingDays(user.expiresAt);
     return remaining > 0 && user.status === 'ACTIVE';
+  },
+
+  // -------------------------------------------------------------
+  // DAILY LEARNING STREAK TRACKER
+  // -------------------------------------------------------------
+  updateDailyStreak: function() {
+    if (!this.data.currentUser) return;
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+
+    const progress = this.data.userProgress;
+    if (!progress.lastActiveDate) {
+      progress.streak = 1;
+      progress.lastActiveDate = todayStr;
+    } else if (progress.lastActiveDate !== todayStr) {
+      const lastDate = new Date(progress.lastActiveDate);
+      const diffDays = Math.round((today - lastDate) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        progress.streak = (progress.streak || 1) + 1;
+      } else if (diffDays > 1) {
+        progress.streak = 1;
+      }
+      progress.lastActiveDate = todayStr;
+    }
+
+    // Sync streak into user object so admin can view
+    this.data.currentUser.streak = progress.streak || 1;
+    const userInList = this.data.users.find(u => this.isKeyMatching(u.key || u.id, this.data.currentUser.key || this.data.currentUser.id));
+    if (userInList) {
+      userInList.streak = progress.streak || 1;
+      localStorage.setItem('eduquest_b1_all_users', JSON.stringify(this.data.users));
+    }
+
+    this.saveUserProgressToStorage();
+  },
+
+  initIcons: function() {
+    if (window.lucide) {
+      lucide.createIcons();
+    }
   },
 
   loadUsersFromStorage: function() {
@@ -639,16 +685,18 @@ const app = {
 
     if (user) {
       const remainingDays = this.getRemainingDays(user.expiresAt);
+      const dynamicPackageName = this.getDynamicPackageName(remainingDays);
       const isActive = this.isAccountActive(user);
+      const streak = this.data.userProgress.streak || 1;
 
-      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong>`;
+      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="text-amber-300">🔥 Chuỗi: ${streak} Ngày</span>`;
 
       if (isActive) {
         if (subBadge) {
           subBadge.classList.remove('hidden');
           subBadge.className = 'hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/80 border border-indigo-700 text-cyan-300 text-xs font-bold shadow-sm';
         }
-        if (subText) subText.innerText = `${user.package} (Còn ${remainingDays} ngày)`;
+        if (subText) subText.innerText = `${dynamicPackageName} (Còn ${remainingDays} ngày)`;
         if (statusBadge) {
           statusBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs font-bold';
           statusBadge.innerHTML = '<i data-lucide="unlock" class="w-3.5 h-3.5"></i> Đề 01 Sẵn Sàng';
@@ -668,12 +716,19 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <div class="flex items-center gap-1.5">
+            <!-- Daily Streak Badge -->
+            <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-950/90 border border-amber-600/80 text-amber-300 text-xs font-black shadow-sm shrink-0" title="Chuỗi ngày đăng nhập học tập liên tục">
+              <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400 fill-amber-400 animate-pulse"></i>
+              <span>${streak} Ngày</span>
+            </div>
+
             <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800 border border-slate-700">
               <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
                 ${user.name.charAt(0).toUpperCase()}
               </div>
-              <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[100px]">${user.name}</span>
+              <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[90px]">${user.name}</span>
             </div>
+
             <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
               <i data-lucide="log-out" class="w-4 h-4"></i>
             </button>
