@@ -25,7 +25,7 @@
     "freeExamSubmitted": false,
     "createdAt": "2026-08-23T06:25:13.845Z",
     "streak": 1,
-    "lastActiveDate": "2026-08-23T06:37:03.539Z",
+    "lastActiveDate": "2026-08-23T07:24:08.419Z",
     "progress": {
       "unlockedUpTo": 1,
       "passedSets": {},
@@ -33,6 +33,7 @@
       "exp": 0,
       "attempts": []
     },
-    "status": "ACTIVE"
+    "status": "ACTIVE",
+    "password": "bubgvn06"
   }
 ]

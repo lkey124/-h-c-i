@@ -91,10 +91,19 @@ const app = {
     } else {
       if (iconWrapper) {
         iconWrapper.style.display = 'flex';
-        iconSpan.innerText = options.icon || '🎉';
-        iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
-          options.iconBg || 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400'
-        }`;
+        const isElephant = options.icon === '🐘' || options.useElephantLogo;
+        if (isElephant) {
+          iconSpan.innerHTML = `<img src="/icons/app-logo.png" alt="Logo Voi B1" class="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-md mx-auto transform hover:scale-105 transition-transform">`;
+          iconWrapper.className = `mx-auto flex items-center justify-center p-0 bg-transparent border-0 shadow-none`;
+        } else if (typeof options.icon === 'string' && options.icon.includes('<img')) {
+          iconSpan.innerHTML = options.icon;
+          iconWrapper.className = `mx-auto flex items-center justify-center p-0 bg-transparent border-0 shadow-none`;
+        } else {
+          iconSpan.innerText = options.icon || '🎉';
+          iconWrapper.className = `w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-xl ${
+            options.iconBg || 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400'
+          }`;
+        }
       }
     }
     titleEl.innerText = options.title || 'Thông Báo';
@@ -457,7 +466,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.5.0',
+  APP_VERSION: 'v2.5.1',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -1447,18 +1456,23 @@ const app = {
       }
 
       if (authSec) {
-        const tierBadge = isPremiumActive
-          ? `<span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-300 text-[10px] font-black">⭐ PREMIUM</span>`
-          : `<span class="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-300 text-[10px] font-black">🆓 FREE</span>`;
         authSec.innerHTML = `
-          <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <!-- TIKTOK FRAMELESS TIER-SCALED STREAK FLAME BUTTON -->
             <button onclick="app.showStreakCelebration()" class="streak-frameless-btn shrink-0" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
               ${flameHTML}
               <span class="${streakInfo.textClass} text-[11px] sm:text-xs font-black tracking-tight whitespace-nowrap">${streak} Ngày</span>
             </button>
 
-            ${tierBadge}
+            <!-- UPGRADE KEY BUTTON FOR FREE TIER (VISIBLE ON MOBILE & DESKTOP) -->
+            ${!isPremiumActive ? `
+              <button onclick="app.openLinkKeyModal()" class="flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-white font-black text-[10px] sm:text-xs shadow-md shadow-amber-600/30 active:scale-95 transition-all shrink-0 cursor-pointer animate-pulse" title="Nhập Key mở khóa Full 50 Đề">
+                <i data-lucide="key" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></i>
+                <span class="font-extrabold">Nhập Key</span>
+              </button>
+            ` : `
+              <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/90 border border-amber-600/80 text-amber-300 text-[10px] font-black shrink-0">⭐ PRO</span>
+            `}
 
             <!-- USER PROFILE BUTTON (CLICK TO VIEW DAYS & KEY MANAGEMENT) -->
             <button onclick="app.openUserProfileModal()" class="flex items-center gap-1.5 p-1 pl-1.5 pr-2 sm:pl-2 sm:pr-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 hover:border-indigo-500/60 cursor-pointer shrink-0 transition-all shadow-sm" title="Xem Thời Hạn & Đổi Key">
