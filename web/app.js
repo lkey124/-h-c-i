@@ -864,76 +864,97 @@ const app = {
   renderTikTokFlameHTML: function(level, customSize) {
     let size = customSize;
     if (!size) {
-      if (level === 5) size = 26;
-      else if (level === 4) size = 23;
-      else if (level === 3) size = 21;
-      else if (level === 2) size = 19;
-      else size = 17;
+      if (level === 5) size = 32;
+      else if (level === 4) size = 28;
+      else if (level === 3) size = 25;
+      else if (level === 2) size = 22;
+      else size = 19;
     }
-    const height = Math.round(size * 1.16);
+    const height = Math.round(size * 1.05);
+    const showSparks = level >= 2;
 
     return `
-      <span class="inline-flex items-center justify-center flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
-        <svg viewBox="0 0 24 28" fill="none" class="duo-flame-svg" style="width: 100%; height: 100%;">
+      <span class="flame-plump-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <svg viewBox="0 0 100 100" class="flame-plump-svg" style="width: 100%; height: 100%; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <!-- Level 1: Warm Sunset Amber -->
-            <linearGradient id="duo-out-1" x1="12" y1="0" x2="12" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#fbbf24"/>
-              <stop offset="100%" stop-color="#d97706"/>
+            <!-- Level 1: Warm Amber / Gold -->
+            <linearGradient id="plump-out-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#b45309"/>
+              <stop offset="55%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="duo-in-1" x1="12" y1="9" x2="12" y2="26" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#fde047"/>
-            </linearGradient>
-
-            <!-- Level 2: Duolingo Classic Blaze -->
-            <linearGradient id="duo-out-2" x1="12" y1="0" x2="12" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ff7b00"/>
-              <stop offset="100%" stop-color="#ea580c"/>
-            </linearGradient>
-            <linearGradient id="duo-in-2" x1="12" y1="9" x2="12" y2="26" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ffea79"/>
-              <stop offset="100%" stop-color="#f59e0b"/>
+            <linearGradient id="plump-in-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="60%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
 
-            <!-- Level 3: Crimson Ruby Inferno -->
-            <linearGradient id="duo-out-3" x1="12" y1="0" x2="12" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ff2a5f"/>
-              <stop offset="100%" stop-color="#be123c"/>
+            <!-- Level 2: Fiery Radiant Orange -->
+            <linearGradient id="plump-out-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#c2410c"/>
+              <stop offset="50%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#fef08a"/>
             </linearGradient>
-            <linearGradient id="duo-in-3" x1="12" y1="9" x2="12" y2="26" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#fb7185"/>
+            <linearGradient id="plump-in-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="60%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
 
-            <!-- Level 4: Electric Cyan Plasma -->
-            <linearGradient id="duo-out-4" x1="12" y1="0" x2="12" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#00e5ff"/>
-              <stop offset="100%" stop-color="#0284c7"/>
+            <!-- Level 3: Ruby Red Inferno (As in User Screenshot!) -->
+            <linearGradient id="plump-out-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="45%" stop-color="#e11d48"/>
+              <stop offset="75%" stop-color="#ff2a5f"/>
+              <stop offset="100%" stop-color="#ffe4e6"/>
             </linearGradient>
-            <linearGradient id="duo-in-4" x1="12" y1="9" x2="12" y2="26" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#7dd3fc"/>
+            <linearGradient id="plump-in-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#e11d48"/>
+              <stop offset="60%" stop-color="#fb7185"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <!-- Level 4: Plasma Purple / Electric -->
+            <linearGradient id="plump-out-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#4c1d95"/>
+              <stop offset="45%" stop-color="#7c3aed"/>
+              <stop offset="80%" stop-color="#c084fc"/>
+              <stop offset="100%" stop-color="#f5d0fe"/>
+            </linearGradient>
+            <linearGradient id="plump-in-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="60%" stop-color="#d8b4fe"/>
+              <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
 
             <!-- Level 5: Sacred Solar Gold Crown -->
-            <linearGradient id="duo-out-5" x1="12" y1="0" x2="12" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#fde047"/>
-              <stop offset="60%" stop-color="#eab308"/>
-              <stop offset="100%" stop-color="#ca8a04"/>
+            <linearGradient id="plump-out-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#854d0e"/>
+              <stop offset="45%" stop-color="#eab308"/>
+              <stop offset="80%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
-            <linearGradient id="duo-in-5" x1="12" y1="9" x2="12" y2="26" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#ffffff"/>
-              <stop offset="100%" stop-color="#fef08a"/>
+            <linearGradient id="plump-in-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ca8a04"/>
+              <stop offset="60%" stop-color="#fef08a"/>
+              <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
           </defs>
 
-          <!-- Outer Flame Silhouette -->
-          <path d="M12 0.8C12 0.8 14.5 4.5 15.5 7.5C16.8 6.5 17.8 4.8 18 3.5C21.5 7.5 23 12.2 23 16C23 22.1 18.1 27 12 27C5.9 27 1 22.1 1 16C1 10.5 4.8 5.2 8.5 2.2C8.2 4.5 9 7 10.5 8.5C11.5 6 12 0.8 12 0.8Z" fill="url(#duo-out-${level})" />
+          <!-- Plump, Chubby Outer Flame Body (Wide Belly!) -->
+          <path fill="url(#plump-out-${level})" d="M50,4 C68,26 94,46 94,68 C94,86 76,96 50,96 C24,96 6,86 6,68 C6,46 32,26 50,4 Z" />
 
-          <!-- Inner Flame Tongue -->
-          <path d="M12 9.5C12 9.5 13.5 12 14.2 14C15 13.2 15.6 12 15.8 11.2C17.8 13.8 18.5 16.8 18.5 19.2C18.5 22.8 15.6 25.8 12 25.8C8.4 25.8 5.5 22.8 5.5 19.2C5.5 15.8 7.8 12.5 10 10.5C9.8 12 10.3 13.5 11.2 14.5C11.8 13 12 9.5 12 9.5Z" fill="url(#duo-in-${level})" />
+          <!-- Plump Secondary Inner 3D Cut -->
+          <path fill="url(#plump-in-${level})" opacity="0.92" d="M50,18 C62,32 82,48 82,68 C82,84 68,90 50,90 C32,90 18,84 18,68 C18,48 38,32 50,18 Z" />
+
+          <!-- Plump Superheated Core Glow -->
+          <path class="flame-core-glow" fill="#ffffff" opacity="0.96" d="M50,48 C60,58 70,68 68,78 C66,86 58,87 50,87 C42,87 34,86 32,78 C30,68 40,58 50,48 Z" />
         </svg>
+
+        ${showSparks ? `
+          <span class="flame-spark-dot spark-dot-1"></span>
+          <span class="flame-spark-dot spark-dot-2"></span>
+        ` : ''}
       </span>
     `;
   },
