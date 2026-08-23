@@ -457,7 +457,7 @@ const app = {
     this.initIcons();
   },
 
-  APP_VERSION: 'v2.3.2',
+  APP_VERSION: 'v2.3.3',
 
   // -------------------------------------------------------------
   // INITIALIZATION
@@ -476,8 +476,8 @@ const app = {
       this.data.userProgress = { unlockedUpTo: 1, passedSets: {}, streak: 0, exp: 0, attempts: [] };
       setTimeout(() => {
         this.showCustomAlert({
-          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.2',
-          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa tầng, bộ đếm ngược thời gian thực và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
+          title: 'HỆ THỐNG ĐÃ CẬP NHẬT v2.3.3',
+          message: 'Hệ thống vừa nâng cấp phiên bản mới nhất với tính năng khôi phục tài khoản đa năng 3 trong 1 (Email / Tên / Key), đếm ngược thời gian thực và đồng bộ đám mây.<br><br>Vui lòng <strong>Đăng nhập lại</strong> để cập nhật phiên bản mới!',
           icon: '🚀',
           iconBg: 'bg-indigo-950/80 border border-indigo-600/60 text-indigo-400',
           btnText: 'Đăng Nhập Lại Ngay',
@@ -1651,41 +1651,44 @@ const app = {
     const rawInput = (emailInp?.value || '').trim();
 
     if (!rawInput) {
-      if (errBox) { errBox.innerText = 'Vui lòng nhập Email hoặc Mã Key!'; errBox.classList.remove('hidden'); }
+      if (errBox) { errBox.innerText = 'Vui lòng nhập Email, Tên hoặc Mã Key!'; errBox.classList.remove('hidden'); }
       return;
     }
     if (errBox) errBox.classList.add('hidden');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang kiểm tra...'; this.initIcons(); }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang xác thực...'; this.initIcons(); }
 
     const isEmail = rawInput.includes('@');
-    const cleanEmail = rawInput.toLowerCase();
+    const cleanLower = rawInput.toLowerCase();
     const cleanKeyNorm = rawInput.replace(/[- _]/g, '').toUpperCase();
 
     try {
       await this.syncKeysFromCloud();
       const accounts = await this.fetchAccountsFromCloud();
       
-      // 1. Match by Email or Linked Key in accounts list
+      // 1. Search in accounts list by: Email, Name, or Linked Key
       let found = accounts.find(a => {
-        if (isEmail && a.email && a.email.toLowerCase() === cleanEmail) return true;
-        if (a.linkedKey && (a.linkedKey === rawInput || a.linkedKey.replace(/[- _]/g, '').toUpperCase() === cleanKeyNorm)) return true;
+        if (a.email && a.email.trim().toLowerCase() === cleanLower) return true;
+        if (a.name && a.name.trim().toLowerCase() === cleanLower) return true;
+        if (a.linkedKey && (a.linkedKey.trim() === rawInput || a.linkedKey.replace(/[- _]/g, '').toUpperCase() === cleanKeyNorm)) return true;
         return false;
       });
 
-      // 2. Match by standalone Key in this.data.users list
+      // 2. Search in keys list by: Key, Name, or Email
       if (!found && Array.isArray(this.data.users)) {
         const matchedKey = this.data.users.find(u => {
           const uKeyNorm = (u.key || u.id || '').replace(/[- _]/g, '').toUpperCase();
           if (uKeyNorm && uKeyNorm === cleanKeyNorm) return true;
-          if (isEmail && u.linkedEmail && u.linkedEmail.toLowerCase() === cleanEmail) return true;
+          if (u.name && u.name.trim().toLowerCase() === cleanLower && u.name !== 'Chưa Kích Hoạt') return true;
+          if (u.linkedName && u.linkedName.trim().toLowerCase() === cleanLower) return true;
+          if (u.linkedEmail && u.linkedEmail.trim().toLowerCase() === cleanLower) return true;
           return false;
         });
 
         if (matchedKey && matchedKey.name && matchedKey.name !== 'Chưa Kích Hoạt') {
           found = {
             accountId: matchedKey.linkedAccountId || ('ACC-' + (matchedKey.key || matchedKey.id)),
-            email: matchedKey.linkedEmail || (isEmail ? cleanEmail : (matchedKey.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
-            name: matchedKey.name,
+            email: matchedKey.linkedEmail || (isEmail ? cleanLower : (matchedKey.name.toLowerCase().replace(/\s+/g, '') + '@gmail.com')),
+            name: matchedKey.name || matchedKey.linkedName,
             tier: 'premium',
             linkedKey: matchedKey.key,
             keyExpiresAt: matchedKey.expiresAt,
@@ -1713,22 +1716,23 @@ const app = {
           btnText: 'Vào Học Ngay'
         });
       } else {
-        if (!isEmail) {
-          if (errBox) { errBox.innerText = `Không tìm thấy mã Key "${rawInput}". Vui lòng kiểm tra lại hoặc nhập đúng Email!`; errBox.classList.remove('hidden'); }
-          return;
+        if (!isEmail && !rawInput.includes('.')) {
+          // If typed a name or invalid key not found anywhere, ask to register as free
+          this.data.pendingEmail = cleanLower.replace(/\s+/g, '') + '@gmail.com';
+        } else {
+          this.data.pendingEmail = cleanLower;
         }
-        // New email → show name registration step
-        this.data.pendingEmail = cleanEmail;
+        // New user → show name registration step
         document.getElementById('login-step-email')?.classList.add('hidden');
         document.getElementById('login-step-name')?.classList.remove('hidden');
         const nameInp = document.getElementById('login-name-input');
-        if (nameInp) nameInp.value = '';
+        if (nameInp) nameInp.value = (!isEmail && rawInput.length >= 2) ? rawInput.toUpperCase() : '';
         this.initIcons();
       }
     } catch (e) {
       if (errBox) { errBox.innerText = 'Không thể kết nối server. Vui lòng thử lại!'; errBox.classList.remove('hidden'); }
     } finally {
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="arrow-right" class="w-4 h-4"></i> Tiếp Tục'; this.initIcons(); }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập / Tiếp Tục'; this.initIcons(); }
     }
   },
 
