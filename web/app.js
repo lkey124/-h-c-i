@@ -861,7 +861,16 @@ const app = {
     }
   },
 
-  renderTikTokFlameHTML: function(level, size = 18) {
+  renderTikTokFlameHTML: function(level, customSize) {
+    let size = customSize;
+    if (!size) {
+      if (level === 5) size = 36;
+      else if (level === 4) size = 32;
+      else if (level === 3) size = 28;
+      else if (level === 2) size = 22;
+      else size = 18;
+    }
+
     let outerColor = '#f59e0b';
     let coreColor = '#ffffff';
     let showSparks = true;
@@ -886,7 +895,7 @@ const app = {
 
     return `
       <span class="tiktok-flame-wrapper" style="width: ${size}px; height: ${size}px;">
-        <svg viewBox="0 0 24 24" class="tiktok-flame-outer" style="width: ${size}px; height: ${size}px;">
+        <svg viewBox="0 0 24 24" class="flame-anim-lv${level}" style="width: ${size}px; height: ${size}px;">
           <defs>
             <linearGradient id="grad-flame-lv1" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#b45309"/>
@@ -900,9 +909,9 @@ const app = {
             </linearGradient>
             <linearGradient id="grad-flame-lv3" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#9f1239"/>
-              <stop offset="40%" stop-color="#e11d48"/>
-              <stop offset="80%" stop-color="#f43f5e"/>
-              <stop offset="100%" stop-color="#fef08a"/>
+              <stop offset="35%" stop-color="#e11d48"/>
+              <stop offset="70%" stop-color="#f43f5e"/>
+              <stop offset="100%" stop-color="#ffe4e6"/>
             </linearGradient>
             <linearGradient id="grad-flame-lv4" x1="0" y1="1" x2="0" y2="0">
               <stop offset="0%" stop-color="#581c87"/>
@@ -939,22 +948,22 @@ const app = {
     this.showCustomAlert({
       title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
       message: `
-        <div class="text-center py-2 space-y-3">
-          <div class="inline-block p-4 rounded-3xl ${info.badgeClass} shadow-xl scale-125 my-2">
-            ${this.renderTikTokFlameHTML(info.level, 48)}
+        <div class="text-center py-3 space-y-4">
+          <div class="flex justify-center items-center py-4">
+            <div class="scale-150 transform transition-transform">
+              ${this.renderTikTokFlameHTML(info.level, 56)}
+            </div>
           </div>
-          <div class="font-extrabold text-base text-white">Danh Hiệu: <span class="text-amber-400">Level ${info.level} - ${info.title}</span></div>
-          <p class="text-xs text-slate-300">
+          <div class="font-black text-lg ${info.textClass}">Danh Hiệu: Level ${info.level} - ${info.title}</div>
+          <p class="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
             ${
               info.level >= 3
                 ? '🔥🔥 Ngọn lửa đang bùng cháy cực đại! Hãy duy trì chuỗi học mỗi ngày để đạt mốc 30 ngày mở khóa danh hiệu Huyền Thoại B1!'
-                : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa tiến hóa lên cấp độ cao hơn!'
+                : 'Hãy đăng nhập và hoàn thành đề thi mỗi ngày để ngọn lửa bùng cháy lớn hơn và tiến hóa lên cấp độ cao hơn!'
             }
           </p>
         </div>
       `,
-      icon: info.icon,
-      iconBg: info.badgeClass,
       btnText: 'Tiếp Tục Bùng Cháy 🔥'
     });
   },
@@ -965,8 +974,7 @@ const app = {
       return {
         level: 5,
         title: 'Huyền Thoại',
-        icon: '👑',
-        badgeClass: 'streak-aura-lv5 font-black',
+        textClass: 'streak-text-lv5',
         heroClass: 'text-yellow-300 font-extrabold'
       };
     }
@@ -974,8 +982,7 @@ const app = {
       return {
         level: 4,
         title: 'Bậc Thầy',
-        icon: '🔮',
-        badgeClass: 'streak-aura-lv4 font-extrabold',
+        textClass: 'streak-text-lv4',
         heroClass: 'text-purple-400 font-extrabold'
       };
     }
@@ -983,8 +990,7 @@ const app = {
       return {
         level: 3,
         title: 'Siêu Cháy',
-        icon: '💥',
-        badgeClass: 'streak-aura-lv3 font-black',
+        textClass: 'streak-text-lv3',
         heroClass: 'text-rose-400 font-extrabold'
       };
     }
@@ -992,16 +998,14 @@ const app = {
       return {
         level: 2,
         title: 'Nhiệt Huyết',
-        icon: '⚡',
-        badgeClass: 'streak-aura-lv2 font-bold',
+        textClass: 'streak-text-lv2',
         heroClass: 'text-orange-400 font-bold'
       };
     }
     return {
       level: 1,
       title: 'Khởi Động',
-      icon: '🔰',
-      badgeClass: 'streak-aura-lv1 font-bold',
+      textClass: 'streak-text-lv1',
       heroClass: 'text-amber-300 font-bold'
     };
   },
@@ -1020,9 +1024,9 @@ const app = {
       const isActive = this.isAccountActive(user);
       const streak = this.data.userProgress.streak || 1;
       const streakInfo = this.getStreakLevelInfo(streak);
-      const flameHTML = this.renderTikTokFlameHTML(streakInfo.level, 18);
+      const flameHTML = this.renderTikTokFlameHTML(streakInfo.level);
 
-      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">${streakInfo.icon} Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
+      if (heroBadge) heroBadge.innerHTML = `<i data-lucide="user-check" class="w-3 h-3 text-indigo-400"></i> Học viên: <strong class="text-white">${user.name}</strong> • <span class="${streakInfo.heroClass}">🔥 Chuỗi: ${streak} Ngày (${streakInfo.title})</span>`;
 
       if (isActive) {
         if (subBadge) {
@@ -1048,21 +1052,21 @@ const app = {
 
       if (authSec) {
         authSec.innerHTML = `
-          <div class="flex items-center gap-1.5">
-            <!-- TIKTOK 5-LEVEL STREAK FLAME BUTTON -->
-            <button onclick="app.showStreakCelebration()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${streakInfo.badgeClass} text-xs shrink-0 cursor-pointer active:scale-95 transition-all shadow-md" title="Bấm để xem danh hiệu Level ${streakInfo.level}: ${streakInfo.title}">
+          <div class="flex items-center gap-2">
+            <!-- TIKTOK FRAMELESS TIER-SCALED STREAK FLAME BUTTON -->
+            <button onclick="app.showStreakCelebration()" class="streak-frameless-btn" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
               ${flameHTML}
-              <span class="font-extrabold">${streak} Ngày</span>
+              <span class="${streakInfo.textClass}">${streak} Ngày</span>
             </button>
 
-            <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800 border border-slate-700">
+            <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
               <div class="w-6 h-6 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
                 ${user.name.charAt(0).toUpperCase()}
               </div>
               <span class="text-xs font-bold text-slate-100 hidden sm:inline-block truncate max-w-[90px]">${user.name}</span>
             </div>
 
-            <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
+            <button onclick="app.logout()" class="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800 transition-colors shrink-0" title="Đăng Xuất / Đổi Key">
               <i data-lucide="log-out" class="w-4 h-4"></i>
             </button>
           </div>
