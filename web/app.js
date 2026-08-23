@@ -862,14 +862,100 @@ const app = {
   },
 
   renderTikTokFlameHTML: function(level, customSize) {
-    const size = customSize || 20;
+    let size = customSize;
+    if (!size) {
+      if (level === 5) size = 38;
+      else if (level === 4) size = 32;
+      else if (level === 3) size = 27;
+      else if (level === 2) size = 22;
+      else size = 18;
+    }
+    const height = Math.round(size * 1.25);
+    const showSparks = level >= 2;
+
     return `
-      <span class="tiktok-fire-icon" style="font-size: ${size}px;">🔥</span>
+      <span class="flame-premium-container flame-tier-lv${level}" style="width: ${size}px; height: ${height}px;">
+        <svg viewBox="0 0 100 125" class="flame-anim-bounce" style="width: 100%; height: 100%; overflow: visible;">
+          <defs>
+            <linearGradient id="exact-outer-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#b45309"/>
+              <stop offset="55%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="exact-inner-1" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#f59e0b"/>
+              <stop offset="60%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="exact-outer-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#c2410c"/>
+              <stop offset="50%" stop-color="#f97316"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="exact-inner-2" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ea580c"/>
+              <stop offset="60%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="exact-outer-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#9f1239"/>
+              <stop offset="45%" stop-color="#e11d48"/>
+              <stop offset="75%" stop-color="#ff2a5f"/>
+              <stop offset="100%" stop-color="#ffe4e6"/>
+            </linearGradient>
+            <linearGradient id="exact-inner-3" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#e11d48"/>
+              <stop offset="60%" stop-color="#fb7185"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="exact-outer-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#4c1d95"/>
+              <stop offset="45%" stop-color="#7c3aed"/>
+              <stop offset="80%" stop-color="#c084fc"/>
+              <stop offset="100%" stop-color="#f5d0fe"/>
+            </linearGradient>
+            <linearGradient id="exact-inner-4" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#7c3aed"/>
+              <stop offset="60%" stop-color="#d8b4fe"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+
+            <linearGradient id="exact-outer-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#854d0e"/>
+              <stop offset="45%" stop-color="#eab308"/>
+              <stop offset="80%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <linearGradient id="exact-inner-5" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#ca8a04"/>
+              <stop offset="60%" stop-color="#fef08a"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Outer Flame Body (Teardrop Curve) -->
+          <path fill="url(#exact-outer-${level})" d="M50,4 C60,24 82,45 84,72 C86,98 72,122 50,124 C28,122 14,98 16,72 C18,45 40,24 50,4 Z"/>
+
+          <!-- Secondary Outer Curve Cut (for 3D stylized look) -->
+          <path fill="url(#exact-inner-${level})" opacity="0.92" d="M50,22 C56,36 72,52 74,74 C76,96 66,112 50,114 C34,112 24,96 26,74 C28,52 44,36 50,22 Z"/>
+
+          <!-- Bright Core Pulse Flame -->
+          <path class="flame-core-pulse" fill="#ffffff" opacity="0.96" d="M50,54 C54,66 62,76 60,92 C58,104 46,104 42,92 C40,78 46,66 50,54 Z"/>
+        </svg>
+
+        ${showSparks ? `
+          <span class="flame-spark-dot spark-dot-1"></span>
+          <span class="flame-spark-dot spark-dot-2"></span>
+        ` : ''}
+      </span>
     `;
   },
 
   initAnimeFlameAnimation: function() {
-    // Clean CSS Keyframes
+    // Pure CSS High-Perf Spring Physics
   },
 
   showStreakCelebration: function() {
@@ -883,9 +969,9 @@ const app = {
       title: `🔥 CHUỖI HỌC ${streak} NGÀY LIÊN TỤC!`,
       message: `
         <div class="text-center py-4 space-y-4">
-          <div class="flex justify-center items-center py-2">
-            <div class="streak-tier-lv${info.level} p-4 rounded-full bg-slate-900/60 border border-slate-800">
-              <span class="tiktok-fire-icon" style="font-size: 56px;">🔥</span>
+          <div class="flex justify-center items-center py-4">
+            <div class="scale-150 transform transition-transform">
+              ${this.renderTikTokFlameHTML(info.level, 56)}
             </div>
           </div>
           <div class="font-black text-xl ${info.textClass}">Chuỗi: ${streak} Ngày (${info.title})</div>
@@ -917,7 +1003,7 @@ const app = {
         level: 4,
         title: 'Bậc Thầy (Tuần 4)',
         textClass: 'streak-text-lv4',
-        heroClass: 'text-cyan-400 font-extrabold'
+        heroClass: 'text-purple-400 font-extrabold'
       };
     }
     if (days >= 15) {
@@ -987,10 +1073,10 @@ const app = {
       if (authSec) {
         authSec.innerHTML = `
           <div class="flex items-center gap-2">
-            <!-- TIKTOK GLOWING STREAK FLAME BUTTON -->
-            <button onclick="app.showStreakCelebration()" class="streak-frameless-btn streak-tier-lv${streakInfo.level}" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
+            <!-- TIKTOK FRAMELESS TIER-SCALED STREAK FLAME BUTTON -->
+            <button onclick="app.showStreakCelebration()" class="streak-frameless-btn" title="Level ${streakInfo.level}: ${streakInfo.title} (${streak} Ngày)">
               ${flameHTML}
-              <span class="${streakInfo.textClass}">${streak}</span>
+              <span class="${streakInfo.textClass}">${streak} Ngày</span>
             </button>
 
             <div class="flex items-center gap-1.5 p-1 pl-2 pr-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
